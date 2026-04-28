@@ -1,0 +1,172 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top, #1b2b1b 0%, #050805 45%, #000 100%);
+  color: #e8ffe8;
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.game-layout {
+  width: min(1100px, 100%);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 24px;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  grid-template-areas:
+    "header header"
+    "ascii status"
+    "story log";
+  gap: 16px;
+}
+
+.game-header {
+  grid-area: header;
+  border-bottom: 1px solid #3cff3c;
+  padding-bottom: 12px;
+}
+
+.game-header h1 {
+  color: #7cff7c;
+  margin: 0 0 6px;
+  letter-spacing: 2px;
+}
+
+.game-header p {
+  color: #9fdc9f;
+  margin: 0;
+}
+
+.game-panel {
+  background: rgba(0, 0, 0, 0.82);
+  border: 1px solid #2f9f2f;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 0 18px rgba(60, 255, 60, 0.12);
+}
+
+.game-panel h2 {
+  font-size: 16px;
+  color: #7cff7c;
+  margin: 0 0 12px;
+  border-bottom: 1px dashed #2f9f2f;
+  padding-bottom: 6px;
+}
+
+.ascii-panel {
+  grid-area: ascii;
+}
+
+.story-panel {
+  grid-area: story;
+}
+
+.status-panel {
+  grid-area: status;
+}
+
+.log-panel {
+  grid-area: log;
+}
+
+#asciiArt {
+  margin: 0;
+  color: #b6ffb6;
+  white-space: pre-wrap;
+  line-height: 1.25;
+}
+
+.story-output {
+  min-height: 260px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.story-output p,
+.log-output p {
+  margin: 6px 0;
+  line-height: 1.5;
+}
+
+.command-text {
+  color: #ffe66d;
+}
+
+.command-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid #2f9f2f;
+  padding-top: 12px;
+  margin-top: 12px;
+}
+
+.prompt-symbol {
+  color: #7cff7c;
+  font-weight: bold;
+}
+
+#commandInput {
+  flex: 1;
+  background: #050805;
+  color: #e8ffe8;
+  border: 1px solid #2f9f2f;
+  border-radius: 6px;
+  padding: 10px;
+  font-family: inherit;
+  outline: none;
+}
+
+#commandInput:focus {
+  border-color: #7cff7c;
+  box-shadow: 0 0 8px rgba(124, 255, 124, 0.25);
+}
+
+button {
+  background: #102510;
+  color: #7cff7c;
+  border: 1px solid #7cff7c;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #1d3d1d;
+}
+
+.status-panel ul {
+  padding-left: 18px;
+  margin: 0;
+}
+
+.status-panel li {
+  margin-bottom: 10px;
+}
+
+.log-output {
+  min-height: 160px;
+  max-height: 260px;
+  overflow-y: auto;
+  color: #c6ffc6;
+  font-size: 14px;
+}
+
+@media (max-width: 800px) {
+  .game-layout {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "header"
+      "ascii"
+      "status"
+      "story"
+      "log";
+    padding: 14px;
+  }
+}

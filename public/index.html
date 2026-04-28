@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Dungeon Demo</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="game-layout">
+    <header class="game-header">
+      <h1>AI 輔助文字地城冒險遊戲</h1>
+      <p>Ancient Ruins Terminal Demo</p>
+    </header>
+
+    <section class="game-panel ascii-panel">
+      <h2>遺跡影像 ASCII View</h2>
+      <pre id="asciiArt">
+        _______
+       / _____ \
+      / /     \ \
+      | | RUIN | |
+      | |_____| |
+      \_________/
+      </pre>
+    </section>
+
+    <section class="game-panel story-panel">
+      <h2>故事輸出 Story</h2>
+      <div id="storyOutput" class="story-output">
+        <p>&gt; 系統啟動中...</p>
+        <p>&gt; 你站在古代地下遺跡的入口前。</p>
+        <p>&gt; 輸入 <span class="command-text">help</span> 查看可用指令。</p>
+      </div>
+
+      <form id="commandForm" class="command-form">
+        <span class="prompt-symbol">&gt;</span>
+        <input
+          id="commandInput"
+          type="text"
+          autocomplete="off"
+          placeholder="輸入指令，例如：look"
+        />
+        <button type="submit">送出</button>
+      </form>
+    </section>
+
+    <aside class="game-panel status-panel">
+      <h2>玩家狀態 Status</h2>
+      <ul>
+        <li>HP：<span id="statusHp">30</span></li>
+        <li>MP：<span id="statusMp">10</span></li>
+        <li>位置：<span id="statusRoom">遺跡入口</span></li>
+        <li>背包：<span id="statusInventory">空</span></li>
+      </ul>
+    </aside>
+
+    <aside class="game-panel log-panel">
+      <h2>冒險日誌 Log</h2>
+      <div id="logOutput" class="log-output">
+        <p>[System] 遊戲介面已載入。</p>
+      </div>
+    </aside>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
