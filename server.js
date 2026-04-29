@@ -8,7 +8,7 @@ const {
   getPublicGameState,
   handleCommand,
 } = require("./engine/gameEngine");
-const { narrate } = require("./ai/narrator");
+const { narrate } = require("./AI/narrator");
 
 const app = express();
 const PORT = 3000;
