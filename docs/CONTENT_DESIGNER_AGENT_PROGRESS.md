@@ -23,14 +23,21 @@
 | Step 6 | 完善 `tools/validateArea.js`，補強 hand-written validator 邏輯 | `tools/validateArea.js` | Completed |
 | Step 7 | 建立 validator 手動測試案例 | `tools/validator-test-cases/*.json` | Completed |
 | Step 8 | 整理 validator CLI 使用方式、`--help` 與錯誤訊息 | `tools/validateArea.js` | Completed |
+| Step 9 | 同步 `outputs/generatedArea.json` 為冰封遺跡範例 | `outputs/generatedArea.json` | Completed |
+| Step 10 | 建立 `AI/contentDesigner.js` mock implementation | `AI/contentDesigner.js` | Completed |
+| Step 11 | `AI/contentDesigner.js` 支援 `--write` 寫入 `outputs/generatedArea.json` | `AI/contentDesigner.js` | Completed |
+| Step 12 | `AI/contentDesigner.js` 支援 `--write --validate` 寫入後自動驗證 | `AI/contentDesigner.js` | Completed |
+| Step 13 | 新增 `package.json` npm scripts（generate / validate / test） | `package.json` | Completed |
 
 ## 4. 目前相關檔案說明
 - `docs/GAME_DESIGN_AGENT.md`：`Content Designer Agent` 規格、邊界、流程與分階段規劃。
 - `docs/CONTENT_DESIGNER_AGENT_PROGRESS.md`：本文件，記錄 MVP 進度與實務使用方式。
+- `AI/contentDesigner.js`：`Content Designer Agent` mock implementation，負責產生 `generatedArea` JSON，支援輸出、寫入與驗證。
 - `schemas/generatedArea.schema.json`：`generatedArea` 的 `JSON Schema`（`Phase 1` + `Phase 1.5` 擴充描述）。
 - `tools/validateArea.js`：`Validator` CLI，採 hand-written validation，負責結構與邏輯檢查。
 - `tools/sampleGeneratedArea.json`：合法範例資料（冰封遺跡主題）。
 - `outputs/generatedArea.json`：目前產出的草案資料，用於驗證與人工審查。
+- `package.json`：提供 `start`、`validate:area`、`generate:area`、`test:validator`、`test` scripts。
 - `tools/validator-test-cases/validArea.json`：預期 PASS 的合法測試案例。
 - `tools/validator-test-cases/duplicateRoomId.json`：測試重複 room id，預期 FAIL。
 - `tools/validator-test-cases/invalidExitDirection.json`：測試非法 exit direction，預期 FAIL。
@@ -59,17 +66,23 @@
 - `rooms` 目前仍為必要欄位。
 - `items` / `monsters` / `skills` / `traps` 為 `Phase 1.5` 的可選擴充欄位。
 
-## 6. Validator 使用方式
+## 6. Validator / CLI 使用方式
 ```bash
 node tools/validateArea.js
 node tools/validateArea.js outputs/generatedArea.json
 node tools/validateArea.js tools/sampleGeneratedArea.json
 node tools/validateArea.js tools/validator-test-cases/validArea.json
 node tools/validateArea.js --help
+
+npm run validate:area
+npm run generate:area
+npm run test:validator
+npm test
 ```
 
 說明：
-- 若未指定路徑，預設驗證 `outputs/generatedArea.json`。
+- 若未指定路徑，`validateArea` 預設驗證 `outputs/generatedArea.json`。
+- `npm run generate:area` 會執行 `node AI/contentDesigner.js --write --validate`。
 
 Exit code：
 - `0`：validation passed
@@ -100,6 +113,11 @@ Exit code：
 
 ## 8. 手動測試指令
 ```bash
+node AI/contentDesigner.js
+node AI/contentDesigner.js --help
+node AI/contentDesigner.js --write
+node AI/contentDesigner.js --write --validate
+
 node tools/validateArea.js tools/sampleGeneratedArea.json
 node tools/validateArea.js outputs/generatedArea.json
 node tools/validateArea.js tools/validator-test-cases/validArea.json
@@ -131,26 +149,20 @@ git diff --stat
 git diff -- docs/CONTENT_DESIGNER_AGENT_PROGRESS.md
 ```
 
-提醒：
-- 新增本文件後，理想上 `git status` 會看到 `docs/CONTENT_DESIGNER_AGENT_PROGRESS.md` 為新增檔案；若工作樹本來已有其他變更，則會一併顯示。
-
 ## 10. 目前仍未做的事情
-- 尚未實作 `AI/contentDesigner.js` 或 `agents/contentDesignerAgent.js`
 - 尚未接 Gemini provider
 - 尚未把 `generatedArea` 自動合併到 `data/gameData.js`
 - 尚未讓 `Game Engine` 直接讀取 `generatedArea`
 - 尚未加入 AJV
-- 尚未加入 `package.json` test script
 - 尚未加入 GitHub Actions / CI
 - 尚未做正式 balance check
-- 尚未新增資料庫、登入、session、多人功能
 
 ## 11. 下一步建議
-1. 第九步：決定是否同步更新 `outputs/generatedArea.json` 為冰封遺跡範例。
-2. 第十步：建立 `AI/contentDesigner.js` 或 `agents/contentDesignerAgent.js`。
-3. 第十一步：讓 `Content Designer Agent` 只輸出 JSON 草案，不直接改 `gameData.js`。
-4. 第十二步：產生 `patch` 建議給 `Human Review`。
-5. 未來：考慮 AJV、`npm test` script、CI。
+1. Step 15：建立更完整的 Content Designer Agent prompt / provider 邊界。
+2. Step 16：設計 provider 介面，但先保留 mock provider。
+3. Step 17：考慮接 Gemini / GPT / Ollama，但輸出仍必須先經 JSON parse 與 validator。
+4. Step 18：產生 patch 建議，但不直接改 `data/gameData.js`。
+5. 未來：AJV、CI、balance check、Human Review workflow。
 
 ## 12. 安全邊界提醒
 - `Content Designer Agent` 是 `Development-time` 工具。
