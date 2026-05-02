@@ -1,9 +1,13 @@
-{
+﻿{
   "name": "ai-dungeon-demo",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "validate:area": "node tools/validateArea.js outputs/generatedArea.json",
+    "generate:area": "node AI/contentDesigner.js --write --validate",
+    "test:validator": "node tools/validateArea.js tools/sampleGeneratedArea.json && node tools/validateArea.js outputs/generatedArea.json && node tools/validateArea.js tools/validator-test-cases/validArea.json",
+    "test": "npm run test:validator"
   },
   "keywords": [],
   "author": "",
