@@ -1,15 +1,15 @@
-const gameData = {
+﻿const gameData = {
   rooms: {
     entrance: {
       id: "entrance",
       name: "遺跡入口",
       description:
-        "你站在古代地下遺跡的入口。冷風從石門縫隙中吹出，牆上刻著模糊的符號。",
+        "你站在古老遺跡的入口，牆面刻著早已模糊的符文。冷風從黑暗深處吹來，彷彿在催促你前進。",
       ascii: `
         _______
        / _____ \\
       / /     \\ \\
-      | |入口 | |
+      | |入口  | |
       | |_____| |
       \\_________/
       `,
@@ -22,9 +22,9 @@ const gameData = {
 
     hall: {
       id: "hall",
-      name: "石像大廳",
+      name: "守衛長廊",
       description:
-        "巨大的石像排列在大廳兩側。它們的眼窩空洞，像是在注視著闖入者。",
+        "斑駁的長廊兩側立著破碎石像，地面散落骨片與鏽蝕鐵器。你感受到某種敵意正在逼近。",
       ascii: `
        O      O
       /|\\    /|\\
@@ -41,14 +41,14 @@ const gameData = {
 
     corridor: {
       id: "corridor",
-      name: "陷阱走廊",
+      name: "回音走廊",
       description:
-        "狹窄的走廊地面布滿裂痕。你感覺只要走錯一步，就可能觸發古老機關。",
+        "狹長走廊裡回音不斷，腳步聲被放大成不安的節奏。牆邊有微弱藍光閃爍。",
       ascii: `
       =================
        ^   ^   ^   ^
       =================
-        陷阱走廊
+         回音走廊
       `,
       exits: {
         west: "hall",
@@ -60,15 +60,15 @@ const gameData = {
 
     altar: {
       id: "altar",
-      name: "地下祭壇",
+      name: "祭壇大廳",
       description:
-        "祭壇中央漂浮著微弱的藍光。空氣中瀰漫著古代魔法殘留的氣息。",
+        "你來到一座坍塌過半的祭壇，中央石台仍殘留著古老儀式的痕跡。東側有一道沉重石門。",
       ascii: `
           /\\
          /__\\
         /____\\
           ||
-        地下祭壇
+         祭壇
       `,
       exits: {
         south: "corridor",
@@ -80,16 +80,16 @@ const gameData = {
 
     boss_room: {
       id: "boss_room",
-      name: "守護者房間",
+      name: "核心密室",
       description:
-        "沉重的石門後方，是一座圓形空間。遺跡守護者站在中央，守著古代核心。",
+        "密室深處矗立著殘破機關與巨型守衛。古代核心懸浮在半空，散發不穩定能量。",
       ascii: `
           [====]
          /|    |\\
         /_|____|_\\
           |    |
          / \\  / \\
-        遺跡守護者
+         遺跡守衛
       `,
       exits: {
         west: "altar",
@@ -103,28 +103,28 @@ const gameData = {
     torch: {
       id: "torch",
       name: "火把",
-      description: "一支還能燃燒的火把，可以照亮黑暗角落。",
+      description: "一支可照明的火把，能在黑暗中提供基本視野。",
       type: "tool",
     },
 
     rusty_key: {
       id: "rusty_key",
       name: "生鏽鑰匙",
-      description: "一把生鏽的古老鑰匙，也許能打開某道門。",
+      description: "一把佈滿鏽斑的舊鑰匙，看起來可以打開遺跡深處的門。",
       type: "key",
     },
 
     ancient_core: {
       id: "ancient_core",
       name: "古代核心",
-      description: "散發藍色光芒的神秘核心，是這趟探險的目標。",
+      description: "遺跡能量的來源，帶回入口或許能完成這次探索。",
       type: "quest",
     },
 
     small_potion: {
       id: "small_potion",
-      name: "小藥水",
-      description: "恢復少量 HP 的藥水。",
+      name: "小型藥水",
+      description: "可恢復少量 HP 的藥水。",
       type: "consumable",
       effect: {
         hp: 10,
@@ -139,7 +139,7 @@ const gameData = {
       maxHp: 16,
       hp: 16,
       attack: 4,
-      description: "一具手持破舊短劍的骷髏守衛，正在大廳中巡邏。",
+      description: "手持殘刃的骷髏守衛，動作僵硬卻致命。",
     },
 
     ruin_guardian: {
@@ -148,7 +148,7 @@ const gameData = {
       maxHp: 35,
       hp: 35,
       attack: 7,
-      description: "由古代魔法驅動的巨大守護者，沉默地守護著古代核心。",
+      description: "沉睡已久的巨型守護者，誓死守護古代核心。",
     },
   },
 
@@ -158,7 +158,7 @@ const gameData = {
       name: "斬擊",
       mpCost: 0,
       damage: 8,
-      description: "普通的近戰攻擊技能。",
+      description: "穩定的近戰攻擊技能。",
     },
 
     fireball: {
@@ -166,7 +166,7 @@ const gameData = {
       name: "火球術",
       mpCost: 4,
       damage: 14,
-      description: "消耗 MP，造成較高傷害。",
+      description: "消耗 MP 施放火球造成高傷害。",
     },
 
     guard: {
@@ -174,7 +174,7 @@ const gameData = {
       name: "防禦姿態",
       mpCost: 2,
       damage: 0,
-      description: "進入防禦狀態，降低下一次受到的傷害。",
+      description: "進入防禦狀態，下一次受到的傷害減半。",
     },
   },
 };

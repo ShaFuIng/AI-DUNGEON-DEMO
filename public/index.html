@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
@@ -9,12 +9,12 @@
 <body>
   <main class="game-layout">
     <header class="game-header">
-      <h1>AI 輔助文字地城冒險遊戲</h1>
+      <h1>AI 地城終端冒險</h1>
       <p>Ancient Ruins Terminal Demo</p>
     </header>
 
     <section class="game-panel ascii-panel">
-      <h2>遺跡影像 ASCII View</h2>
+      <h2>遺跡場景 ASCII View</h2>
       <pre id="asciiArt">
         _______
        / _____ \
@@ -26,10 +26,10 @@
     </section>
 
     <section class="game-panel story-panel">
-      <h2>故事輸出 Story</h2>
+      <h2>敘事輸出 Story</h2>
       <div id="storyOutput" class="story-output">
-        <p>&gt; 系統啟動中...</p>
-        <p>&gt; 你站在古代地下遺跡的入口前。</p>
+        <p>&gt; 系統載入中...</p>
+        <p>&gt; 你站在古老遺跡的入口。</p>
         <p>&gt; 輸入 <span class="command-text">help</span> 查看可用指令。</p>
       </div>
 
@@ -39,26 +39,26 @@
           id="commandInput"
           type="text"
           autocomplete="off"
-          placeholder="輸入指令，例如：look"
+          placeholder="輸入指令，例如 look"
         />
         <button type="submit">送出</button>
       </form>
     </section>
 
     <aside class="game-panel status-panel">
-      <h2>玩家狀態 Status</h2>
+      <h2>角色狀態 Status</h2>
       <ul>
         <li>HP：<span id="statusHp">30</span></li>
         <li>MP：<span id="statusMp">10</span></li>
-        <li>位置：<span id="statusRoom">遺跡入口</span></li>
-        <li>背包：<span id="statusInventory">空</span></li>
+        <li>房間：<span id="statusRoom">遺跡入口</span></li>
+        <li>背包：<span id="statusInventory">無</span></li>
       </ul>
     </aside>
 
     <aside class="game-panel log-panel">
-      <h2>冒險日誌 Log</h2>
+      <h2>行動紀錄 Log</h2>
       <div id="logOutput" class="log-output">
-        <p>[System] 遊戲介面已載入。</p>
+        <p>[System] 遊戲初始化完成。</p>
       </div>
     </aside>
   </main>

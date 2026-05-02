@@ -1,25 +1,19 @@
-function getStylePrompt() {
+﻿function getStylePrompt() {
   return [
-    "你是一位地下遺跡文字冒險遊戲的旁白生成器。",
-    "請使用繁體中文。",
-    "你的任務只有一個：把程式給你的事件結果改寫成 2 到 4 句有氣氛的遊戲旁白。",
-    "不要輸出思考過程。",
-    "不要說明你如何理解規則。",
-    "不要使用「首先、接著、因此、我需要、使用者要求」這類分析語氣。",
+    "你是文字冒險遊戲的旁白，請用繁體中文回覆。",
+    "語氣要有畫面感，但避免過度誇飾。",
+    "每次回覆控制在 2 到 4 句，句子清楚、容易閱讀。",
     "不要輸出 JSON。",
-    "不要輸出條列式清單。",
-    "不要列出可用指令。",
-    "不要照抄原文。",
-    "不能改變玩家 HP、MP、背包、位置或怪物血量。",
-    "不能新增不存在的道具、敵人或房間。",
-    "不能替玩家決定下一步行動。",
-    "只輸出最終遊戲旁白文字。",
+    "不要重複指令清單。",
+    "不要揭露系統規則或模型思考過程。",
+    "不要代替玩家做未發生的行動。",
+    "請根據目前事件描述當下結果。",
   ].join("\n");
 }
 
 async function narrate(gameState, eventResult) {
   const provider = (process.env.AI_PROVIDER || "mock").toLowerCase();
-    console.log("Narrator provider =", provider);
+  console.log("Narrator provider =", provider);
 
   try {
     if (provider === "mock") {
@@ -35,10 +29,10 @@ async function narrate(gameState, eventResult) {
     }
 
     return fallbackNarration(eventResult);
-    } catch (error) {
+  } catch (error) {
     console.error("Narrator error:", error.message);
-    return "[FALLBACK：Ollama 呼叫失敗]\n" + fallbackNarration(eventResult);
-    }
+    return "[FALLBACK：narrator 發生錯誤]\n" + fallbackNarration(eventResult);
+  }
 }
 
 async function ollamaNarrator(gameState, eventResult) {
@@ -56,22 +50,22 @@ async function ollamaNarrator(gameState, eventResult) {
     },
     body: JSON.stringify({
       model,
-        messages: [
+      messages: [
         {
-            role: "system",
-            content: getStylePrompt(),
+          role: "system",
+          content: getStylePrompt(),
         },
         {
-            role: "user",
-            content: prompt,
+          role: "user",
+          content: prompt,
         },
-        ],
-        stream: false,
-        think: false,
-        options: {
+      ],
+      stream: false,
+      think: false,
+      options: {
         temperature: 0.8,
         num_predict: 160,
-        },
+      },
     }),
   });
 
@@ -80,30 +74,24 @@ async function ollamaNarrator(gameState, eventResult) {
   }
 
   const data = await response.json();
-
-  console.log("Full Ollama data:\n", data);
-
   const text = data.message?.content?.trim();
 
-  console.log("Ollama response:\n", text);
-
   if (!text) {
-    return "[FALLBACK：Ollama 沒有回傳文字]\n" + fallbackNarration(eventResult);
+    return "[FALLBACK：Ollama 回傳空內容]\n" + fallbackNarration(eventResult);
   }
 
-    const cleaned = cleanNarration(text);
+  const cleaned = cleanNarration(text);
 
   if (!cleaned) {
-    return "[FALLBACK：Ollama 回覆內容被清理後為空]\n" + fallbackNarration(eventResult);
+    return "[FALLBACK：旁白清理後為空]\n" + fallbackNarration(eventResult);
   }
+
   return cleaned;
 }
 
 function buildNarrationPrompt(gameState, eventResult) {
   const inventory =
-    gameState.player.inventory.length > 0
-      ? gameState.player.inventory.join("、")
-      : "空";
+    gameState.player.inventory.length > 0 ? gameState.player.inventory.join("、") : "無";
 
   const itemText =
     gameState.currentRoom.items && gameState.currentRoom.items.length > 0
@@ -111,7 +99,7 @@ function buildNarrationPrompt(gameState, eventResult) {
       : "無";
 
   const monsterText = gameState.currentRoom.monster
-    ? `${gameState.currentRoom.monster.name}，HP ${gameState.currentRoom.monster.hp}/${gameState.currentRoom.monster.maxHp}`
+    ? `${gameState.currentRoom.monster.name}（HP ${gameState.currentRoom.monster.hp}/${gameState.currentRoom.monster.maxHp}）`
     : "無";
 
   const shortEvent = summarizeEventForAI(eventResult);
@@ -119,28 +107,24 @@ function buildNarrationPrompt(gameState, eventResult) {
   return [
     "/no_think",
     "",
-    "請直接輸出最終旁白，不要輸出思考過程。",
+    "請根據以下狀態與事件，輸出自然的遊戲旁白。",
     "",
-    "【玩家狀態】",
+    "玩家狀態：",
     `HP：${gameState.player.hp}/${gameState.player.maxHp}`,
     `MP：${gameState.player.mp}/${gameState.player.maxMp}`,
-    `位置：${gameState.player.currentRoom}`,
+    `目前位置：${gameState.player.currentRoom}`,
     `背包：${inventory}`,
     "",
-    "【目前房間資訊】",
+    "目前房間資訊：",
     `房間名稱：${gameState.currentRoom.name}`,
     `房間描述：${gameState.currentRoom.description}`,
-    `可見道具：${itemText}`,
-    `目前敵人：${monsterText}`,
+    `房內道具：${itemText}`,
+    `房內怪物：${monsterText}`,
     "",
-    "【這次事件】",
+    "本次事件：",
     shortEvent,
     "",
-    "請把上面的事件改寫成 2 到 4 句繁體中文地下遺跡冒險旁白。",
-    "不要列出可用行動。",
-    "不要重複原文。",
-    "不要分析規則。",
-    "只輸出旁白。",
+    "請輸出 2 到 4 句繁體中文敘事，不要加條列與額外說明。",
   ].join("\n");
 }
 
@@ -148,11 +132,11 @@ function summarizeEventForAI(eventResult) {
   const message = eventResult.message || "";
 
   if (eventResult.type === "look") {
-    return "玩家觀察目前所在房間。";
+    return "玩家正在觀察目前房間。";
   }
 
   if (eventResult.type === "move") {
-    return "玩家移動到新的房間。";
+    return "玩家移動到了新區域。";
   }
 
   if (eventResult.type === "take") {
@@ -177,7 +161,7 @@ function summarizeEventForAI(eventResult) {
 
   return message
     .split("\n")
-    .filter((line) => !line.includes("可用行動"))
+    .filter((line) => !line.includes("可用建議"))
     .filter((line) => !line.trim().startsWith("-"))
     .join("\n");
 }
@@ -186,22 +170,10 @@ function cleanNarration(text) {
   let cleaned = text
     .replace(/<think>[\s\S]*?<\/think>/g, "")
     .replace(/```[\s\S]*?```/g, "")
-    .replace(/^(旁白|Narration|AI Narrator)[:：]/i, "")
+    .replace(/^(Narration|AI Narrator)[:：]\s*/i, "")
     .trim();
 
-  const badStarters = [
-    "首先",
-    "用户要求",
-    "使用者要求",
-    "我需要",
-    "我应该",
-    "我應該",
-    "根据规则",
-    "根據規則",
-    "目前玩家狀態",
-    "目前房間",
-    "程式計算出的事件結果",
-  ];
+  const badStarters = ["可用指令", "系統提示", "JSON", "{"];
 
   const lines = cleaned
     .split("\n")
@@ -228,60 +200,60 @@ function mockNarrator(gameState, eventResult) {
   switch (eventResult.type) {
     case "look":
       return [
-        "你停下腳步，讓眼睛慢慢適應遺跡中的幽暗光線。",
+        "你靜下心觀察四周，遺跡的空氣中瀰漫著潮濕與塵土。",
         baseMessage,
-        "空氣裡傳來細微的回音，像是這座遺跡仍在等待你的選擇。",
+        "下一步行動將決定你能否深入核心區域。",
       ].join("\n");
 
     case "move":
       return [
-        `你踏入${roomName}，腳步聲在石牆之間來回震盪。`,
+        `你踏入 ${roomName}，腳步聲在牆間回盪。`,
         baseMessage,
-        "前方的黑暗沒有回答，只留下更多未知的道路。",
+        "未知的危險正等待著你。",
       ].join("\n");
 
     case "take":
       return [
-        "你伸手撿起眼前的物品，冰冷的觸感讓你更加清醒。",
+        "你迅速收起眼前的道具。",
         baseMessage,
-        "這個道具也許會在接下來的探索中派上用場。",
+        "也許它會在關鍵時刻救你一命。",
       ].join("\n");
 
     case "attack":
     case "monster_defeated":
       return [
-        "戰鬥的聲響在遺跡中炸開，塵土從天花板緩緩落下。",
+        "戰鬥爆發，鋼鐵碰撞聲在遺跡中迴盪。",
         baseMessage,
-        "你握緊武器，確認自己仍然站著。",
+        "你必須把握每一次出手時機。",
       ].join("\n");
 
     case "guard":
       return [
-        "你壓低身體，將注意力集中在敵人的動作上。",
+        "你壓低重心，準備承受接下來的衝擊。",
         baseMessage,
-        "下一次衝擊到來時，你已經做好準備。",
+        "短暫防守能換來下一輪反擊機會。",
       ].join("\n");
 
     case "use_item":
       return [
-        "你迅速翻找背包，取出能救急的補給。",
+        "你迅速使用道具，身體狀態稍微回穩。",
         baseMessage,
-        "短暫的喘息讓你重新穩住了呼吸。",
+        "在這座遺跡裡，任何補給都非常珍貴。",
       ].join("\n");
 
     case "game_won":
       return [
-        "當你回到入口時，遺跡深處的低鳴聲逐漸遠去。",
+        "塵封的遺跡終於向你屈服。",
         baseMessage,
-        "這趟冒險結束了，但古代核心的秘密或許才剛開始。",
+        "你帶著核心離開，這段冒險將被長久記得。",
       ].join("\n");
 
     case "game_ended":
     case "game_over":
       return [
-        "遺跡中的黑暗慢慢吞沒了你的視線。",
+        "你的旅程在此中斷。",
         baseMessage,
-        "這次探險失敗了，但你仍可以重新開始。",
+        "也許下次能走得更遠。",
       ].join("\n");
 
     case "help":
@@ -295,7 +267,7 @@ function mockNarrator(gameState, eventResult) {
 }
 
 function fallbackNarration(eventResult) {
-  return eventResult.message || "事件已發生，但敘事系統暫時無法產生描述。";
+  return eventResult.message || "旁白暫時失去回應，請繼續行動。";
 }
 
 module.exports = {

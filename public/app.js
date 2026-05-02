@@ -1,4 +1,4 @@
-const commandForm = document.getElementById("commandForm");
+﻿const commandForm = document.getElementById("commandForm");
 const commandInput = document.getElementById("commandInput");
 const storyOutput = document.getElementById("storyOutput");
 const logOutput = document.getElementById("logOutput");
@@ -8,8 +8,6 @@ const statusHp = document.getElementById("statusHp");
 const statusMp = document.getElementById("statusMp");
 const statusRoom = document.getElementById("statusRoom");
 const statusInventory = document.getElementById("statusInventory");
-
-let currentState = null;
 
 function addStoryLine(text) {
   const lines = String(text).split("\n");
@@ -21,13 +19,6 @@ function addStoryLine(text) {
   }
 
   storyOutput.scrollTop = storyOutput.scrollHeight;
-}
-
-function addLogLine(text) {
-  const p = document.createElement("p");
-  p.textContent = `[Log] ${text}`;
-  logOutput.appendChild(p);
-  logOutput.scrollTop = logOutput.scrollHeight;
 }
 
 function renderLogFromState(state) {
@@ -43,15 +34,11 @@ function renderLogFromState(state) {
 }
 
 function updateUI(state) {
-  currentState = state;
-
   statusHp.textContent = `${state.player.hp}/${state.player.maxHp}`;
   statusMp.textContent = `${state.player.mp}/${state.player.maxMp}`;
   statusRoom.textContent = state.player.currentRoom;
   statusInventory.textContent =
-    state.player.inventory.length > 0
-      ? state.player.inventory.join("、")
-      : "空";
+    state.player.inventory.length > 0 ? state.player.inventory.join("、") : "無";
 
   asciiArt.textContent = state.currentRoom.ascii;
   renderLogFromState(state);
@@ -65,7 +52,7 @@ async function loadGameState() {
     updateUI(state);
     addStoryLine(state.currentRoom.description);
   } catch (error) {
-    addStoryLine("無法讀取遊戲狀態，請確認伺服器是否正在執行。");
+    addStoryLine("無法載入遊戲狀態，請重新整理頁面後再試一次。");
   }
 }
 
@@ -84,7 +71,7 @@ async function sendCommand(command) {
     updateUI(data.state);
     addStoryLine(data.narration || data.eventResult.message);
   } catch (error) {
-    addStoryLine("指令送出失敗，請確認伺服器是否正在執行。");
+    addStoryLine("指令送出失敗，請稍後再試。");
   }
 }
 
