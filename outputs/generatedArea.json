@@ -1,39 +1,58 @@
 {
-  "id": "sunken_archive",
-  "name": "沉沒檔案庫",
-  "theme": "潮濕石廊與失控魔導機關",
-  "narrativeHook": "你踩進積水，牆上殘存的符文像呼吸般明滅。",
-  "difficulty": 4,
+  "id": "frozen_ruins",
+  "name": "冰封遺跡",
+  "theme": "寒霜、冰晶、古代機關、被凍結的遺跡",
+  "narrativeHook": "你踏過結霜的石階，冰晶在火光裡折射出古老機關尚未熄滅的寒芒。",
+  "difficulty": 5,
   "rooms": [
     {
-      "id": "archive_gate",
-      "name": "檔案庫外門",
-      "description": "鏽蝕門環掛在半開石門上，門縫裡吹出帶鹽味的冷風。",
+      "id": "frozen_gate",
+      "name": "冰封外門",
+      "description": "半毀的石門被厚冰封住，裂縫間滲出刺骨寒氣。你能聽見門後傳來空洞的回音。",
       "exits": {
-        "north": "flooded_stacks"
+        "north": "frost_hall"
       },
-      "items": ["torch"],
+      "items": [
+        "torch"
+      ],
       "monster": null
     },
     {
-      "id": "flooded_stacks",
-      "name": "浸水書庫",
-      "description": "書架傾倒在水面，漂浮的殘頁黏在你的靴子上。",
+      "id": "frost_hall",
+      "name": "霜痕長廊",
+      "description": "長廊地面覆著薄霜，牆上的古老刻紋被冰晶填滿。腳步聲在狹長通道中被拉得很遠。",
       "exits": {
-        "south": "archive_gate",
-        "east": "core_vault"
+        "south": "frozen_gate",
+        "east": "crystal_chamber"
       },
-      "items": ["small_potion"],
+      "items": [
+        "rusty_key"
+      ],
       "monster": "skeleton_guard"
     },
     {
-      "id": "core_vault",
-      "name": "核心保管室",
-      "description": "破裂的晶體容器排列成圓環，中央控制台仍有微弱脈動。",
+      "id": "crystal_chamber",
+      "name": "冰晶密室",
+      "description": "密室中央垂落巨大冰柱，反射出冷白色光芒。角落散落破碎祭器，像是某種儀式被強行中斷。",
       "exits": {
-        "west": "flooded_stacks"
+        "west": "frost_hall",
+        "north": "ancient_ice_core"
       },
-      "items": ["ancient_core"],
+      "items": [
+        "small_potion"
+      ],
+      "monster": null
+    },
+    {
+      "id": "ancient_ice_core",
+      "name": "古冰核心室",
+      "description": "核心室內的古代機關被寒冰包覆，仍以微弱震動維持運轉。冰霧深處有守衛者的身影緩慢甦醒。",
+      "exits": {
+        "south": "crystal_chamber"
+      },
+      "items": [
+        "ancient_core"
+      ],
       "monster": "ruin_guardian"
     }
   ]
