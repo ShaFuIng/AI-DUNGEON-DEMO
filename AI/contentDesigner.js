@@ -1,4 +1,7 @@
-﻿function createMockGeneratedArea() {
+﻿const fs = require('fs');
+const path = require('path');
+
+function createMockGeneratedArea() {
   return {
     id: 'frozen_ruins',
     name: '冰封遺跡',
@@ -52,10 +55,39 @@
   };
 }
 
+function writeGeneratedArea(area, outputPath) {
+  const content = `${JSON.stringify(area, null, 2)}\n`;
+  fs.writeFileSync(outputPath, content, 'utf8');
+}
+
+function getDefaultOutputPath() {
+  return path.resolve(__dirname, '..', 'outputs', 'generatedArea.json');
+}
+
+function printHelp() {
+  console.log('Usage:');
+  console.log('  node AI/contentDesigner.js          Print mock generatedArea JSON');
+  console.log('  node AI/contentDesigner.js --write  Write mock JSON to outputs/generatedArea.json');
+  console.log('  node AI/contentDesigner.js --help   Show this help message');
+}
+
 module.exports = {
-  createMockGeneratedArea
+  createMockGeneratedArea,
+  writeGeneratedArea,
+  getDefaultOutputPath
 };
 
 if (require.main === module) {
-  console.log(JSON.stringify(createMockGeneratedArea(), null, 2));
+  const args = process.argv.slice(2);
+  const area = createMockGeneratedArea();
+
+  if (args.includes('--help') || args.includes('-h')) {
+    printHelp();
+  } else if (args.includes('--write')) {
+    const outputPath = getDefaultOutputPath();
+    writeGeneratedArea(area, outputPath);
+    console.log(`Wrote generated area to: ${outputPath}`);
+  } else {
+    console.log(JSON.stringify(area, null, 2));
+  }
 }

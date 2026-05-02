@@ -8,7 +8,7 @@
     {
       "id": "frozen_gate",
       "name": "冰封外門",
-      "description": "半毀的石門被厚冰封住，裂縫間滲出刺骨寒氣。你能聽見門後傳來空洞的回音。",
+      "description": "半毀石門覆滿厚冰，寒氣從裂縫滲出。遠處有金屬摩擦聲在迴盪。",
       "exits": {
         "north": "frost_hall"
       },
@@ -20,7 +20,7 @@
     {
       "id": "frost_hall",
       "name": "霜痕長廊",
-      "description": "長廊地面覆著薄霜，牆上的古老刻紋被冰晶填滿。腳步聲在狹長通道中被拉得很遠。",
+      "description": "狹長走廊佈滿霜紋，牆面刻痕被冰晶填滿。每一步都像踩在薄玻璃上。",
       "exits": {
         "south": "frozen_gate",
         "east": "crystal_chamber"
@@ -33,7 +33,7 @@
     {
       "id": "crystal_chamber",
       "name": "冰晶密室",
-      "description": "密室中央垂落巨大冰柱，反射出冷白色光芒。角落散落破碎祭器，像是某種儀式被強行中斷。",
+      "description": "高聳冰柱垂落於密室中央，折射出的冷光照亮了破碎祭器。",
       "exits": {
         "west": "frost_hall",
         "north": "ancient_ice_core"
@@ -46,7 +46,7 @@
     {
       "id": "ancient_ice_core",
       "name": "古冰核心室",
-      "description": "核心室內的古代機關被寒冰包覆，仍以微弱震動維持運轉。冰霧深處有守衛者的身影緩慢甦醒。",
+      "description": "核心機關埋在古冰之下，低鳴仍在運轉。守衛者在霧中緩慢甦醒。",
       "exits": {
         "south": "crystal_chamber"
       },
