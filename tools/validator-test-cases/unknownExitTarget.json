@@ -1,0 +1,29 @@
+{
+  "id": "unknown_target_test",
+  "name": "未知出口測試",
+  "theme": "測試出口指向不存在房間",
+  "narrativeHook": "你在冰牆上找到一條標示不明的通道。",
+  "difficulty": 3,
+  "rooms": [
+    {
+      "id": "known_room",
+      "name": "已知房間",
+      "description": "冷風從裂縫灌入。",
+      "exits": {
+        "north": "missing_room"
+      },
+      "items": ["torch"],
+      "monster": null
+    },
+    {
+      "id": "side_room",
+      "name": "側室",
+      "description": "角落堆著破碎石片。",
+      "exits": {
+        "west": "known_room"
+      },
+      "items": ["rusty_key"],
+      "monster": null
+    }
+  ]
+}

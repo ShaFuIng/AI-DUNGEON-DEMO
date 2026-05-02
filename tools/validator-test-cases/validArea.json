@@ -1,0 +1,40 @@
+{
+  "id": "frozen_test_zone",
+  "name": "冰封測試遺跡",
+  "theme": "寒霜、冰晶、古代機關",
+  "narrativeHook": "你推開覆霜石門，冰晶反光照亮狹長走道。",
+  "difficulty": 5,
+  "rooms": [
+    {
+      "id": "frozen_gate",
+      "name": "冰封外門",
+      "description": "外門覆滿白霜，裂縫滲出寒氣。",
+      "exits": {
+        "north": "frost_hall"
+      },
+      "items": ["torch"],
+      "monster": null
+    },
+    {
+      "id": "frost_hall",
+      "name": "霜痕長廊",
+      "description": "長廊刻紋被冰晶填滿，回音迴盪不止。",
+      "exits": {
+        "south": "frozen_gate",
+        "east": "crystal_room"
+      },
+      "items": ["rusty_key"],
+      "monster": "skeleton_guard"
+    },
+    {
+      "id": "crystal_room",
+      "name": "冰晶密室",
+      "description": "冰柱垂落的密室中央有微弱藍光。",
+      "exits": {
+        "west": "frost_hall"
+      },
+      "items": ["small_potion"],
+      "monster": null
+    }
+  ]
+}

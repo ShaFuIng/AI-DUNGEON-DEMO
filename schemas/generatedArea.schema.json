@@ -14,21 +14,16 @@
   ],
   "properties": {
     "id": {
-      "type": "string",
-      "pattern": "^[a-z0-9_]+$",
-      "minLength": 3
+      "$ref": "#/$defs/idString"
     },
     "name": {
-      "type": "string",
-      "minLength": 1
+      "$ref": "#/$defs/localizedText"
     },
     "theme": {
-      "type": "string",
-      "minLength": 1
+      "$ref": "#/$defs/localizedText"
     },
     "narrativeHook": {
-      "type": "string",
-      "minLength": 1
+      "$ref": "#/$defs/localizedText"
     },
     "difficulty": {
       "type": "integer",
@@ -39,51 +34,292 @@
       "type": "array",
       "minItems": 1,
       "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "id",
-          "name",
-          "description",
-          "exits",
-          "items",
-          "monster"
-        ],
-        "properties": {
-          "id": {
-            "type": "string",
-            "pattern": "^[a-z0-9_]+$",
-            "minLength": 3
-          },
-          "name": {
-            "type": "string",
-            "minLength": 1
-          },
-          "description": {
-            "type": "string",
-            "minLength": 1
-          },
-          "exits": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "north": { "type": "string", "pattern": "^[a-z0-9_]+$" },
-              "south": { "type": "string", "pattern": "^[a-z0-9_]+$" },
-              "east": { "type": "string", "pattern": "^[a-z0-9_]+$" },
-              "west": { "type": "string", "pattern": "^[a-z0-9_]+$" }
-            }
-          },
+        "$ref": "#/$defs/room"
+      }
+    },
+    "items": {
+      "$ref": "#/$defs/itemMap"
+    },
+    "monsters": {
+      "$ref": "#/$defs/monsterMap"
+    },
+    "skills": {
+      "$ref": "#/$defs/skillMap"
+    },
+    "traps": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/trap"
+      }
+    }
+  },
+  "$defs": {
+    "idString": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "minLength": 3
+    },
+    "localizedText": {
+      "type": "string",
+      "minLength": 1
+    },
+    "directionExits": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "north": {
+          "$ref": "#/$defs/idString"
+        },
+        "south": {
+          "$ref": "#/$defs/idString"
+        },
+        "east": {
+          "$ref": "#/$defs/idString"
+        },
+        "west": {
+          "$ref": "#/$defs/idString"
+        }
+      }
+    },
+    "room": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "description",
+        "exits",
+        "items",
+        "monster"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/idString"
+        },
+        "name": {
+          "$ref": "#/$defs/localizedText"
+        },
+        "description": {
+          "$ref": "#/$defs/localizedText"
+        },
+        "exits": {
+          "$ref": "#/$defs/directionExits"
+        },
+        "items": {
+          "type": "array",
+          "uniqueItems": true,
           "items": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "pattern": "^[a-z0-9_]+$"
-            }
-          },
-          "monster": {
-            "type": ["string", "null"],
-            "pattern": "^[a-z0-9_]+$"
+            "$ref": "#/$defs/idString"
           }
+        },
+        "monster": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "traps": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/idString"
+          }
+        }
+      }
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "description",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/idString"
+        },
+        "name": {
+          "$ref": "#/$defs/localizedText"
+        },
+        "description": {
+          "$ref": "#/$defs/localizedText"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "tool",
+            "key",
+            "quest",
+            "consumable",
+            "material"
+          ]
+        },
+        "effect": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "hp": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "mp": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "attack": {
+              "type": "integer"
+            },
+            "defense": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "itemMap": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[a-z][a-z0-9_]*$": {
+          "$ref": "#/$defs/item"
+        }
+      }
+    },
+    "monster": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "description",
+        "maxHp",
+        "attack"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/idString"
+        },
+        "name": {
+          "$ref": "#/$defs/localizedText"
+        },
+        "description": {
+          "$ref": "#/$defs/localizedText"
+        },
+        "maxHp": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "attack": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tags": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "monsterMap": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[a-z][a-z0-9_]*$": {
+          "$ref": "#/$defs/monster"
+        }
+      }
+    },
+    "skill": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "description",
+        "mpCost",
+        "damage"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/idString"
+        },
+        "name": {
+          "$ref": "#/$defs/localizedText"
+        },
+        "description": {
+          "$ref": "#/$defs/localizedText"
+        },
+        "mpCost": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "damage": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "effect": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "guard": {
+              "type": "boolean"
+            },
+            "heal": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "status": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "skillMap": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[a-z][a-z0-9_]*$": {
+          "$ref": "#/$defs/skill"
+        }
+      }
+    },
+    "trap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "description",
+        "damage"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/idString"
+        },
+        "name": {
+          "$ref": "#/$defs/localizedText"
+        },
+        "description": {
+          "$ref": "#/$defs/localizedText"
+        },
+        "damage": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "trigger": {
+          "type": "string",
+          "enum": [
+            "enter_room",
+            "take_item",
+            "open_exit",
+            "inspect"
+          ]
         }
       }
     }

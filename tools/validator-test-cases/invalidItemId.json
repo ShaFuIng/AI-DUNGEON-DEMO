@@ -1,0 +1,29 @@
+{
+  "id": "invalid_item_ref_test",
+  "name": "未知道具測試",
+  "theme": "測試未知 item 引用",
+  "narrativeHook": "你在冰霧中看到一件陌生遺物。",
+  "difficulty": 4,
+  "rooms": [
+    {
+      "id": "entry_room",
+      "name": "入口室",
+      "description": "石階上覆著薄霜。",
+      "exits": {
+        "north": "inner_room"
+      },
+      "items": ["ice_key"],
+      "monster": null
+    },
+    {
+      "id": "inner_room",
+      "name": "內廳",
+      "description": "牆上刻痕仍殘留藍光。",
+      "exits": {
+        "south": "entry_room"
+      },
+      "items": ["torch"],
+      "monster": "skeleton_guard"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "id": "invalid_direction_test",
+  "name": "方向錯誤測試",
+  "theme": "測試非法出口方向",
+  "narrativeHook": "你看到一扇標示奇怪方向的門。",
+  "difficulty": 2,
+  "rooms": [
+    {
+      "id": "start_room",
+      "name": "起點室",
+      "description": "地面覆著薄冰。",
+      "exits": {
+        "up": "upper_room"
+      },
+      "items": ["torch"],
+      "monster": null
+    },
+    {
+      "id": "upper_room",
+      "name": "上層室",
+      "description": "牆面結晶閃爍。",
+      "exits": {
+        "south": "start_room"
+      },
+      "items": ["small_potion"],
+      "monster": null
+    }
+  ]
+}

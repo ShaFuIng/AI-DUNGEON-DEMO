@@ -1,0 +1,29 @@
+{
+  "id": "duplicate_room_test",
+  "name": "重複房間測試",
+  "theme": "測試重複房間 id",
+  "narrativeHook": "你進入一段看似正常的走道。",
+  "difficulty": 3,
+  "rooms": [
+    {
+      "id": "echo_room",
+      "name": "回聲室一",
+      "description": "第一個房間。",
+      "exits": {
+        "north": "echo_room"
+      },
+      "items": ["torch"],
+      "monster": null
+    },
+    {
+      "id": "echo_room",
+      "name": "回聲室二",
+      "description": "第二個房間使用相同 id。",
+      "exits": {
+        "south": "echo_room"
+      },
+      "items": ["rusty_key"],
+      "monster": null
+    }
+  ]
+}

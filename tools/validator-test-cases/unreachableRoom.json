@@ -1,0 +1,37 @@
+{
+  "id": "unreachable_test",
+  "name": "不可達房間測試",
+  "theme": "測試地圖可達性",
+  "narrativeHook": "你在遺跡中察覺有一處區域完全無法抵達。",
+  "difficulty": 4,
+  "rooms": [
+    {
+      "id": "start_gate",
+      "name": "起始外門",
+      "description": "門前積雪未散。",
+      "exits": {
+        "north": "main_hall"
+      },
+      "items": ["torch"],
+      "monster": null
+    },
+    {
+      "id": "main_hall",
+      "name": "主長廊",
+      "description": "寒氣在走廊間盤旋。",
+      "exits": {
+        "south": "start_gate"
+      },
+      "items": ["rusty_key"],
+      "monster": null
+    },
+    {
+      "id": "sealed_cellar",
+      "name": "封閉地窖",
+      "description": "一處被冰封住的孤立空間。",
+      "exits": {},
+      "items": ["small_potion"],
+      "monster": null
+    }
+  ]
+}
