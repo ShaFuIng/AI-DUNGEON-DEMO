@@ -1,7 +1,28 @@
 ﻿const { loadGameData } = require("../data/loadGameData");
 const gameData = loadGameData();
 
+function getInitialRoomId() {
+  if (gameData.initialRoomId && gameData.rooms[gameData.initialRoomId]) {
+    return gameData.initialRoomId;
+  }
+
+  if (gameData.rooms.entrance) {
+    return "entrance";
+  }
+
+  const roomIds = Object.keys(gameData.rooms || {});
+  if (roomIds.length === 0) {
+    throw new Error("gameData.rooms must contain at least one room.");
+  }
+
+  return roomIds[0];
+}
+
+
 function createInitialGameState() {
+  const initialRoomId = getInitialRoomId();
+  const initialRoom = gameData.rooms[initialRoomId];
+
   return {
     player: {
       hp: 30,
@@ -10,8 +31,8 @@ function createInitialGameState() {
       maxMp: 10,
       attack: 6,
       inventory: [],
-      currentRoom: "entrance",
-      visitedRooms: ["entrance"],
+      currentRoom: initialRoomId,
+      visitedRooms: [initialRoomId],
       isDefending: false,
     },
 
@@ -24,7 +45,7 @@ function createInitialGameState() {
 
     monsters: createMonsterState(),
 
-    log: ["遊戲開始。你站在遺跡入口。"],
+    log: [`遊戲開始。你站在${initialRoom.name}。`],
   };
 }
 
@@ -558,6 +579,7 @@ function handleLog(gameState) {
 }
 
 module.exports = {
+  getInitialRoomId,
   createInitialGameState,
   getPublicGameState,
   handleCommand,

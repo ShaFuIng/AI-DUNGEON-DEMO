@@ -56,7 +56,9 @@ npm start
 - 預設是 `default`
 - `/api/health` 會顯示 `gameDataSource`
 - `GAME_DATA_SOURCE` 會同時影響 `server` 與 `engine` 的 gameData 載入
-- 若 `experimental` 啟動時出現起始房間錯誤，代表需要設定 experimental initial room
+- `engine` 會根據目前 gameData 自動決定起始房間
+- `default` 預期起始為 `entrance`
+- `experimental` 預期起始為 `frozen_gate`
 
 ## Human Review 結果
 - 檔案：`outputs/generatedArea.humanReview.md`
