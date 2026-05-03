@@ -57,6 +57,11 @@ $env:GAME_DATA_SOURCE="experimental"
 npm start
 ```
 
+Pipeline 測試文件：
+- `docs/CONTENT_DESIGNER_PIPELINE_TEST.md`
+- 目前 experimental win condition 尚未完整處理
+- 目前測試重點是啟動、房間、移動、撿道具、戰鬥
+
 ## Experimental gameData 草案
 - 檔案：`data/gameData.experimental.js`
 - 目前可由 `GAME_DATA_SOURCE=experimental` 載入
