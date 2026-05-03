@@ -1,116 +1,100 @@
 ﻿# AI-DUNGEON-DEMO 專案脈絡（最新）
 
 ## 文件目的
-本文件提供給接手開發的 AI/工程師快速理解目前 `ai-dungeon-demo` 的程式架構、資料流與已知限制。
-
-- 語言：繁體中文
-- 格式：Markdown
-- 編碼：UTF-8
-- 更新日期：2026-05-02（Asia/Taipei）
+本文件提供接手開發者快速掌握 `AI-DUNGEON-DEMO` 的目前架構、資料流、測試方式與 Content Designer Agent 最新進度（Step 1～23.5）。
 
 ## 專案定位
-這是一個 `Node.js + Express` 的文字冒險 Demo：
+`AI-DUNGEON-DEMO` 是 `Node.js + Express` 文字冒險 Demo：
 1. 前端送出玩家指令。
-2. 後端交給 `engine/gameEngine.js` 套用規則。
-3. `AI/narrator.js` 依事件產生敘事。
-4. 前端更新故事、角色狀態、房間與 log。
+2. `engine/gameEngine.js` 套用規則更新狀態。
+3. `AI/narrator.js` 生成敘事。
+4. 前端更新故事、狀態與 log。
 
-## 專案結構（重點）
+## 目前主要模組
 ```text
 ai-dungeon-demo/
 ├─ AI/
-│  └─ narrator.js
-├─ data/
-│  └─ gameData.js
+│  ├─ narrator.js
+│  ├─ contentDesigner.js
+│  ├─ contentDesignerProviders/
+│  │  ├─ mockProvider.js
+│  │  ├─ rawMockProvider.js
+│  │  └─ geminiProvider.js
+│  └─ contentDesignerUtils/
+│     └─ parseProviderJsonOutput.js
+├─ data/gameData.js
+├─ engine/gameEngine.js
 ├─ docs/
-│  └─ GAME_DESIGN_AGENT.md
-├─ engine/
-│  └─ gameEngine.js
-├─ outputs/
-│  └─ generatedArea.json
-├─ public/
-│  ├─ app.js
-│  ├─ index.html
-│  └─ style.css
-├─ schemas/
-│  └─ generatedArea.schema.json
+│  ├─ GAME_DESIGN_AGENT.md
+│  ├─ CONTENT_DESIGNER_AGENT_PROGRESS.md
+│  └─ CONTENT_DESIGNER_PROVIDER_CONTRACT.md
+├─ schemas/generatedArea.schema.json
 ├─ tools/
+│  ├─ validateArea.js
 │  ├─ sampleGeneratedArea.json
-│  └─ validateArea.js
-├─ .gitignore
+│  └─ validator-test-cases/*.json
+├─ outputs/generatedArea.json
 ├─ package.json
-├─ PROJECT_CONTEXT.md
-├─ README.md
+├─ .env.example
 └─ server.js
 ```
 
-## 執行方式
-1. `npm install`
-2. `node server.js`
-3. 開啟 `http://localhost:3000`
+## 執行與測試（最新）
+### 啟動
+```bash
+npm install
+npm start
+```
 
-目前 `package.json` 只有 `test` script，尚未有 `start/dev` script。
+### Content Designer 常用指令
+```bash
+npm run validate:area
+npm run generate:area
+npm run test:validator
+npm test
+```
 
-## 後端與 API
-檔案：`server.js`
+### 手動 provider 測試
+```bash
+node AI/contentDesigner.js --provider mock --write --validate
+node AI/contentDesigner.js --provider raw-mock --write --validate
+node AI/contentDesigner.js --provider gemini --theme "冰封遺跡" --difficulty 5 --room-count 4
+```
 
-- `GET /api/health`：健康檢查與 provider 資訊
-- `GET /api/game-data`：完整遊戲資料
-- `GET /api/state`：公開遊戲狀態
-- `POST /api/command`：處理玩家指令並回傳 `{ eventResult, narration, state }`
-- `POST /api/reset`：重置遊戲
+## package.json scripts（目前有效）
+- `start`: 啟動 Express server
+- `validate:area`: 驗證 `outputs/generatedArea.json`
+- `generate:area`: 產生並驗證 generatedArea
+- `test:validator`: 跑三個預期 PASS 的 validator 測試
+- `test`: 指向 `test:validator`
 
-狀態目前採單一記憶體 `gameState`（尚無 per-user 隔離）。
+## Content Designer Agent 現況
+目前已不是僅有 MVP 檔案骨架，而是具備 provider 架構：
+- `mock` provider：直接產生 object
+- `raw-mock` provider：產生 raw JSON string，走 parser flow
+- `gemini` provider：呼叫 Gemini API，回傳 raw text，再交由 CLI parse/write/validate
 
-## 遊戲規則引擎
-檔案：`engine/gameEngine.js`
+`AI/contentDesigner.js` 目前支援：
+- `--provider mock|raw-mock|gemini`
+- `--theme`、`--difficulty`、`--room-count`
+- `--write`、`--validate`
 
-- 核心函式：`createInitialGameState`, `getPublicGameState`, `handleCommand`
-- 支援指令：`help`, `look`, `status`, `move`, `take`, `attack`, `skill`, `use`, `log`, `reset`
-- 核心機制：移動、戰鬥、技能、道具使用、勝負條件、行動 log
+## Gemini provider 最新狀態
+- 已實作 API call。
+- provider 回傳 raw text，不直接 parse / write / validate。
+- parse 與 validation 由 `AI/contentDesigner.js` + `tools/validateArea.js` 負責。
+- API call 成功不等於可合併資料：仍需 parse PASS、validator PASS、Human Review。
+- LLM 輸出可能有額外欄位或不完全遵守 `roomCount`，需持續強化 prompt/檢查。
 
-## 資料模型
-檔案：`data/gameData.js`
+## 安全與邊界
+- Content Designer Agent 僅限 Development-time。
+- 不直接修改 `gameEngine.js`。
+- 不直接修改 `data/gameData.js`。
+- 不自動 commit/push。
+- `.env` 不進版控；僅使用 `.env.example` 提供變數名稱與 placeholder。
 
-- `rooms`: 5（`entrance`, `hall`, `corridor`, `altar`, `boss_room`）
-- `items`: 4（`torch`, `rusty_key`, `ancient_core`, `small_potion`）
-- `monsters`: 2（`skeleton_guard`, `ruin_guardian`）
-- `skills`: 3（`slash`, `fireball`, `guard`）
-
-## AI Narrator
-檔案：`AI/narrator.js`
-
-依 `AI_PROVIDER` 分流：
-- `mock`
-- `ollama`（呼叫 `{OLLAMA_URL}/api/chat`）
-- `gemini`（目前 fallback）
-
-包含 prompt 建構、輸出清理、fallback 文案。
-
-## 前端
-檔案：`public/index.html`, `public/app.js`, `public/style.css`
-
-- 載入：呼叫 `/api/state`
-- 指令：呼叫 `/api/command`
-- 顯示：HP/MP、房間 ASCII、背包、log、敘事
-
-## Content Designer Agent（MVP Phase 1）
-已就位檔案：
-- `docs/GAME_DESIGN_AGENT.md`
-- `schemas/generatedArea.schema.json`
-- `tools/validateArea.js`
-- `tools/sampleGeneratedArea.json`
-- `outputs/generatedArea.json`
-
-驗證指令：
-- `node tools/validateArea.js outputs/generatedArea.json`
-
-## 清理與編碼檢查狀態
-- 文字檔編碼已檢查為 UTF-8 或 ASCII（UTF-8 相容）。
-- `outputs/generatedArea.json`、`tools/sampleGeneratedArea.json` 已由 CP950/Big5 轉為 UTF-8。
-- `public/app.js` 已清理未使用程式碼與修正前端中文亂碼訊息，不變更 API 與 UI 結構。
-
-## 已知風險
-1. 專案仍有部分歷史文字內容可能存在語意亂碼（非編碼錯誤）。
-2. `gemini` provider 尚未實作實際呼叫。
-3. 尚缺自動化測試保護規則變更。
+## 主要風險與後續
+1. Gemini 輸出穩定性仍需提升（格式與約束遵循）。
+2. 尚未導入 AJV runtime schema validation。
+3. 尚未建立 CI 自動化驗證。
+4. 尚未完成 balance check 與正式 Human Review workflow。
