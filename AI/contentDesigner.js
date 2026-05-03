@@ -11,6 +11,27 @@ function getArgValue(args, name) {
   return args[index + 1];
 }
 
+function parseIntegerArg(args, name) {
+  const value = getArgValue(args, name);
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!/^-?\d+$/.test(value)) {
+    throw new Error(`Invalid integer value for ${name}: ${value}`);
+  }
+
+  return Number(value);
+}
+
+function buildProviderInput(args) {
+  return {
+    theme: getArgValue(args, '--theme'),
+    difficulty: parseIntegerArg(args, '--difficulty'),
+    roomCount: parseIntegerArg(args, '--room-count')
+  };
+}
+
 function resolveProvider(providerName) {
   const effectiveProvider = providerName || 'mock';
 
@@ -26,8 +47,8 @@ function generateAreaWithProvider(providerName, input = {}) {
   return provider.generateArea(input);
 }
 
-function createMockGeneratedArea() {
-  return generateAreaWithProvider('mock');
+function createMockGeneratedArea(input = {}) {
+  return generateAreaWithProvider('mock', input);
 }
 
 function writeGeneratedArea(area, outputPath) {
@@ -59,11 +80,20 @@ function validateGeneratedArea(outputPath) {
 
 function printHelp() {
   console.log('Usage:');
-  console.log('  node AI/contentDesigner.js                                      Print generatedArea JSON (default provider: mock)');
-  console.log('  node AI/contentDesigner.js --provider mock                      Print generatedArea JSON with mock provider');
-  console.log('  node AI/contentDesigner.js --provider mock --write              Write generatedArea JSON to outputs/generatedArea.json');
-  console.log('  node AI/contentDesigner.js --provider mock --write --validate   Write generatedArea JSON and run validator');
-  console.log('  node AI/contentDesigner.js --help                               Show this help message');
+  console.log('  node AI/contentDesigner.js                                                            Print generatedArea JSON (default provider: mock)');
+  console.log('  node AI/contentDesigner.js --provider mock                                            Print generatedArea JSON with mock provider');
+  console.log('  node AI/contentDesigner.js --provider mock --write                                    Write generatedArea JSON to outputs/generatedArea.json');
+  console.log('  node AI/contentDesigner.js --provider mock --write --validate                         Write generatedArea JSON and run validator');
+  console.log('  node AI/contentDesigner.js --provider mock --theme "冰封遺跡"                           Generate JSON with a custom theme');
+  console.log('  node AI/contentDesigner.js --provider mock --theme "沉沒圖書館" --write --validate      Generate, write, and validate with a custom theme');
+  console.log('Options:');
+  console.log('  --provider <name>       Provider name (currently only mock is supported)');
+  console.log('  --theme <text>          Theme input for provider');
+  console.log('  --difficulty <1-10>     Difficulty input for provider (integer)');
+  console.log('  --room-count <number>   Room count input for provider (integer)');
+  console.log('  --write                 Write generated JSON to outputs/generatedArea.json');
+  console.log('  --validate              Run validator after --write');
+  console.log('  --help, -h              Show this help message');
 }
 
 module.exports = {
@@ -74,7 +104,9 @@ module.exports = {
   validateGeneratedArea,
   getArgValue,
   resolveProvider,
-  generateAreaWithProvider
+  generateAreaWithProvider,
+  parseIntegerArg,
+  buildProviderInput
 };
 
 if (require.main === module) {
@@ -96,7 +128,8 @@ if (require.main === module) {
 
   let area;
   try {
-    area = generateAreaWithProvider(providerName);
+    const input = buildProviderInput(args);
+    area = generateAreaWithProvider(providerName, input);
   } catch (error) {
     console.error(error.message);
     process.exit(1);
