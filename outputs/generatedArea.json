@@ -1,16 +1,17 @@
 {
-  "id": "frozen_ruins",
-  "name": "冰封遺跡",
+  "id": "ice_ruins_adventure",
+  "name": "冰封遺跡的秘密",
   "theme": "冰封遺跡",
-  "narrativeHook": "你踏過結霜的石階，冰晶在火光裡折射出古老機關尚未熄滅的寒芒。",
+  "narrativeHook": "一股寒意侵襲，你發現自己身處一座被冰雪覆蓋的古老遺跡。傳說這裡藏著失落的文明遺物，但也被古老的守護者所看守。",
   "difficulty": 5,
   "rooms": [
     {
-      "id": "frozen_gate",
-      "name": "冰封外門",
-      "description": "半毀石門覆滿厚冰，寒氣從裂縫滲出。遠處有金屬摩擦聲在迴盪。",
+      "id": "ruins_entrance",
+      "name": "遺跡入口",
+      "description": "巨大的冰霜石門矗立在眼前，門上刻滿了奇異的符文。空氣中瀰漫著一股古老的氣息，似乎預示著即將到來的挑戰。",
       "exits": {
-        "north": "frost_hall"
+        "north": "frozen_hall",
+        "east": "storage_chamber"
       },
       "items": [
         "torch"
@@ -18,12 +19,12 @@
       "monster": null
     },
     {
-      "id": "frost_hall",
-      "name": "霜痕長廊",
-      "description": "狹長走廊佈滿霜紋，牆面刻痕被冰晶填滿。每一步都像踩在薄玻璃上。",
+      "id": "frozen_hall",
+      "name": "冰封長廊",
+      "description": "長廊的牆壁上結滿了厚厚的冰霜，腳下的積雪發出細微的聲響。遠處似乎傳來微弱的光芒。",
       "exits": {
-        "south": "frozen_gate",
-        "east": "crystal_chamber"
+        "south": "ruins_entrance",
+        "north": "ancient_altar"
       },
       "items": [
         "rusty_key"
@@ -31,12 +32,11 @@
       "monster": "skeleton_guard"
     },
     {
-      "id": "crystal_chamber",
-      "name": "冰晶密室",
-      "description": "高聳冰柱垂落於密室中央，折射出的冷光照亮了破碎祭器。",
+      "id": "storage_chamber",
+      "name": "儲藏室",
+      "description": "這個房間堆滿了腐朽的木箱和破碎的陶罐，空氣中充滿了塵土的味道。角落裡似乎有什麼東西在閃閃發光。",
       "exits": {
-        "west": "frost_hall",
-        "north": "ancient_ice_core"
+        "west": "ruins_entrance"
       },
       "items": [
         "small_potion"
@@ -44,11 +44,11 @@
       "monster": null
     },
     {
-      "id": "ancient_ice_core",
-      "name": "古冰核心室",
-      "description": "核心機關埋在古冰之下，低鳴仍在運轉。守衛者在霧中緩慢甦醒。",
+      "id": "ancient_altar",
+      "name": "古代祭壇",
+      "description": "房間中央有一個巨大的石製祭壇，上面刻畫著複雜的圖案。祭壇的頂部懸掛著一顆散發著微光的奇異核心。",
       "exits": {
-        "south": "crystal_chamber"
+        "south": "frozen_hall"
       },
       "items": [
         "ancient_core"

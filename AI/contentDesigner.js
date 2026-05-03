@@ -59,31 +59,31 @@ function resolveProvider(providerName) {
   throw new Error(`Unsupported content designer provider: ${effectiveProvider}`);
 }
 
-function generateAreaFromRawProvider(provider, input = {}) {
+async function generateAreaFromRawProvider(provider, input = {}) {
   if (typeof provider.generateRawArea !== 'function') {
     throw new Error('Provider does not support raw area generation.');
   }
 
-  const rawText = provider.generateRawArea(input);
+  const rawText = await provider.generateRawArea(input);
   return parseProviderJsonOutput(rawText);
 }
 
-function generateAreaWithProvider(providerName, input = {}) {
+async function generateAreaWithProvider(providerName, input = {}) {
   const provider = resolveProvider(providerName);
 
   if (typeof provider.generateArea === 'function') {
-    return provider.generateArea(input);
+    return await provider.generateArea(input);
   }
 
   if (typeof provider.generateRawArea === 'function') {
-    return generateAreaFromRawProvider(provider, input);
+    return await generateAreaFromRawProvider(provider, input);
   }
 
   throw new Error('Provider must implement generateArea() or generateRawArea().');
 }
 
 function createMockGeneratedArea(input = {}) {
-  return generateAreaWithProvider('mock', input);
+  return mockProvider.generateArea(input);
 }
 
 function writeGeneratedArea(area, outputPath) {
@@ -118,7 +118,7 @@ function printHelp() {
   console.log('  node AI/contentDesigner.js                                                                      Print generatedArea JSON (default provider: mock)');
   console.log('  node AI/contentDesigner.js --provider mock                                                      Print generatedArea JSON with mock provider');
   console.log('  node AI/contentDesigner.js --provider raw-mock                                                  Print generatedArea JSON with raw-mock provider');
-  console.log('  node AI/contentDesigner.js --provider gemini --theme "冰封遺跡"                                 Run gemini provider skeleton (API not implemented yet)');
+  console.log('  node AI/contentDesigner.js --provider gemini --theme "冰封遺跡"                                 Generate JSON with gemini provider');
   console.log('  node AI/contentDesigner.js --provider mock --write                                              Write generatedArea JSON to outputs/generatedArea.json');
   console.log('  node AI/contentDesigner.js --provider mock --write --validate                                   Write generatedArea JSON and run validator');
   console.log('  node AI/contentDesigner.js --provider raw-mock --theme "沉沒圖書館" --write --validate           Generate, parse, write, and validate with raw-mock provider');
@@ -147,7 +147,7 @@ module.exports = {
   generateAreaFromRawProvider
 };
 
-if (require.main === module) {
+async function main() {
   const args = process.argv.slice(2);
   const wantsHelp = args.includes('--help') || args.includes('-h');
   const wantsWrite = args.includes('--write');
@@ -167,7 +167,7 @@ if (require.main === module) {
   let area;
   try {
     const input = buildProviderInput(args);
-    area = generateAreaWithProvider(providerName, input);
+    area = await generateAreaWithProvider(providerName, input);
   } catch (error) {
     console.error(error.message);
     process.exit(1);
@@ -186,4 +186,8 @@ if (require.main === module) {
     const exitCode = validateGeneratedArea(outputPath);
     process.exit(exitCode);
   }
+}
+
+if (require.main === module) {
+  main();
 }
