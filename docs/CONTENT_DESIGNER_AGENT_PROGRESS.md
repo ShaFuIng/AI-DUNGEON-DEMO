@@ -1,7 +1,7 @@
-﻿# Content Designer Agent MVP 進度與使用說明（Step 1～30）
+﻿# Content Designer Agent MVP 進度與使用說明（Step 1～31）
 
 ## 1. 文件目的
-本文件記錄 `AI-DUNGEON-DEMO` 的 `Content Designer Agent` 從 Step 1 到 Step 30 的開發歷程、操作方式、測試狀態與後續方向。
+本文件記錄 `AI-DUNGEON-DEMO` 的 `Content Designer Agent` 從 Step 1 到 Step 31 的開發歷程、操作方式、測試狀態與後續方向。
 
 ## 2. 架構定位
 - `Game Engine`（`engine/gameEngine.js`）：唯一可修改遊戲 state 的核心。
@@ -13,23 +13,25 @@
 - provider 輸出必須經 `parseProviderJsonOutput()` 與 `tools/validateArea.js`。
 - 即使通過驗證，仍需 Human Review 才可考慮後續合併。
 
-## 3. 已完成步驟總覽（Step 1～30）
-- Step 1～29：已完成（契約、validator、providers、async Gemini、Human Review checklist、patch suggestion spec、patch suggestion 工具）。
+## 3. 已完成步驟總覽（Step 1～31）
+- Step 1～30：已完成（契約、validator、providers、async Gemini、Human Review checklist、patch suggestion spec、patch suggestion 工具、human review result）。
 
-### Step 30
-- 完成內容：建立 patch suggestion Human Review 結果文件。
+### Step 31
+- 完成內容：建立 runtime merge strategy 與 rollback strategy 文件。
 - 新增檔案：
-  - `outputs/generatedArea.humanReview.md`
+  - `docs/CONTENT_DESIGNER_RUNTIME_MERGE_STRATEGY.md`
 - 修改檔案：
   - `docs/CONTENT_DESIGNER_AGENT_PROGRESS.md`
   - `README.md`
   - `PROJECT_CONTEXT.md`
 - 新增內容：
-  - 根據 Human Review Checklist 審查 `outputs/generatedArea.patchSuggestion.json`
-  - 記錄 missing references / room id conflicts / runtime readiness
-  - 給出 `Decision: NEEDS REVISION`
+  - 比較 Strategy A / B / C
+  - 推薦 Strategy C：建立 experimental gameData
+  - 定義 runtime 切換策略
+  - 定義 rollback strategy
+  - 定義 runtime 測試清單
 - 目的：
-  - 在不修改 `data/gameData.js` 的前提下，先記錄 patch suggestion 是否適合進入 runtime 合併階段。
+  - 在修改 `data/gameData.js` 前，先規劃安全合併與回滾方式。
 
 ## 4. 目前測試狀態
 已確認 PASS：
@@ -45,11 +47,7 @@
 - Gemini provider 第一版完整流程已跑通：
   Gemini API → raw text → parseProviderJsonOutput() → write outputs/generatedArea.json → validateArea.js → PASS
 - Patch suggestion 工具已可輸出 `outputs/generatedArea.patchSuggestion.json`。
-- Human Review 結果文件已建立：`outputs/generatedArea.humanReview.md`。
-
-安全提醒：
-- 即使 Gemini `--write --validate` PASS，也不代表可自動合併到 `data/gameData.js`。
-- patch suggestion 與 human review 結果都不會自動套用，仍需人工決策。
+- Human Review 結果文件已建立：`outputs/generatedArea.humanReview.md`（Decision: NEEDS REVISION）。
 
 ## 5. 操作方式（摘要）
 ```bash
@@ -67,8 +65,8 @@ node tools/createAreaPatchSuggestion.js
 ```
 
 ## 6. 下一步建議
-1. Step 31：設計 runtime 合併策略與 rollback strategy。
-2. Step 32：手動建立 `data/gameData.js` 實驗性 patch。
-3. Step 33：測試 runtime 遊戲流程。
-4. Step 34：評估 AJV / CI。
-5. Step 35：整理完整專案報告。
+1. Step 32：建立 `data/gameData.experimental.js` 草案。
+2. Step 33：設計 `GAME_DATA_SOURCE` 切換機制。
+3. Step 34：測試 runtime 遊戲流程。
+4. Step 35：整理完整專案報告。
+5. Step 36：評估 AJV / CI / 自動化回歸測試。

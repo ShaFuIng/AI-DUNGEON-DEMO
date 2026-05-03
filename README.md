@@ -43,6 +43,10 @@ node tools/createAreaPatchSuggestion.js
 - 目前 review decision：`NEEDS REVISION`
 - 還不能直接合併到 `data/gameData.js`
 
+## Runtime 合併策略
+- 文件：`docs/CONTENT_DESIGNER_RUNTIME_MERGE_STRATEGY.md`
+- 目前推薦先建立 experimental gameData，不直接覆蓋 `data/gameData.js`
+
 ## .env.example 用途
 請依 `.env.example` 建立本機 `.env`：
 ```env
@@ -69,4 +73,5 @@ GEMINI_MODEL=gemini-2.5-flash-lite
 - `docs/CONTENT_DESIGNER_PROVIDER_CONTRACT.md`
 - `docs/CONTENT_DESIGNER_HUMAN_REVIEW_CHECKLIST.md`
 - `docs/CONTENT_DESIGNER_PATCH_SUGGESTION.md`
+- `docs/CONTENT_DESIGNER_RUNTIME_MERGE_STRATEGY.md`
 - `outputs/generatedArea.humanReview.md`
