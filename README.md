@@ -27,6 +27,17 @@ node AI/contentDesigner.js --provider gemini --theme "冰封遺跡" --difficulty
 node AI/contentDesigner.js --provider gemini --theme "冰封遺跡" --difficulty 5 --room-count 4 --write --validate
 ```
 
+## Patch suggestion 指令
+```bash
+node tools/createAreaPatchSuggestion.js
+```
+
+說明：
+- 讀取 `outputs/generatedArea.json`
+- 產生 `outputs/generatedArea.patchSuggestion.json`
+- 不會修改 `data/gameData.js`
+- 產生後仍需 Human Review
+
 ## .env.example 用途
 請依 `.env.example` 建立本機 `.env`：
 ```env
@@ -45,12 +56,6 @@ GEMINI_MODEL=gemini-2.5-flash-lite
 - 不自動 commit / push。
 - `generatedArea` 必須先 `parse + validator PASS + Human Review`。
 - 即使 `--write --validate` PASS，也必須依 Human Review Checklist 審查後，才可進入 patch suggestion。
-
-## 目前 Gemini 里程碑
-Gemini provider 第一版完整流程已跑通：
-Gemini API → raw text → `parseProviderJsonOutput()` → write `outputs/generatedArea.json` → `validateArea.js` → PASS
-
-即使通過 `--write --validate`，仍需 Human Review，不能直接合併正式遊戲資料。
 
 ## 相關文件
 - `PROJECT_CONTEXT.md`

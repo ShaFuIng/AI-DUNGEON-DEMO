@@ -1,4 +1,4 @@
-﻿# AI-DUNGEON-DEMO 專案脈絡（Step 1～28）
+﻿# AI-DUNGEON-DEMO 專案脈絡（Step 1～29）
 
 ## 專案定位
 `AI-DUNGEON-DEMO` 是 `Node.js + Express` 文字冒險 Demo，包含：
@@ -12,34 +12,19 @@
 - `raw-mock`：回傳 raw JSON string，再經 parser
 - `gemini`：async fetch 呼叫 Gemini API，回傳 raw text，再經 parse/validate
 
-關鍵里程碑（Step 25）：
-- 移除 Gemini provider 的 `spawnSync` worker
-- 改為 async provider flow
-- `AI/contentDesigner.js` 支援 async `generateAreaWithProvider()` / `generateAreaFromRawProvider()`
-- CLI 改為 async `main()`
-- `createMockGeneratedArea()` 維持同步
-
-## 目前已驗證通過
-- `npm test` PASS
-- `npm run generate:area` PASS
-- `node AI/contentDesigner.js --provider mock --write --validate` PASS
-- `node AI/contentDesigner.js --provider raw-mock --write --validate` PASS
-- `node AI/contentDesigner.js --provider gemini --theme "冰封遺跡" --difficulty 5 --room-count 4` PASS
-- `node AI/contentDesigner.js --provider gemini --theme "冰封遺跡" --difficulty 5 --room-count 4 --write --validate` PASS
-
 Gemini provider 第一版完整流程已跑通：
 Gemini API → raw text → `parseProviderJsonOutput()` → write `outputs/generatedArea.json` → `validateArea.js` → PASS
 
-## Human Review 狀態
-- Human Review checklist 已建立：`docs/CONTENT_DESIGNER_HUMAN_REVIEW_CHECKLIST.md`
-- `validator PASS` 後仍需人工審查
-- Step 28 已建立 patch suggestion 規格：`docs/CONTENT_DESIGNER_PATCH_SUGGESTION.md`
-- 下一階段才是 patch suggestion，不直接合併 `data/gameData.js`
+## Patch suggestion 現況（Step 29）
+- `tools/createAreaPatchSuggestion.js` 已建立
+- `outputs/generatedArea.patchSuggestion.json` 是建議檔
+- patch suggestion 不會自動套用
+- `data/gameData.js` 仍需人工決定是否修改
 
-## 重要邊界
-- Content Designer Agent 仍是 Development-time。
-- 即使 Gemini `--write --validate` PASS，仍不能直接合併正式遊戲資料。
-- 必須經 Human Review，且不得直接修改 `data/gameData.js`。
+## Human Review 狀態
+- Human Review checklist：`docs/CONTENT_DESIGNER_HUMAN_REVIEW_CHECKLIST.md`
+- `validator PASS` 後仍需人工審查
+- patch suggestion 僅是下一階段輸入，不直接合併 runtime 資料
 
 ## 常用指令
 ```bash
@@ -50,12 +35,13 @@ npm test
 
 node AI/contentDesigner.js --provider mock --write --validate
 node AI/contentDesigner.js --provider raw-mock --write --validate
-node AI/contentDesigner.js --provider gemini --theme "冰封遺跡" --difficulty 5 --room-count 4
 node AI/contentDesigner.js --provider gemini --theme "冰封遺跡" --difficulty 5 --room-count 4 --write --validate
+node tools/createAreaPatchSuggestion.js
 ```
 
 ## 後續建議
-1. Step 29：評估 AJV 與 hand-written validator 並行。
-2. Step 30：建立 CI（至少跑 `npm test`）。
-3. Step 31：規劃 `gameData.js` 合併策略與回滾策略。
-4. Step 32：定義 patch suggestion 到人工實作的標準作業流程。
+1. Step 30：人工審查 `outputs/generatedArea.patchSuggestion.json`
+2. Step 31：手動合併到 `data/gameData.js` 的實驗分支
+3. Step 32：測試 runtime 遊戲流程
+4. Step 33：設計 rollback strategy
+5. Step 34：評估 CI / AJV

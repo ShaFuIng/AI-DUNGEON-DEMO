@@ -1,0 +1,98 @@
+{
+  "type": "gameDataPatchSuggestion",
+  "sourceAreaId": "frozen_ruins",
+  "sourceFile": "outputs/generatedArea.json",
+  "targetFile": "data/gameData.js",
+  "status": "draft",
+  "requiresHumanReview": true,
+  "summary": "建議將「冰封遺跡」加入 gameData rooms。",
+  "roomsToAdd": {
+    "frozen_gate": {
+      "id": "frozen_gate",
+      "name": "冰封外門",
+      "description": "半毀石門覆滿厚冰，寒氣從裂縫滲出。遠處有金屬摩擦聲在迴盪。",
+      "ascii": "",
+      "exits": {
+        "north": "frost_hall"
+      },
+      "items": [
+        "torch"
+      ],
+      "monster": null
+    },
+    "frost_hall": {
+      "id": "frost_hall",
+      "name": "霜痕長廊",
+      "description": "狹長走廊佈滿霜紋，牆面刻痕被冰晶填滿。每一步都像踩在薄玻璃上。",
+      "ascii": "",
+      "exits": {
+        "south": "frozen_gate",
+        "east": "crystal_chamber"
+      },
+      "items": [
+        "rusty_key"
+      ],
+      "monster": "skeleton_guard"
+    },
+    "crystal_chamber": {
+      "id": "crystal_chamber",
+      "name": "冰晶密室",
+      "description": "高聳冰柱垂落於密室中央，折射出的冷光照亮了破碎祭器。",
+      "ascii": "",
+      "exits": {
+        "west": "frost_hall",
+        "north": "ancient_ice_core"
+      },
+      "items": [
+        "small_potion"
+      ],
+      "monster": null
+    },
+    "ancient_ice_core": {
+      "id": "ancient_ice_core",
+      "name": "古冰核心室",
+      "description": "核心機關埋在古冰之下，低鳴仍在運轉。守衛者在霧中緩慢甦醒。",
+      "ascii": "",
+      "exits": {
+        "south": "crystal_chamber"
+      },
+      "items": [
+        "ancient_core"
+      ],
+      "monster": "ruin_guardian"
+    }
+  },
+  "itemsReferenced": [
+    "ancient_core",
+    "rusty_key",
+    "small_potion",
+    "torch"
+  ],
+  "monstersReferenced": [
+    "ruin_guardian",
+    "skeleton_guard"
+  ],
+  "skillsReferenced": [],
+  "missingReferences": {
+    "items": [],
+    "monsters": [],
+    "skills": []
+  },
+  "roomIdConflicts": [],
+  "engineCompatibilityNotes": [
+    "roomsToAdd 目前僅為建議，尚未套用到 data/gameData.js。",
+    "新增房間若要成為遊戲入口，需人工檢查起始房間與 engine 流程。",
+    "ascii 目前以空字串 placeholder 產生，需人工補齊或確認 UI 可接受。"
+  ],
+  "humanReviewNotes": [
+    "請依 docs/CONTENT_DESIGNER_HUMAN_REVIEW_CHECKLIST.md 審查。",
+    "validator PASS 不代表內容可直接合併。"
+  ],
+  "risks": [
+    "直接合併可能影響既有通關流程，需人工測試。"
+  ],
+  "rollbackNotes": [
+    "合併前請先保留 data/gameData.js 的 git diff。",
+    "若 runtime 測試失敗，請 revert 對 data/gameData.js 的修改。"
+  ]
+}
