@@ -1,5 +1,11 @@
 ﻿const fs = require('fs');
 const path = require('path');
+const dotenv = require('dotenv');
+
+dotenv.config({
+  path: path.resolve(__dirname, '..', '.env')
+});
+
 const { spawnSync } = require('child_process');
 const mockProvider = require('./contentDesignerProviders/mockProvider');
 const rawMockProvider = require('./contentDesignerProviders/rawMockProvider');
