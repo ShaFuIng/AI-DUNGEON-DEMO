@@ -1,4 +1,4 @@
-﻿# AI-DUNGEON-DEMO 專案脈絡（Step 1～27）
+﻿# AI-DUNGEON-DEMO 專案脈絡（Step 1～28）
 
 ## 專案定位
 `AI-DUNGEON-DEMO` 是 `Node.js + Express` 文字冒險 Demo，包含：
@@ -33,6 +33,7 @@ Gemini API → raw text → `parseProviderJsonOutput()` → write `outputs/gener
 ## Human Review 狀態
 - Human Review checklist 已建立：`docs/CONTENT_DESIGNER_HUMAN_REVIEW_CHECKLIST.md`
 - `validator PASS` 後仍需人工審查
+- Step 28 已建立 patch suggestion 規格：`docs/CONTENT_DESIGNER_PATCH_SUGGESTION.md`
 - 下一階段才是 patch suggestion，不直接合併 `data/gameData.js`
 
 ## 重要邊界
@@ -54,7 +55,7 @@ node AI/contentDesigner.js --provider gemini --theme "冰封遺跡" --difficulty
 ```
 
 ## 後續建議
-1. Step 28：設計 generatedArea → patch suggestion 格式（不直接改 `data/gameData.js`）。
-2. Step 29：評估 AJV 與 hand-written validator 並行。
-3. Step 30：建立 CI（至少跑 `npm test`）。
-4. Step 31：規劃 `gameData.js` 合併策略與回滾策略。
+1. Step 29：評估 AJV 與 hand-written validator 並行。
+2. Step 30：建立 CI（至少跑 `npm test`）。
+3. Step 31：規劃 `gameData.js` 合併策略與回滾策略。
+4. Step 32：定義 patch suggestion 到人工實作的標準作業流程。

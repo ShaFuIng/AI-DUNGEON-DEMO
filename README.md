@@ -58,3 +58,4 @@ Gemini API → raw text → `parseProviderJsonOutput()` → write `outputs/gener
 - `docs/CONTENT_DESIGNER_AGENT_PROGRESS.md`
 - `docs/CONTENT_DESIGNER_PROVIDER_CONTRACT.md`
 - `docs/CONTENT_DESIGNER_HUMAN_REVIEW_CHECKLIST.md`
+- `docs/CONTENT_DESIGNER_PATCH_SUGGESTION.md`
