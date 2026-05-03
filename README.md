@@ -38,6 +38,12 @@ node tools/createAreaPatchSuggestion.js
 - 不會修改 `data/gameData.js`
 - 產生後仍需 Human Review
 
+## Experimental gameData 草案
+- 檔案：`data/gameData.experimental.js`
+- 目前尚未由 `server.js` 自動載入
+- 下一步會加入 `GAME_DATA_SOURCE` 切換機制
+- 不要直接覆蓋 `data/gameData.js`
+
 ## Human Review 結果
 - 檔案：`outputs/generatedArea.humanReview.md`
 - 目前 review decision：`NEEDS REVISION`

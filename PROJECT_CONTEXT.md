@@ -1,4 +1,4 @@
-﻿# AI-DUNGEON-DEMO 專案脈絡（Step 1～31）
+﻿# AI-DUNGEON-DEMO 專案脈絡（Step 1～32）
 
 ## 專案定位
 `AI-DUNGEON-DEMO` 是 `Node.js + Express` 文字冒險 Demo，包含：
@@ -21,11 +21,14 @@ Gemini API → raw text → `parseProviderJsonOutput()` → write `outputs/gener
 - `outputs/generatedArea.humanReview.md` 已建立
 - 目前 patch suggestion review decision：`NEEDS REVISION`
 
-## Runtime 合併策略（Step 31）
+## Runtime 合併策略與 experimental data（Step 32）
 - runtime merge strategy 已建立：`docs/CONTENT_DESIGNER_RUNTIME_MERGE_STRATEGY.md`
 - 目前推薦 Strategy C：experimental gameData
-- 下一步是建立 `data/gameData.experimental.js` 草案
-- 仍不直接修改 `data/gameData.js`
+- `data/gameData.experimental.js` 已建立
+- experimental rooms 來自 patch suggestion
+- items / monsters / skills 沿用 base gameData
+- `server.js` 尚未接入 experimental data
+- 下一步是 `GAME_DATA_SOURCE` 切換機制
 
 ## 重要邊界
 - Content Designer Agent 仍是 Development-time。
@@ -46,8 +49,7 @@ node tools/createAreaPatchSuggestion.js
 ```
 
 ## 後續建議
-1. Step 32：建立 `data/gameData.experimental.js` 草案
-2. Step 33：設計 `GAME_DATA_SOURCE` 切換機制
-3. Step 34：測試 runtime 遊戲流程
-4. Step 35：整理完整專案報告
-5. Step 36：評估 AJV / CI / 自動化回歸測試
+1. Step 33：設計 `GAME_DATA_SOURCE` 切換機制
+2. Step 34：使用 experimental gameData 啟動 runtime 並測試遊戲流程
+3. Step 35：整理完整專案報告
+4. Step 36：評估 AJV / CI / 自動化回歸測試
