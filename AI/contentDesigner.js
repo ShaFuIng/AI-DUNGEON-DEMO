@@ -3,8 +3,31 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 const mockProvider = require('./contentDesignerProviders/mockProvider');
 
+function getArgValue(args, name) {
+  const index = args.indexOf(name);
+  if (index === -1 || index + 1 >= args.length) {
+    return undefined;
+  }
+  return args[index + 1];
+}
+
+function resolveProvider(providerName) {
+  const effectiveProvider = providerName || 'mock';
+
+  if (effectiveProvider === 'mock') {
+    return mockProvider;
+  }
+
+  throw new Error(`Unsupported content designer provider: ${effectiveProvider}`);
+}
+
+function generateAreaWithProvider(providerName, input = {}) {
+  const provider = resolveProvider(providerName);
+  return provider.generateArea(input);
+}
+
 function createMockGeneratedArea() {
-  return mockProvider.generateArea();
+  return generateAreaWithProvider('mock');
 }
 
 function writeGeneratedArea(area, outputPath) {
@@ -36,10 +59,11 @@ function validateGeneratedArea(outputPath) {
 
 function printHelp() {
   console.log('Usage:');
-  console.log('  node AI/contentDesigner.js                    Print mock generatedArea JSON');
-  console.log('  node AI/contentDesigner.js --write            Write mock JSON to outputs/generatedArea.json');
-  console.log('  node AI/contentDesigner.js --write --validate Write mock JSON and run validator');
-  console.log('  node AI/contentDesigner.js --help             Show this help message');
+  console.log('  node AI/contentDesigner.js                                      Print generatedArea JSON (default provider: mock)');
+  console.log('  node AI/contentDesigner.js --provider mock                      Print generatedArea JSON with mock provider');
+  console.log('  node AI/contentDesigner.js --provider mock --write              Write generatedArea JSON to outputs/generatedArea.json');
+  console.log('  node AI/contentDesigner.js --provider mock --write --validate   Write generatedArea JSON and run validator');
+  console.log('  node AI/contentDesigner.js --help                               Show this help message');
 }
 
 module.exports = {
@@ -47,7 +71,10 @@ module.exports = {
   writeGeneratedArea,
   getDefaultOutputPath,
   getProjectRoot,
-  validateGeneratedArea
+  validateGeneratedArea,
+  getArgValue,
+  resolveProvider,
+  generateAreaWithProvider
 };
 
 if (require.main === module) {
@@ -55,7 +82,7 @@ if (require.main === module) {
   const wantsHelp = args.includes('--help') || args.includes('-h');
   const wantsWrite = args.includes('--write');
   const wantsValidate = args.includes('--validate');
-  const area = createMockGeneratedArea();
+  const providerName = getArgValue(args, '--provider');
 
   if (wantsHelp) {
     printHelp();
@@ -64,6 +91,14 @@ if (require.main === module) {
 
   if (wantsValidate && !wantsWrite) {
     console.error('ERROR: --validate must be used with --write.');
+    process.exit(1);
+  }
+
+  let area;
+  try {
+    area = generateAreaWithProvider(providerName);
+  } catch (error) {
+    console.error(error.message);
     process.exit(1);
   }
 
