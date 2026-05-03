@@ -1,7 +1,7 @@
 {
   "id": "frozen_ruins",
   "name": "冰封遺跡",
-  "theme": "寒霜、冰晶、古代機關、被凍結的遺跡",
+  "theme": "冰封遺跡",
   "narrativeHook": "你踏過結霜的石階，冰晶在火光裡折射出古老機關尚未熄滅的寒芒。",
   "difficulty": 5,
   "rooms": [
