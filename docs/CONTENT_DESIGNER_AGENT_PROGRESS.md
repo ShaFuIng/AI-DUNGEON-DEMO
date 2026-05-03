@@ -1,7 +1,7 @@
-﻿# Content Designer Agent MVP 進度與使用說明（Step 1～25）
+﻿# Content Designer Agent MVP 進度與使用說明（Step 1～27）
 
 ## 1. 文件目的
-本文件記錄 `AI-DUNGEON-DEMO` 的 `Content Designer Agent` 從 Step 1 到 Step 25 的開發歷程、操作方式、測試狀態與後續方向。
+本文件記錄 `AI-DUNGEON-DEMO` 的 `Content Designer Agent` 從 Step 1 到 Step 27 的開發歷程、操作方式、測試狀態與後續方向。
 
 ## 2. 架構定位
 - `Game Engine`（`engine/gameEngine.js`）：唯一可修改遊戲 state 的核心。
@@ -13,7 +13,7 @@
 - provider 輸出必須經 `parseProviderJsonOutput()` 與 `tools/validateArea.js`。
 - 即使通過驗證，仍需 Human Review 才可考慮後續合併。
 
-## 3. 已完成步驟總覽（Step 1～25）
+## 3. 已完成步驟總覽（Step 1～27）
 
 ### Step 1
 - 完成內容：建立 Content Designer Agent MVP 基本資料夾與檔案。
@@ -175,6 +175,22 @@
   - `createMockGeneratedArea()` 保持同步
 - 目的：避免 Windows/nvm4w 下 `spawnSync node.exe EPERM`，讓 Gemini 可直接 API → parse → write → validate。
 
+### Step 27
+- 完成內容：建立 Content Designer Human Review checklist。
+- 新增檔案：
+  - `docs/CONTENT_DESIGNER_HUMAN_REVIEW_CHECKLIST.md`
+- 修改檔案：
+  - `docs/CONTENT_DESIGNER_AGENT_PROGRESS.md`
+  - `README.md`
+  - `PROJECT_CONTEXT.md`
+- 新增功能：
+  - 定義 generatedArea 通過 validator 後的人類審查標準
+  - 區分 PASS / NEEDS REVISION / REJECT
+  - 明確要求合併前仍需 Human Review
+- 目的：
+  - 避免 AI 生成內容只因 validator PASS 就被誤認為可直接合併
+  - 建立進入 patch suggestion 前的人工品質閘門
+
 ## 4. 目前測試狀態
 已確認 PASS：
 - `npm test`
@@ -206,7 +222,7 @@ node AI/contentDesigner.js --provider gemini --theme "冰封遺跡" --difficulty
 ```
 
 ## 6. 下一步建議
-1. Step 27：建立 Human Review checklist。
-2. Step 28：設計 generatedArea → patch suggestion 格式，但不直接改 `data/gameData.js`。
-3. Step 29：評估 AJV 與 hand-written validator 並行。
-4. Step 30：建立 GitHub Actions / CI，至少跑 `npm test`。
+1. Step 28：設計 generatedArea → patch suggestion 格式，但不直接改 `data/gameData.js`。
+2. Step 29：評估 AJV 與 hand-written validator 並行。
+3. Step 30：建立 GitHub Actions / CI，至少跑 `npm test`。
+4. Step 31：規劃 `gameData.js` 合併策略與回滾策略。

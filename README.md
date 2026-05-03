@@ -44,9 +44,17 @@ GEMINI_MODEL=gemini-2.5-flash-lite
 - 不直接修改 `data/gameData.js`。
 - 不自動 commit / push。
 - `generatedArea` 必須先 `parse + validator PASS + Human Review`。
+- 即使 `--write --validate` PASS，也必須依 Human Review Checklist 審查後，才可進入 patch suggestion。
 
 ## 目前 Gemini 里程碑
 Gemini provider 第一版完整流程已跑通：
 Gemini API → raw text → `parseProviderJsonOutput()` → write `outputs/generatedArea.json` → `validateArea.js` → PASS
 
 即使通過 `--write --validate`，仍需 Human Review，不能直接合併正式遊戲資料。
+
+## 相關文件
+- `PROJECT_CONTEXT.md`
+- `docs/GAME_DESIGN_AGENT.md`
+- `docs/CONTENT_DESIGNER_AGENT_PROGRESS.md`
+- `docs/CONTENT_DESIGNER_PROVIDER_CONTRACT.md`
+- `docs/CONTENT_DESIGNER_HUMAN_REVIEW_CHECKLIST.md`
