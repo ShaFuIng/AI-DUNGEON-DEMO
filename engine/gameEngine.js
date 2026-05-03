@@ -1,4 +1,5 @@
-﻿const gameData = require("../data/gameData");
+﻿const { loadGameData } = require("../data/loadGameData");
+const gameData = loadGameData();
 
 function createInitialGameState() {
   return {
