@@ -2,6 +2,8 @@
 const path = require('path');
 const { spawnSync } = require('child_process');
 const mockProvider = require('./contentDesignerProviders/mockProvider');
+const rawMockProvider = require('./contentDesignerProviders/rawMockProvider');
+const { parseProviderJsonOutput } = require('./contentDesignerUtils/parseProviderJsonOutput');
 
 function getArgValue(args, name) {
   const index = args.indexOf(name);
@@ -39,12 +41,34 @@ function resolveProvider(providerName) {
     return mockProvider;
   }
 
+  if (effectiveProvider === 'raw-mock') {
+    return rawMockProvider;
+  }
+
   throw new Error(`Unsupported content designer provider: ${effectiveProvider}`);
+}
+
+function generateAreaFromRawProvider(provider, input = {}) {
+  if (typeof provider.generateRawArea !== 'function') {
+    throw new Error('Provider does not support raw area generation.');
+  }
+
+  const rawText = provider.generateRawArea(input);
+  return parseProviderJsonOutput(rawText);
 }
 
 function generateAreaWithProvider(providerName, input = {}) {
   const provider = resolveProvider(providerName);
-  return provider.generateArea(input);
+
+  if (typeof provider.generateArea === 'function') {
+    return provider.generateArea(input);
+  }
+
+  if (typeof provider.generateRawArea === 'function') {
+    return generateAreaFromRawProvider(provider, input);
+  }
+
+  throw new Error('Provider must implement generateArea() or generateRawArea().');
 }
 
 function createMockGeneratedArea(input = {}) {
@@ -80,14 +104,15 @@ function validateGeneratedArea(outputPath) {
 
 function printHelp() {
   console.log('Usage:');
-  console.log('  node AI/contentDesigner.js                                                            Print generatedArea JSON (default provider: mock)');
-  console.log('  node AI/contentDesigner.js --provider mock                                            Print generatedArea JSON with mock provider');
-  console.log('  node AI/contentDesigner.js --provider mock --write                                    Write generatedArea JSON to outputs/generatedArea.json');
-  console.log('  node AI/contentDesigner.js --provider mock --write --validate                         Write generatedArea JSON and run validator');
-  console.log('  node AI/contentDesigner.js --provider mock --theme "冰封遺跡"                           Generate JSON with a custom theme');
-  console.log('  node AI/contentDesigner.js --provider mock --theme "沉沒圖書館" --write --validate      Generate, write, and validate with a custom theme');
+  console.log('  node AI/contentDesigner.js                                                                      Print generatedArea JSON (default provider: mock)');
+  console.log('  node AI/contentDesigner.js --provider mock                                                      Print generatedArea JSON with mock provider');
+  console.log('  node AI/contentDesigner.js --provider raw-mock                                                  Print generatedArea JSON with raw-mock provider');
+  console.log('  node AI/contentDesigner.js --provider mock --write                                              Write generatedArea JSON to outputs/generatedArea.json');
+  console.log('  node AI/contentDesigner.js --provider mock --write --validate                                   Write generatedArea JSON and run validator');
+  console.log('  node AI/contentDesigner.js --provider raw-mock --theme "沉沒圖書館" --write --validate           Generate, parse, write, and validate with raw-mock provider');
+  console.log('  node AI/contentDesigner.js --provider mock --theme "冰封遺跡"                                     Generate JSON with a custom theme');
   console.log('Options:');
-  console.log('  --provider <name>       Provider name (currently only mock is supported)');
+  console.log('  --provider <name>       Provider name (supported: mock, raw-mock)');
   console.log('  --theme <text>          Theme input for provider');
   console.log('  --difficulty <1-10>     Difficulty input for provider (integer)');
   console.log('  --room-count <number>   Room count input for provider (integer)');
@@ -106,7 +131,8 @@ module.exports = {
   resolveProvider,
   generateAreaWithProvider,
   parseIntegerArg,
-  buildProviderInput
+  buildProviderInput,
+  generateAreaFromRawProvider
 };
 
 if (require.main === module) {
