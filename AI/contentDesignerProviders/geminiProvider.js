@@ -28,6 +28,7 @@ function buildPrompt(input = {}) {
 
 function generateRawArea(input = {}) {
   const apiKey = process.env.GEMINI_API_KEY;
+  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
 
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY is required for gemini provider.');
@@ -36,8 +37,9 @@ function generateRawArea(input = {}) {
   const prompt = buildPrompt(input);
   const workerScript = `
 const apiKey = process.env.GEMINI_API_KEY;
+const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
 const prompt = process.env.GEMINI_PROMPT || '';
-const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + encodeURIComponent(apiKey);
+const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent?key=' + encodeURIComponent(apiKey);
 
 try {
   const response = await fetch(url, {
@@ -85,6 +87,7 @@ try {
     env: {
       ...process.env,
       GEMINI_API_KEY: apiKey,
+      GEMINI_MODEL: model,
       GEMINI_PROMPT: prompt
     }
   });
