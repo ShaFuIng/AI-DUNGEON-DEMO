@@ -1,7 +1,7 @@
-﻿# Content Designer Agent MVP 進度與使用說明（Step 1～32）
+﻿# Content Designer Agent MVP 進度與使用說明（Step 1～33）
 
 ## 1. 文件目的
-本文件記錄 `AI-DUNGEON-DEMO` 的 `Content Designer Agent` 從 Step 1 到 Step 32 的開發歷程、操作方式、測試狀態與後續方向。
+本文件記錄 `AI-DUNGEON-DEMO` 的 `Content Designer Agent` 從 Step 1 到 Step 33 的開發歷程、操作方式、測試狀態與後續方向。
 
 ## 2. 架構定位
 - `Game Engine`（`engine/gameEngine.js`）：唯一可修改遊戲 state 的核心。
@@ -13,24 +13,25 @@
 - provider 輸出必須經 `parseProviderJsonOutput()` 與 `tools/validateArea.js`。
 - 即使通過驗證，仍需 Human Review 才可考慮後續合併。
 
-## 3. 已完成步驟總覽（Step 1～32）
-- Step 1～31：已完成（契約、validator、providers、async Gemini、Human Review、patch suggestion、runtime merge strategy）。
+## 3. 已完成步驟總覽（Step 1～33）
+- Step 1～32：已完成（契約、validator、providers、async Gemini、Human Review、patch suggestion、runtime merge strategy、experimental gameData）。
 
-### Step 32
-- 完成內容：建立 `data/gameData.experimental.js` 草案。
+### Step 33
+- 完成內容：加入 `GAME_DATA_SOURCE` 切換機制。
 - 新增檔案：
-  - `data/gameData.experimental.js`
+  - `data/loadGameData.js`
 - 修改檔案：
+  - `server.js`
+  - `.env.example`
   - `docs/CONTENT_DESIGNER_AGENT_PROGRESS.md`
   - `README.md`
   - `PROJECT_CONTEXT.md`
-- 新增內容：
-  - experimental gameData 使用 patch suggestion 的 `roomsToAdd`
-  - items / monsters / skills 沿用 base `data/gameData.js`
-  - 補上簡單 ascii placeholder
-  - 尚未接入 `server.js`
+- 新增功能：
+  - `GAME_DATA_SOURCE=default` 載入 `data/gameData.js`
+  - `GAME_DATA_SOURCE=experimental` 載入 `data/gameData.experimental.js`
+  - `/api/health` 回傳 `gameDataSource`
 - 目的：
-  - 在不修改 `data/gameData.js` 的前提下，建立可供後續 runtime 測試的實驗資料檔。
+  - 讓 runtime 可以安全切換 default / experimental 遊戲資料，而不覆蓋原本 `data/gameData.js`。
 
 ## 4. 目前測試狀態
 已確認 PASS：
@@ -58,7 +59,7 @@ node tools/createAreaPatchSuggestion.js
 ```
 
 ## 6. 下一步建議
-1. Step 33：設計 `GAME_DATA_SOURCE` 切換機制。
-2. Step 34：使用 experimental gameData 啟動 runtime 並測試遊戲流程。
-3. Step 35：整理完整專案報告。
-4. Step 36：評估 AJV / CI / 自動化回歸測試。
+1. Step 34：使用 `GAME_DATA_SOURCE=experimental` 啟動 runtime 並測試遊戲流程。
+2. Step 35：整理完整專案報告。
+3. Step 36：評估 AJV / CI / 自動化回歸測試。
+4. Step 37：考慮將 patch suggestion 與 experimental gameData 產生流程自動化。

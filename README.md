@@ -40,9 +40,21 @@ node tools/createAreaPatchSuggestion.js
 
 ## Experimental gameData 草案
 - 檔案：`data/gameData.experimental.js`
-- 目前尚未由 `server.js` 自動載入
-- 下一步會加入 `GAME_DATA_SOURCE` 切換機制
+- 目前可由 `GAME_DATA_SOURCE=experimental` 載入
 - 不要直接覆蓋 `data/gameData.js`
+
+## 切換遊戲資料來源
+PowerShell：
+```powershell
+$env:GAME_DATA_SOURCE="default"
+npm start
+```
+
+說明：
+- `default` 使用 `data/gameData.js`
+- `experimental` 使用 `data/gameData.experimental.js`
+- 預設是 `default`
+- `/api/health` 會顯示 `gameDataSource`
 
 ## Human Review 結果
 - 檔案：`outputs/generatedArea.humanReview.md`
