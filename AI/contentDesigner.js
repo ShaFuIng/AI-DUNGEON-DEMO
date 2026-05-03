@@ -3,6 +3,7 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 const mockProvider = require('./contentDesignerProviders/mockProvider');
 const rawMockProvider = require('./contentDesignerProviders/rawMockProvider');
+const geminiProvider = require('./contentDesignerProviders/geminiProvider');
 const { parseProviderJsonOutput } = require('./contentDesignerUtils/parseProviderJsonOutput');
 
 function getArgValue(args, name) {
@@ -43,6 +44,10 @@ function resolveProvider(providerName) {
 
   if (effectiveProvider === 'raw-mock') {
     return rawMockProvider;
+  }
+
+  if (effectiveProvider === 'gemini') {
+    return geminiProvider;
   }
 
   throw new Error(`Unsupported content designer provider: ${effectiveProvider}`);
@@ -107,12 +112,13 @@ function printHelp() {
   console.log('  node AI/contentDesigner.js                                                                      Print generatedArea JSON (default provider: mock)');
   console.log('  node AI/contentDesigner.js --provider mock                                                      Print generatedArea JSON with mock provider');
   console.log('  node AI/contentDesigner.js --provider raw-mock                                                  Print generatedArea JSON with raw-mock provider');
+  console.log('  node AI/contentDesigner.js --provider gemini --theme "冰封遺跡"                                 Run gemini provider skeleton (API not implemented yet)');
   console.log('  node AI/contentDesigner.js --provider mock --write                                              Write generatedArea JSON to outputs/generatedArea.json');
   console.log('  node AI/contentDesigner.js --provider mock --write --validate                                   Write generatedArea JSON and run validator');
   console.log('  node AI/contentDesigner.js --provider raw-mock --theme "沉沒圖書館" --write --validate           Generate, parse, write, and validate with raw-mock provider');
   console.log('  node AI/contentDesigner.js --provider mock --theme "冰封遺跡"                                     Generate JSON with a custom theme');
   console.log('Options:');
-  console.log('  --provider <name>       Provider name (supported: mock, raw-mock)');
+  console.log('  --provider <name>       Provider name (supported: mock, raw-mock, gemini)');
   console.log('  --theme <text>          Theme input for provider');
   console.log('  --difficulty <1-10>     Difficulty input for provider (integer)');
   console.log('  --room-count <number>   Room count input for provider (integer)');
