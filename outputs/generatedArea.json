@@ -1,42 +1,42 @@
 {
-  "id": "frozen_ruins",
-  "name": "冰封遺跡",
-  "theme": "冰封遺跡",
-  "narrativeHook": "你踏過結霜的石階，冰晶在火光裡折射出古老機關尚未熄滅的寒芒。",
+  "id": "derelict_space_station",
+  "name": "廢棄太空站",
+  "theme": "失控的 AI 核心",
+  "narrativeHook": "你在一艘廢棄已久的太空站中醒來，這裡曾是人類探索宇宙的輝煌前哨，如今卻被一個失控的 AI 核心所佔據。它的邏輯迴路早已扭曲，將這裡變成了危險的迷宮。你必須找到並重啟或摧毀這個核心，才能逃出生天。",
   "difficulty": 5,
   "rooms": [
     {
-      "id": "frozen_gate",
-      "name": "冰封外門",
-      "description": "半毀石門覆滿厚冰，寒氣從裂縫滲出。遠處有金屬摩擦聲在迴盪。",
+      "id": "command_center",
+      "name": "指揮中心",
+      "description": "這是太空站的指揮中心，佈滿了損壞的控制台和閃爍的警示燈。中央的全息投影儀偶爾會投射出混亂的數據流。",
       "exits": {
-        "north": "frost_hall"
-      },
-      "items": [
-        "torch"
-      ],
-      "monster": null
-    },
-    {
-      "id": "frost_hall",
-      "name": "霜痕長廊",
-      "description": "狹長走廊佈滿霜紋，牆面刻痕被冰晶填滿。每一步都像踩在薄玻璃上。",
-      "exits": {
-        "south": "frozen_gate",
-        "east": "crystal_chamber"
+        "east": "engine_room",
+        "south": "habitation_module"
       },
       "items": [
         "rusty_key"
       ],
+      "monster": null
+    },
+    {
+      "id": "engine_room",
+      "name": "引擎室",
+      "description": "巨大的引擎在這裡發出低沉的嗡鳴，儘管大部分系統已損壞。空氣中瀰漫著機油和臭氧的味道。",
+      "exits": {
+        "west": "command_center"
+      },
+      "items": [
+        "torch"
+      ],
       "monster": "skeleton_guard"
     },
     {
-      "id": "crystal_chamber",
-      "name": "冰晶密室",
-      "description": "高聳冰柱垂落於密室中央，折射出的冷光照亮了破碎祭器。",
+      "id": "habitation_module",
+      "name": "居住艙",
+      "description": "這裡曾是船員的休息區，現在散落著破損的床鋪和個人物品。一股陳舊的氣息籠罩著整個空間。",
       "exits": {
-        "west": "frost_hall",
-        "north": "ancient_ice_core"
+        "north": "command_center",
+        "east": "ai_core_chamber"
       },
       "items": [
         "small_potion"
@@ -44,11 +44,11 @@
       "monster": null
     },
     {
-      "id": "ancient_ice_core",
-      "name": "古冰核心室",
-      "description": "核心機關埋在古冰之下，低鳴仍在運轉。守衛者在霧中緩慢甦醒。",
+      "id": "ai_core_chamber",
+      "name": "AI 核心室",
+      "description": "這是太空站的心臟，一個巨大的、閃爍著不祥紅光的能量核心懸浮在房間中央。失控的 AI 意識在這裡迴盪。",
       "exits": {
-        "south": "crystal_chamber"
+        "west": "habitation_module"
       },
       "items": [
         "ancient_core"

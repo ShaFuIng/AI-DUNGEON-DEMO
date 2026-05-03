@@ -1,60 +1,60 @@
 {
   "type": "gameDataPatchSuggestion",
-  "sourceAreaId": "frozen_ruins",
+  "sourceAreaId": "derelict_space_station",
   "sourceFile": "outputs/generatedArea.json",
   "targetFile": "data/gameData.js",
   "status": "draft",
   "requiresHumanReview": true,
-  "summary": "建議將「冰封遺跡」加入 gameData rooms。",
+  "summary": "建議將「廢棄太空站」加入 gameData rooms。",
   "roomsToAdd": {
-    "frozen_gate": {
-      "id": "frozen_gate",
-      "name": "冰封外門",
-      "description": "半毀石門覆滿厚冰，寒氣從裂縫滲出。遠處有金屬摩擦聲在迴盪。",
+    "command_center": {
+      "id": "command_center",
+      "name": "指揮中心",
+      "description": "這是太空站的指揮中心，佈滿了損壞的控制台和閃爍的警示燈。中央的全息投影儀偶爾會投射出混亂的數據流。",
       "ascii": "",
       "exits": {
-        "north": "frost_hall"
-      },
-      "items": [
-        "torch"
-      ],
-      "monster": null
-    },
-    "frost_hall": {
-      "id": "frost_hall",
-      "name": "霜痕長廊",
-      "description": "狹長走廊佈滿霜紋，牆面刻痕被冰晶填滿。每一步都像踩在薄玻璃上。",
-      "ascii": "",
-      "exits": {
-        "south": "frozen_gate",
-        "east": "crystal_chamber"
+        "east": "engine_room",
+        "south": "habitation_module"
       },
       "items": [
         "rusty_key"
       ],
-      "monster": "skeleton_guard"
+      "monster": null
     },
-    "crystal_chamber": {
-      "id": "crystal_chamber",
-      "name": "冰晶密室",
-      "description": "高聳冰柱垂落於密室中央，折射出的冷光照亮了破碎祭器。",
+    "engine_room": {
+      "id": "engine_room",
+      "name": "引擎室",
+      "description": "巨大的引擎在這裡發出低沉的嗡鳴，儘管大部分系統已損壞。空氣中瀰漫著機油和臭氧的味道。",
       "ascii": "",
       "exits": {
-        "west": "frost_hall",
-        "north": "ancient_ice_core"
+        "west": "command_center"
+      },
+      "items": [
+        "torch"
+      ],
+      "monster": "skeleton_guard"
+    },
+    "habitation_module": {
+      "id": "habitation_module",
+      "name": "居住艙",
+      "description": "這裡曾是船員的休息區，現在散落著破損的床鋪和個人物品。一股陳舊的氣息籠罩著整個空間。",
+      "ascii": "",
+      "exits": {
+        "north": "command_center",
+        "east": "ai_core_chamber"
       },
       "items": [
         "small_potion"
       ],
       "monster": null
     },
-    "ancient_ice_core": {
-      "id": "ancient_ice_core",
-      "name": "古冰核心室",
-      "description": "核心機關埋在古冰之下，低鳴仍在運轉。守衛者在霧中緩慢甦醒。",
+    "ai_core_chamber": {
+      "id": "ai_core_chamber",
+      "name": "AI 核心室",
+      "description": "這是太空站的心臟，一個巨大的、閃爍著不祥紅光的能量核心懸浮在房間中央。失控的 AI 意識在這裡迴盪。",
       "ascii": "",
       "exits": {
-        "south": "crystal_chamber"
+        "west": "habitation_module"
       },
       "items": [
         "ancient_core"
