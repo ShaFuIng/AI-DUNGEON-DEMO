@@ -38,6 +38,11 @@ node tools/createAreaPatchSuggestion.js
 - 不會修改 `data/gameData.js`
 - 產生後仍需 Human Review
 
+## Human Review 結果
+- 檔案：`outputs/generatedArea.humanReview.md`
+- 目前 review decision：`NEEDS REVISION`
+- 還不能直接合併到 `data/gameData.js`
+
 ## .env.example 用途
 請依 `.env.example` 建立本機 `.env`：
 ```env
@@ -64,3 +69,4 @@ GEMINI_MODEL=gemini-2.5-flash-lite
 - `docs/CONTENT_DESIGNER_PROVIDER_CONTRACT.md`
 - `docs/CONTENT_DESIGNER_HUMAN_REVIEW_CHECKLIST.md`
 - `docs/CONTENT_DESIGNER_PATCH_SUGGESTION.md`
+- `outputs/generatedArea.humanReview.md`
