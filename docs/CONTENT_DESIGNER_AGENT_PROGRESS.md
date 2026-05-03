@@ -1,39 +1,18 @@
-﻿# Content Designer Agent MVP 進度與使用說明（Step 1～33.6）
+﻿# Content Designer Agent MVP 進度與使用說明（Step 1～34.5）
 
-## 1. 文件目的
-本文件記錄 `AI-DUNGEON-DEMO` 的 `Content Designer Agent` 從 Step 1 到 Step 33.6 的開發歷程、操作方式、測試狀態與後續方向。
+## Step 34.5
+- 新增 `tools/createExperimentalGameData.js`
+- 可讀取 `outputs/generatedArea.patchSuggestion.json` 並產生 `data/gameData.experimental.js`
+- 會檢查 `missingReferences` 與 `roomIdConflicts`
+- 自動補 `ascii` placeholder
+- 自動設定 `initialRoomId`（roomsToAdd 第一個 room）
 
-## 2. 架構定位
-- `Game Engine`（`engine/gameEngine.js`）：唯一可修改遊戲 state 的核心。
-- `Narrator Agent`（`AI/narrator.js`）：Runtime 敘事生成。
-- `Content Designer Agent`（`AI/contentDesigner.js` + providers）：Development-time 內容草案流程。
+## 目的
+讓 Gemini 生成結果可經 patch suggestion 自動轉為 runtime experimental gameData，降低手動整理成本。
 
-核心邊界：
-- 不直接修改 `data/gameData.js`。
-- provider 輸出必須經 `parseProviderJsonOutput()` 與 `tools/validateArea.js`。
-- 即使通過驗證，仍需 Human Review 才可考慮後續合併。
-
-## 3. 已完成步驟總覽（Step 1～33.6）
-- Step 1～33.5：已完成。
-
-### Step 33.6
-- 完成內容：讓 `gameEngine.js` 自動決定 initial room。
-- 修改檔案：
-  - `engine/gameEngine.js`
-  - `docs/CONTENT_DESIGNER_AGENT_PROGRESS.md`
-  - `README.md`
-  - `PROJECT_CONTEXT.md`
-- 新增功能：
-  - 新增 `getInitialRoomId()`
-  - 若 `gameData.initialRoomId` 存在且有效，使用它
-  - 否則若有 `entrance`，使用 `entrance`
-  - 否則使用 `gameData.rooms` 的第一個 room id
-  - `createInitialGameState()` 改用 dynamic initial room
-- 目的：
-  - 讓 default 與 experimental gameData 都能建立有效初始狀態。
-
-## 4. 下一步建議
-1. Step 34：使用 `GAME_DATA_SOURCE=experimental` 啟動 runtime 並測試遊戲流程。
-2. Step 34.5：視測試結果處理 experimental win condition。
-3. Step 35：整理完整專案報告。
-4. Step 36：評估 AJV / CI / 自動化回歸測試。
+## 下一步建議
+1. Step 35：建立完整 Gemini → experimental runtime pipeline 指令與測試流程
+2. Step 36：處理 experimental win condition
+3. Step 37：runtime 遊戲流程測試
+4. Step 38：整理完整專案報告
+5. Step 39：評估 AJV / CI / 自動化回歸測試

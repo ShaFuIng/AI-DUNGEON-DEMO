@@ -38,6 +38,25 @@ node tools/createAreaPatchSuggestion.js
 - 不會修改 `data/gameData.js`
 - 產生後仍需 Human Review
 
+## 產生 experimental gameData
+```bash
+node tools/createExperimentalGameData.js
+```
+
+說明：
+- 讀取 `outputs/generatedArea.patchSuggestion.json`
+- 產生或覆寫 `data/gameData.experimental.js`
+- 不會修改 `data/gameData.js`
+
+完整流程（PowerShell）：
+```powershell
+node AI/contentDesigner.js --provider gemini --theme "沉沒圖書館" --difficulty 4 --room-count 4 --write --validate
+node tools/createAreaPatchSuggestion.js
+node tools/createExperimentalGameData.js
+$env:GAME_DATA_SOURCE="experimental"
+npm start
+```
+
 ## Experimental gameData 草案
 - 檔案：`data/gameData.experimental.js`
 - 目前可由 `GAME_DATA_SOURCE=experimental` 載入
