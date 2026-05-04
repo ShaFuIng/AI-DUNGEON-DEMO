@@ -33,24 +33,227 @@ use small_potion
 
 ### 1.1 Node.js 是什麼？
 
-**Node.js** 是讓 JavaScript 可以跑在電腦或伺服器上的環境。
+**Node.js** 是讓 **JavaScript** 可以跑在電腦或伺服器上的執行環境，也可以稱為 **JavaScript runtime environment（JavaScript 執行環境）**。
 
-一般人常以為 JavaScript 只能跑在瀏覽器裡，例如網頁按鈕、動畫、互動效果。但有了 Node.js 之後，JavaScript 也可以拿來寫：
+以前我們通常會覺得：
 
-- 後端伺服器（backend server）
-- API
-- 檔案處理工具
-- 自動化腳本
-- 開發工具
+```text
+JavaScript = 只能跑在瀏覽器裡
+```
+
+例如：
+
+```text
+網頁按鈕
+動畫效果
+表單互動
+畫面更新
+```
+
+但有了 **Node.js** 之後，JavaScript 不只可以跑在瀏覽器裡，也可以跑在你的電腦、伺服器主機、雲端主機上。
+
+也就是說：
+
+```text
+沒有 Node.js：
+JavaScript 主要負責前端互動
+
+有 Node.js：
+JavaScript 也可以負責後端邏輯
+```
+
+---
+
+#### 1.1.1 Node.js 不是「伺服器主機」本身
+
+這裡很容易搞混。
+
+**Server（伺服器）** 可以分成兩種意思：
+
+```text
+1. 硬體上的 server：
+   一台電腦、一台雲端主機、你的筆電，都可以當 server
+
+2. 軟體上的 server：
+   一個負責接收 request、處理資料、回傳 response 的程式
+```
+
+所以比較精準的說法是：
+
+```text
+Node.js 不是那台伺服器主機本身。
+Node.js 是跑在那台主機上的後端執行環境。
+```
+
+以這個專案來說，當我們執行：
+
+```bash
+npm start
+```
+
+實際上會執行：
+
+```bash
+node server.js
+```
+
+然後 `server.js` 會啟動一個 Web server：
+
+```js
+app.listen(PORT, () => {
+  console.log(`Server is running at http://localhost:${PORT}`);
+});
+```
+
+這代表：
+
+```text
+你的電腦正在用 Node.js 執行 server.js
+server.js 啟動了一個後端伺服器程式
+瀏覽器可以透過 http://localhost:3000 連到它
+```
+
+所以這時候你的電腦就暫時扮演了「伺服器主機」的角色。
+
+---
+
+#### 1.1.2 Node.js 可以拿來做什麼？
+
+Node.js 可以讓 JavaScript 拿來寫：
+
+- **後端伺服器（backend server）**
+- **API server（API 伺服器）**
+- **檔案處理工具（file processing tools）**
+- **自動化腳本（automation scripts）**
+- **開發工具（development tools）**
+- **CLI 工具（command-line tools）**
+- **串接外部服務，例如 AI API、資料庫、第三方 API**
 
 在這個專案裡，Node.js 負責：
 
 - 啟動遊戲伺服器
+- 提供前端網頁
 - 接收玩家指令
 - 回傳遊戲狀態
+- 呼叫 Game Engine 處理遊戲邏輯
+- 呼叫 Narrator Agent 產生旁白
 - 執行 Content Designer 工具
 - 讀寫 `outputs/generatedArea.json`
 - 呼叫 Gemini API 或 Ollama API
+
+---
+
+#### 1.1.3 為什麼這個專案選 Node.js？
+
+這個專案選擇 Node.js，主要原因是它很適合做：
+
+```text
+Web 前端 + 後端 API + AI 呼叫 + 即時互動
+```
+
+尤其這個專案本來就是網頁遊戲，所以前端已經會用到 JavaScript。
+
+如果後端也用 Node.js，就可以讓前後端都使用 JavaScript：
+
+```text
+前端：
+public/app.js
+
+後端：
+server.js
+AI/narrator.js
+tools/validateArea.js
+AI/contentDesigner.js
+```
+
+這樣有幾個好處：
+
+#### 第一，前後端語言一致
+
+```text
+前端使用 JavaScript
+後端也使用 JavaScript
+```
+
+對教學或營隊來說，這會降低學習門檻。
+
+學生不用同時理解：
+
+```text
+前端 JavaScript
+後端 PHP
+資料格式 SQL
+```
+
+而是可以先集中理解：
+
+```text
+JavaScript
+JSON
+API
+前後端資料流
+```
+
+---
+
+#### 第二，很適合做 API
+
+這個專案的前端不是每次都刷新整個頁面，而是透過 API 跟後端交換資料。
+
+例如：
+
+```text
+GET /api/state
+POST /api/command
+POST /api/reset
+```
+
+這種 API-based 架構很適合 Node.js + Express。
+
+---
+
+#### 第三，很適合處理非同步任務
+
+這個專案會遇到很多「不是馬上完成」的事情，例如：
+
+```text
+呼叫 AI 模型
+呼叫 Ollama API
+呼叫 Gemini API
+讀寫 JSON 檔案
+等待前端 request
+等待後端 response
+```
+
+這些都屬於 **非同步任務（asynchronous tasks）**。
+
+Node.js 很擅長處理這種情境。
+
+例如在 `server.js` 裡面，玩家送出指令後，後端會呼叫：
+
+```js
+const narration = await narrate(publicState, eventResult);
+```
+
+這代表後端需要「等待旁白產生完成」，再把結果回傳給前端。
+
+---
+
+#### 第四，很適合快速做 Demo
+
+這個專案目前是營隊 / 教學 / Demo 取向，不是大型商業遊戲後端。
+
+Node.js 的優點是：
+
+```text
+啟動快
+修改快
+測試快
+套件多
+跟前端整合容易
+```
+
+所以很適合現在這種 AI 文字地城 Demo。
 
 ---
 
@@ -58,56 +261,291 @@ use small_potion
 
 **npm（Node Package Manager）** 是 Node.js 的套件管理工具。
 
-它有兩個主要用途：
+可以先把 npm 理解成：
 
-#### 第一，安裝套件
+```text
+Node.js 世界裡的套件安裝器 + 指令管理器
+```
 
-例如本專案使用：
+它主要有兩個用途：
 
-- `express`：建立 Web server
-- `dotenv`：讀取 `.env` 環境變數
+```text
+1. 安裝套件
+2. 執行 scripts
+```
 
-安裝指令：
+---
+
+#### 1.2.1 npm 用途一：安裝套件
+
+在 Node.js 專案裡，我們通常不會所有功能都自己從零寫。
+
+例如：
+
+```text
+建立 Web server
+讀取 .env 環境變數
+解析 JSON
+驗證資料
+呼叫 API
+```
+
+很多功能都可以使用別人已經寫好的套件。
+
+這個專案目前在 `package.json` 裡面有：
+
+```json
+"dependencies": {
+  "dotenv": "^17.4.2",
+  "express": "^5.2.1"
+}
+```
+
+代表這個專案使用了兩個主要套件：
+
+```text
+express：
+建立 Web server 和 API
+
+dotenv：
+讀取 .env 環境變數
+```
+
+安裝套件時執行：
 
 ```bash
 npm install
 ```
 
-這個指令會根據 `package.json` 裡面列出的 dependencies 安裝需要的套件。
+npm 會根據 `package.json` 裡面的 `dependencies`，自動安裝需要的套件。
 
-#### 第二，執行 scripts
+安裝完成後，專案裡通常會出現：
 
-`package.json` 裡面可以定義常用指令，例如：
+```text
+node_modules/
+package-lock.json
+```
+
+其中：
+
+```text
+node_modules/
+存放實際下載下來的套件
+
+package-lock.json
+鎖定套件版本，確保不同電腦安裝出來的版本一致
+```
+
+---
+
+#### 1.2.2 npm 用途二：執行 scripts
+
+`package.json` 不只記錄套件，也可以定義常用指令。
+
+例如本專案的 `package.json` 裡面有：
 
 ```json
 "scripts": {
   "start": "node server.js",
   "validate:area": "node tools/validateArea.js outputs/generatedArea.json",
   "generate:area": "node AI/contentDesigner.js --write --validate",
-  "test:validator": "node tools/validateArea.js tools/sampleGeneratedArea.json && node tools/validateArea.js outputs/generatedArea.json && node tools/validateArea.js tools/validator-test-cases/validArea.json",
+  "test:validator": "node tools/validateArea.js tools/sampleGeneratedArea.json && node tools/validateArea.js outputs/generatedArea.json && node tools/validator-test-cases/validArea.json",
   "test": "npm run test:validator"
 }
 ```
 
-所以使用者可以打：
+這代表我們可以打比較短的指令。
+
+例如：
 
 ```bash
 npm start
 ```
 
-它實際上等於：
+實際上等於：
 
 ```bash
 node server.js
+```
+
+也就是啟動後端伺服器。
+
+---
+
+#### 1.2.3 為什麼不直接都打 node 指令就好？
+
+其實可以。
+
+例如你可以直接打：
+
+```bash
+node server.js
+```
+
+但如果專案越來越大，指令會變長。
+
+例如：
+
+```bash
+node AI/contentDesigner.js --provider gemini --theme "沉沒圖書館" --difficulty 4 --room-count 4 --write --validate
+```
+
+這種指令很長，很容易打錯。
+
+所以可以把常用指令寫進 `package.json`：
+
+```json
+"generate:area": "node AI/contentDesigner.js --write --validate"
+```
+
+之後只要打：
+
+```bash
+npm run generate:area
+```
+
+就能執行對應流程。
+
+---
+
+#### 1.2.4 npm 在這個專案裡的角色
+
+在這個專案裡，npm 主要負責：
+
+```text
+安裝 express
+安裝 dotenv
+啟動 server.js
+執行 generatedArea 驗證
+執行 Content Designer
+執行 validator test
+```
+
+所以 npm 不是後端本身，而是管理 Node.js 專案的工具。
+
+可以這樣理解：
+
+```text
+Node.js = 執行 JavaScript 後端程式的環境
+npm = 幫 Node.js 專案安裝套件和管理指令的工具
 ```
 
 ---
 
 ### 1.3 Express 是什麼？
 
-**Express** 是 Node.js 裡常用的 Web framework（網頁伺服器框架）。
+**Express** 是 Node.js 裡常用的 **Web framework（網頁伺服器框架）**。
 
-它可以幫我們建立 API，例如：
+如果 Node.js 是「可以寫後端的環境」，那 Express 就是：
+
+```text
+幫你更方便寫後端 API 的工具框架
+```
+
+---
+
+#### 1.3.1 API 一定要用 Express 嗎？
+
+嚴格來說，不一定。
+
+Node.js 原生就可以建立 server。
+
+例如：
+
+```js
+const http = require("http");
+
+const server = http.createServer((req, res) => {
+  if (req.url === "/api/health") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true }));
+  }
+});
+
+server.listen(3000);
+```
+
+這樣也可以建立 API。
+
+但是你會發現：
+
+```text
+寫起來比較麻煩
+路由 route 管理不方便
+解析 JSON body 很麻煩
+提供靜態檔案也比較麻煩
+程式碼可讀性比較差
+```
+
+所以實務上常常會用 Express 簡化。
+
+---
+
+#### 1.3.2 Express 幫我們簡化什麼？
+
+Express 可以幫我們處理：
+
+```text
+1. 定義 API route
+2. 接收 request
+3. 回傳 response
+4. 解析 JSON body
+5. 提供 static files
+6. 管理不同 HTTP method
+```
+
+例如在本專案的 `server.js`：
+
+```js
+const express = require("express");
+const app = express();
+```
+
+這代表我們引入 Express，並建立一個 Express app。
+
+---
+
+#### 1.3.3 Express 提供靜態網頁
+
+本專案的前端放在：
+
+```text
+public/
+```
+
+裡面有：
+
+```text
+public/index.html
+public/style.css
+public/app.js
+```
+
+在 `server.js` 裡面有這段：
+
+```js
+app.use(express.static(path.join(__dirname, "public")));
+```
+
+意思是：
+
+```text
+請 Express 幫我們把 public 資料夾提供給瀏覽器
+```
+
+所以當使用者打開：
+
+```text
+http://localhost:3000
+```
+
+Express 會提供 `public/index.html` 給瀏覽器。
+
+---
+
+#### 1.3.4 Express 建立 API
+
+例如這個專案有：
 
 ```js
 app.get("/api/state", (req, res) => {
@@ -117,45 +555,156 @@ app.get("/api/state", (req, res) => {
 
 意思是：
 
-當瀏覽器或前端呼叫：
-
 ```text
-GET /api/state
+當前端呼叫 GET /api/state
+後端就回傳目前遊戲狀態
 ```
 
-後端就回傳目前遊戲狀態。
+這裡有幾個重要概念：
 
-在本專案裡，Express 負責：
+```text
+app.get：
+處理 GET request
 
-- 提供靜態網頁 `public/index.html`
-- 提供 API 給前端呼叫
-- 接收玩家輸入的 command
-- 回傳 narration 和 state
+"/api/state"：
+API route，也就是 API 路徑
+
+req：
+request，前端傳來的請求
+
+res：
+response，後端要回傳的回應
+
+res.json：
+把 JavaScript 物件轉成 JSON 回傳
+```
+
+---
+
+#### 1.3.5 Express 接收玩家指令
+
+本專案最重要的 API 是：
+
+```js
+app.post("/api/command", async (req, res) => {
+  const command = req.body.command || "";
+
+  const eventResult = handleCommand(gameState, command);
+
+  if (eventResult.type === "reset") {
+    gameState = createInitialGameState();
+  }
+
+  const publicState = getPublicGameState(gameState);
+  const narration = await narrate(publicState, eventResult);
+
+  res.json({
+    eventResult,
+    narration,
+    state: publicState,
+  });
+});
+```
+
+這段代表：
+
+```text
+前端送出玩家指令
+        ↓
+Express 收到 POST /api/command
+        ↓
+從 req.body.command 拿到指令
+        ↓
+交給 Game Engine 處理
+        ↓
+產生 publicState
+        ↓
+呼叫 Narrator Agent 產生旁白
+        ↓
+用 res.json 回傳結果給前端
+```
+
+---
+
+#### 1.3.6 Express 和 PHP / Apache 的差別
+
+你以前學資料庫可能用過：
+
+```text
+XAMPP + Apache + PHP + MySQL
+```
+
+那種比較像：
+
+```text
+瀏覽器送 request
+        ↓
+Apache 接收
+        ↓
+PHP 處理
+        ↓
+MySQL 查資料
+        ↓
+PHP 產生 HTML
+        ↓
+瀏覽器顯示整個頁面
+```
+
+而現在這個專案是：
+
+```text
+瀏覽器前端
+        ↓
+fetch() 呼叫 API
+        ↓
+Node.js + Express 接收
+        ↓
+Game Engine / AI 處理
+        ↓
+回傳 JSON
+        ↓
+前端自己更新畫面
+```
+
+差別在於：
+
+```text
+傳統 PHP 網站：
+後端常常直接產生整個 HTML 頁面
+
+Node.js + Express API 架構：
+後端主要回傳 JSON 資料，前端負責更新畫面
+```
+
+所以這個專案比較像現代 Web App 架構。
 
 ---
 
 ### 1.4 前端與後端是什麼？
 
-這個專案是典型的前後端分工：
+這個專案是典型的前後端分工。
 
-#### 前端 frontend
+可以先用一句話理解：
 
-位置：
+```text
+前端 frontend：
+負責使用者看得到、操作得到的畫面
+
+後端 backend：
+負責使用者看不到，但真正處理資料和規則的地方
+```
+
+---
+
+### 1.4.1 前端 frontend
+
+本專案的前端位置是：
 
 ```text
 public/
 ```
 
-負責：
-
-- 顯示畫面
-- 顯示角色狀態
-- 顯示 ASCII 或未來的互動式地圖
-- 顯示故事文字
-- 讓玩家輸入指令
-- 用 `fetch()` 呼叫後端 API
-
-目前主要檔案：
+主要檔案：
 
 ```text
 public/index.html
@@ -163,9 +712,63 @@ public/style.css
 public/app.js
 ```
 
-#### 後端 backend
+它們分別負責：
 
-位置：
+```text
+index.html：
+網頁結構，例如輸入框、狀態欄、故事區、Log 區
+
+style.css：
+網頁樣式，例如顏色、排版、terminal 風格
+
+app.js：
+前端互動邏輯，例如送出指令、更新畫面、呼叫 API
+```
+
+---
+
+#### 1.4.2 前端負責什麼？
+
+前端負責：
+
+- 顯示畫面
+- 顯示角色狀態
+- 顯示 HP / MP
+- 顯示目前房間
+- 顯示背包
+- 顯示 ASCII 或未來的互動式地圖
+- 顯示故事文字
+- 顯示 Log
+- 讓玩家輸入指令
+- 用 `fetch()` 呼叫後端 API
+- 收到後端資料後更新 UI
+
+例如 `public/app.js` 裡面有：
+
+```js
+function updateUI(state) {
+  statusHp.textContent = `${state.player.hp}/${state.player.maxHp}`;
+  statusMp.textContent = `${state.player.mp}/${state.player.maxMp}`;
+  statusRoom.textContent = state.player.currentRoom;
+  statusInventory.textContent =
+    state.player.inventory.length > 0 ? state.player.inventory.join("、") : "無";
+
+  asciiArt.textContent = state.currentRoom.ascii;
+  renderLogFromState(state);
+}
+```
+
+這段就是前端在做的事：
+
+```text
+把後端回傳的 state 顯示到網頁上
+```
+
+---
+
+#### 1.4.3 後端 backend
+
+本專案的後端主要位置是：
 
 ```text
 server.js
@@ -175,39 +778,601 @@ data/
 tools/
 ```
 
-負責：
+它們大概負責：
+
+```text
+server.js：
+啟動伺服器，提供 API，連接前端和遊戲邏輯
+
+engine/：
+處理真正的遊戲規則
+
+AI/：
+處理 AI 旁白與 AI 地圖生成
+
+data/：
+存放遊戲資料，例如房間、怪物、道具、技能
+
+tools/：
+開發階段工具，例如驗證 AI 生成的地圖資料
+```
+
+---
+
+#### 1.4.4 後端負責什麼？
+
+後端負責：
 
 - 啟動伺服器
 - 維護遊戲狀態
-- 處理玩家指令
+- 接收前端送來的玩家指令
+- 處理玩家移動
+- 處理戰鬥
+- 處理撿道具
+- 處理使用道具
+- 判斷勝利或失敗
 - 呼叫 AI 旁白
+- 回傳 JSON 給前端
 - 生成或驗證 AI 地圖資料
+
+例如 `server.js` 裡面：
+
+```js
+let gameState = createInitialGameState();
+```
+
+代表後端會保存目前的遊戲狀態。
+
+玩家每次輸入指令，後端就會根據目前 `gameState` 進行更新。
+
+---
+
+#### 1.4.5 fetch() 是什麼？
+
+`fetch()` 是前端 JavaScript 用來發送 **HTTP request（HTTP 請求）** 的方法。
+
+簡單講：
+
+```text
+fetch() = 前端呼叫 API 的方法
+```
+
+例如：
+
+```js
+const response = await fetch("/api/state");
+const state = await response.json();
+```
+
+意思是：
+
+```text
+前端去呼叫後端的 GET /api/state
+等待後端回應
+把後端回傳的 JSON 轉成 JavaScript 物件
+```
+
+---
+
+#### 1.4.6 fetch() 可以呼叫外部 API 嗎？
+
+可以。
+
+例如：
+
+```js
+const response = await fetch("https://example.com/api/weather");
+const data = await response.json();
+```
+
+所以 `fetch()` 可以呼叫：
+
+```text
+自己的後端 API
+外部 API
+AI API
+天氣 API
+資料服務 API
+```
+
+但是有一個重要安全觀念：
+
+```text
+前端不適合直接呼叫需要 API Key 的外部 API。
+```
+
+原因是：
+
+```text
+如果 API Key 寫在前端，
+使用者打開瀏覽器開發者工具就可能看到。
+```
+
+所以比較安全的做法是：
+
+```text
+前端 fetch() 呼叫自己的後端
+        ↓
+後端 Node.js 再呼叫 Gemini / Ollama / 其他外部 API
+        ↓
+後端把結果整理後回傳給前端
+```
+
+---
+
+#### 1.4.7 本專案的 fetch() 範例
+
+在 `public/app.js` 裡面，進入網頁時會載入遊戲狀態：
+
+```js
+async function loadGameState() {
+  try {
+    const response = await fetch("/api/state");
+    const state = await response.json();
+
+    updateUI(state);
+    addStoryLine(state.currentRoom.description);
+  } catch (error) {
+    addStoryLine("無法載入遊戲狀態，請重新整理頁面後再試一次。");
+  }
+}
+```
+
+流程是：
+
+```text
+前端呼叫 /api/state
+        ↓
+後端回傳目前遊戲狀態
+        ↓
+前端更新 HP / MP / 房間 / 背包 / ASCII
+```
+
+玩家送出指令時，前端會呼叫：
+
+```js
+async function sendCommand(command) {
+  try {
+    const response = await fetch("/api/command", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ command }),
+    });
+
+    const data = await response.json();
+
+    updateUI(data.state);
+    addStoryLine(data.narration || data.eventResult.message);
+  } catch (error) {
+    addStoryLine("指令送出失敗，請稍後再試。");
+  }
+}
+```
+
+這段代表：
+
+```text
+玩家輸入 command
+        ↓
+前端把 command 包成 JSON
+        ↓
+用 POST 送到 /api/command
+        ↓
+後端處理遊戲邏輯
+        ↓
+後端回傳新的 state 和 narration
+        ↓
+前端更新畫面
+```
+
+---
+
+#### 1.4.8 async / await 是什麼？
+
+`async / await` 是 JavaScript 處理 **非同步任務（asynchronous tasks）** 的寫法。
+
+所謂非同步任務，就是「不會馬上完成，需要等待結果」的事情。
+
+例如：
+
+```text
+呼叫 API
+讀取檔案
+查資料庫
+呼叫 AI 模型
+等待伺服器回應
+```
+
+如果沒有 `await`，程式可能會在資料還沒回來之前就繼續往下跑。
+
+錯誤概念示範：
+
+```js
+const response = fetch("/api/state");
+const state = response.json();
+```
+
+這樣會有問題，因為：
+
+```text
+fetch 還沒完成
+response 其實還不是完整結果
+你就急著呼叫 response.json()
+```
+
+正確寫法是：
+
+```js
+const response = await fetch("/api/state");
+const state = await response.json();
+```
+
+意思是：
+
+```text
+await fetch("/api/state")
+等後端 response 回來
+
+await response.json()
+等 JSON 解析完成
+```
+
+而只要 function 裡面要使用 `await`，這個 function 前面就要加 `async`：
+
+```js
+async function loadGameState() {
+  const response = await fetch("/api/state");
+  const state = await response.json();
+}
+```
+
+可以這樣記：
+
+```text
+async：
+告訴 JavaScript 這是一個會等待非同步任務的 function
+
+await：
+等待某個非同步任務完成後，再繼續執行下一行
+```
+
+---
+
+#### 1.4.9 後端也會使用 async / await
+
+不只前端會用 `async / await`，後端也會用。
+
+例如 `server.js` 裡面：
+
+```js
+app.post("/api/command", async (req, res) => {
+  const command = req.body.command || "";
+
+  const eventResult = handleCommand(gameState, command);
+
+  const publicState = getPublicGameState(gameState);
+  const narration = await narrate(publicState, eventResult);
+
+  res.json({
+    eventResult,
+    narration,
+    state: publicState,
+  });
+});
+```
+
+這裡的重點是：
+
+```js
+const narration = await narrate(publicState, eventResult);
+```
+
+因為 `narrate()` 可能會呼叫 AI，例如 Ollama。
+
+AI 產生文字需要時間，所以後端要等旁白產生完，才能回傳給前端。
 
 ---
 
 ### 1.5 API 是什麼？
 
-**API（Application Programming Interface）** 可以先理解成「前端和後端溝通的接口」。
-
-例如前端想知道現在玩家在哪個房間，就呼叫：
+**API（Application Programming Interface）** 可以先理解成：
 
 ```text
-GET /api/state
+前端和後端溝通的接口
 ```
 
-後端回傳 JSON：
+更白話一點：
+
+```text
+API = 前端跟後端約好的資料交換入口
+```
+
+---
+
+#### 1.5.1 為什麼需要 API？
+
+因為前端和後端負責的事情不同。
+
+前端負責顯示畫面：
+
+```text
+HP
+MP
+目前房間
+背包
+故事文字
+```
+
+後端負責真正處理資料和邏輯：
+
+```text
+玩家能不能移動
+怪物有沒有死
+道具有沒有拿到
+玩家 HP 有沒有歸零
+遊戲有沒有勝利
+AI 旁白要怎麼產生
+```
+
+所以它們需要一個溝通方式。
+
+這個溝通方式就是 API。
+
+---
+
+#### 1.5.2 API 可以想成餐廳點餐窗口
+
+可以用餐廳比喻：
+
+```text
+前端 = 客人
+API = 點餐窗口
+後端 = 廚房
+JSON = 點餐單 / 出餐內容
+```
+
+流程：
+
+```text
+客人跟點餐窗口說：我要一份餐
+        ↓
+點餐窗口把需求交給廚房
+        ↓
+廚房處理餐點
+        ↓
+點餐窗口把餐點交回客人
+```
+
+在本專案中：
+
+```text
+前端說：我要目前遊戲狀態
+        ↓
+GET /api/state
+        ↓
+後端回傳 state JSON
+
+前端說：我要送出 move north 指令
+        ↓
+POST /api/command
+        ↓
+後端處理移動
+        ↓
+後端回傳新的 state 和 narration
+```
+
+---
+
+#### 1.5.3 本專案目前有哪些 API？
+
+在 `server.js` 中，目前有這些 API：
+
+```text
+GET /api/health
+GET /api/game-data
+GET /api/state
+POST /api/command
+POST /api/reset
+```
+
+---
+
+#### 1.5.4 GET /api/health
+
+用途：
+
+```text
+檢查 server 是否活著
+確認目前 AI provider
+確認目前 gameDataSource
+```
+
+程式：
+
+```js
+app.get("/api/health", (req, res) => {
+  res.json({
+    ok: true,
+    message: "AI Dungeon Demo server is running!",
+    aiProvider: process.env.AI_PROVIDER || "mock",
+    gameDataSource: getGameDataSource(),
+  });
+});
+```
+
+前端或開發者呼叫：
+
+```text
+GET /api/health
+```
+
+可能回傳：
+
+```json
+{
+  "ok": true,
+  "message": "AI Dungeon Demo server is running!",
+  "aiProvider": "mock",
+  "gameDataSource": "default"
+}
+```
+
+這個 API 通常用來確認：
+
+```text
+後端有沒有成功啟動
+現在是 mock / ollama / gemini
+現在用 default 還是 experimental gameData
+```
+
+---
+
+#### 1.5.5 GET /api/state
+
+用途：
+
+```text
+取得目前遊戲公開狀態
+```
+
+程式：
+
+```js
+app.get("/api/state", (req, res) => {
+  res.json(getPublicGameState(gameState));
+});
+```
+
+前端呼叫：
+
+```js
+const response = await fetch("/api/state");
+const state = await response.json();
+```
+
+後端會回傳目前遊戲狀態，例如：
 
 ```json
 {
   "player": {
     "hp": 30,
+    "maxHp": 30,
     "mp": 10,
-    "currentRoom": "指揮中心"
-  }
+    "maxMp": 10,
+    "currentRoom": "entrance",
+    "inventory": []
+  },
+  "currentRoom": {
+    "name": "遺跡入口",
+    "description": "你站在古老遺跡的入口。",
+    "ascii": "..."
+  },
+  "log": []
 }
 ```
 
-前端再把這些資料顯示在畫面上。
+前端再根據這些資料更新 UI。
+
+---
+
+#### 1.5.6 POST /api/command
+
+用途：
+
+```text
+送出玩家指令
+```
+
+前端送出：
+
+```js
+fetch("/api/command", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    command: "move north"
+  }),
+});
+```
+
+後端接收：
+
+```js
+app.post("/api/command", async (req, res) => {
+  const command = req.body.command || "";
+
+  const eventResult = handleCommand(gameState, command);
+
+  const publicState = getPublicGameState(gameState);
+  const narration = await narrate(publicState, eventResult);
+
+  res.json({
+    eventResult,
+    narration,
+    state: publicState,
+  });
+});
+```
+
+流程：
+
+```text
+玩家輸入 move north
+        ↓
+前端 POST /api/command
+        ↓
+後端從 req.body.command 取得 "move north"
+        ↓
+Game Engine 執行 handleCommand()
+        ↓
+Narrator Agent 執行 narrate()
+        ↓
+後端回傳 eventResult、narration、state
+        ↓
+前端更新畫面
+```
+
+---
+
+#### 1.5.7 API 和 function 差在哪？
+
+這是初學者很容易混淆的地方。
+
+**function（函式）** 是程式內部呼叫：
+
+```js
+handleCommand(gameState, command);
+```
+
+這通常發生在同一個程式裡。
+
+**API** 是不同端之間透過 HTTP 溝通：
+
+```text
+前端 fetch("/api/command")
+後端 app.post("/api/command")
+```
+
+簡單比較：
+
+| 概念 | 說明 | 例子 |
+|---|---|---|
+| function | 程式內部呼叫 | `handleCommand()` |
+| API | 前端和後端透過 HTTP 呼叫 | `POST /api/command` |
+| fetch | 前端呼叫 API 的方法 | `fetch("/api/state")` |
+| Express route | 後端接收 API 的地方 | `app.get("/api/state")` |
+
+可以這樣理解：
+
+```text
+fetch() 是前端打電話
+Express route 是後端接電話的櫃台
+function 是後端內部真正做事的人
+```
 
 ---
 
@@ -215,7 +1380,226 @@ GET /api/state
 
 **JSON（JavaScript Object Notation）** 是一種資料格式。
 
-例如一個房間資料可以長這樣：
+它很常用在：
+
+```text
+前後端資料交換
+API request body
+API response body
+設定檔
+AI 生成內容
+資料儲存
+```
+
+---
+
+#### 1.6.1 JSON 長什麼樣？
+
+例如一個玩家狀態可以寫成：
+
+```json
+{
+  "hp": 30,
+  "mp": 10,
+  "currentRoom": "entrance",
+  "inventory": ["torch", "small_potion"]
+}
+```
+
+它的特點是：
+
+```text
+用 key-value 的方式儲存資料
+key 通常是字串
+value 可以是字串、數字、布林值、陣列、物件、null
+```
+
+---
+
+#### 1.6.2 JSON 和 JavaScript object 很像
+
+JavaScript object：
+
+```js
+const player = {
+  hp: 30,
+  mp: 10,
+  currentRoom: "entrance"
+};
+```
+
+JSON：
+
+```json
+{
+  "hp": 30,
+  "mp": 10,
+  "currentRoom": "entrance"
+}
+```
+
+它們很像，但 JSON 比較嚴格：
+
+```text
+JSON 的 key 必須用雙引號
+JSON 不能有 function
+JSON 不能寫註解
+JSON 通常用來傳輸資料
+```
+
+---
+
+#### 1.6.3 為什麼前後端常用 JSON？
+
+因為 JSON：
+
+```text
+格式簡單
+人類看得懂
+程式也容易解析
+JavaScript 原生支援
+很適合 API 傳資料
+```
+
+例如後端可以回傳：
+
+```js
+res.json({
+  eventResult,
+  narration,
+  state: publicState,
+});
+```
+
+Express 會把 JavaScript object 轉成 JSON 回傳給前端。
+
+前端收到後可以用：
+
+```js
+const data = await response.json();
+```
+
+把 JSON 轉回 JavaScript object。
+
+---
+
+#### 1.6.4 JSON.stringify() 是什麼？
+
+前端送資料給後端時，不能直接把 JavaScript object 塞進 HTTP body。
+
+所以要先轉成 JSON 字串。
+
+例如：
+
+```js
+body: JSON.stringify({ command })
+```
+
+假設：
+
+```js
+command = "move north";
+```
+
+那麼：
+
+```js
+JSON.stringify({ command })
+```
+
+會變成：
+
+```json
+{"command":"move north"}
+```
+
+也就是前端送給後端的資料。
+
+---
+
+#### 1.6.5 response.json() 是什麼？
+
+當前端收到後端回傳的 response 時，資料本質上還不是直接能用的 JavaScript object。
+
+所以需要：
+
+```js
+const data = await response.json();
+```
+
+這行的意思是：
+
+```text
+把後端回傳的 JSON response
+解析成 JavaScript 可以操作的 object
+```
+
+例如後端回傳：
+
+```json
+{
+  "narration": "你踏入新的房間。",
+  "state": {
+    "player": {
+      "hp": 30,
+      "mp": 10
+    }
+  }
+}
+```
+
+前端解析後，就可以使用：
+
+```js
+data.narration
+data.state.player.hp
+data.state.player.mp
+```
+
+---
+
+#### 1.6.6 本專案裡 JSON 的用途
+
+在這個專案中，JSON 出現在很多地方：
+
+```text
+1. 前端送玩家指令給後端
+2. 後端回傳遊戲狀態給前端
+3. AI 生成地圖資料
+4. outputs/generatedArea.json
+5. patchSuggestion
+6. API response
+7. Ollama API request / response
+```
+
+例如前端送出玩家指令：
+
+```json
+{
+  "command": "move north"
+}
+```
+
+後端回傳結果：
+
+```json
+{
+  "eventResult": {
+    "type": "move",
+    "message": "你移動到了新的區域。"
+  },
+  "narration": "你踏入新的房間，腳步聲在牆間回盪。",
+  "state": {
+    "player": {
+      "hp": 30,
+      "mp": 10,
+      "currentRoom": "hall"
+    }
+  }
+}
+```
+
+AI 生成地圖時，也會產生類似 JSON 的資料：
 
 ```json
 {
@@ -230,7 +1614,235 @@ GET /api/state
 }
 ```
 
-AI 生成地圖時，就是生成類似這種 JSON。
+---
+
+### 1.7 把 1.1～1.6 串起來看
+
+如果只分開看：
+
+```text
+Node.js
+npm
+Express
+frontend
+backend
+API
+JSON
+fetch
+async/await
+```
+
+可能會覺得每個概念都很零散。
+
+但在這個專案中，它們其實是一條完整流程。
+
+---
+
+#### 1.7.1 玩家進入網頁時
+
+流程：
+
+```text
+玩家打開 http://localhost:3000
+        ↓
+Node.js 執行 server.js
+        ↓
+Express 提供 public/index.html
+        ↓
+瀏覽器載入 public/app.js
+        ↓
+app.js 執行 loadGameState()
+        ↓
+fetch("/api/state") 呼叫後端
+        ↓
+Express 的 app.get("/api/state") 接住
+        ↓
+後端回傳目前 gameState 的 JSON
+        ↓
+前端 updateUI(state)
+```
+
+---
+
+#### 1.7.2 玩家輸入指令時
+
+流程：
+
+```text
+玩家輸入 move north
+        ↓
+public/app.js 偵測 form submit
+        ↓
+sendCommand("move north")
+        ↓
+fetch("/api/command", { method: "POST", body: JSON.stringify(...) })
+        ↓
+Express 的 app.post("/api/command") 接住
+        ↓
+handleCommand(gameState, command)
+        ↓
+Game Engine 更新遊戲狀態
+        ↓
+narrate(publicState, eventResult)
+        ↓
+可能呼叫 mock / ollama / gemini fallback
+        ↓
+後端 res.json({ eventResult, narration, state })
+        ↓
+前端 response.json()
+        ↓
+updateUI(data.state)
+        ↓
+addStoryLine(data.narration)
+```
+
+---
+
+#### 1.7.3 用一句話總結整個技術架構
+
+可以這樣講：
+
+```text
+這個專案使用 Node.js 作為後端執行環境，透過 Express 建立 API，
+前端 HTML/CSS/JavaScript 使用 fetch() 呼叫這些 API，
+後端處理 Game Engine 和 AI Narrator 的邏輯，
+最後用 JSON 把遊戲狀態和旁白回傳給前端顯示。
+```
+
+---
+
+### 1.8 和 XAMPP + Apache + PHP 的差別
+
+你以前學資料庫時用的可能是：
+
+```text
+XAMPP + Apache + PHP + MySQL
+```
+
+那是一種很常見的傳統網站開發方式。
+
+---
+
+#### 1.8.1 傳統 XAMPP 架構
+
+通常流程是：
+
+```text
+瀏覽器送出請求
+        ↓
+Apache 接收 request
+        ↓
+PHP 執行後端程式
+        ↓
+PHP 可能查 MySQL
+        ↓
+PHP 產生 HTML
+        ↓
+瀏覽器顯示整個頁面
+```
+
+這種方式常見於：
+
+```text
+會員系統
+留言板
+商品頁面
+資料庫查詢頁
+傳統網站後台
+```
+
+---
+
+#### 1.8.2 本專案 Node.js 架構
+
+本專案流程是：
+
+```text
+瀏覽器載入前端畫面
+        ↓
+前端用 fetch() 呼叫 API
+        ↓
+Node.js + Express 接收 request
+        ↓
+Game Engine / AI Agent 處理資料
+        ↓
+後端回傳 JSON
+        ↓
+前端用 JavaScript 更新畫面
+```
+
+---
+
+#### 1.8.3 最大差別
+
+最大的差別是：
+
+```text
+XAMPP / PHP 傳統網站：
+後端常常直接產生 HTML 頁面
+
+Node.js / Express Web App：
+後端通常回傳 JSON，前端自己更新畫面
+```
+
+---
+
+#### 1.8.4 用表格比較
+
+| 項目 | XAMPP + Apache + PHP | Node.js + Express |
+|---|---|---|
+| 後端語言 | PHP | JavaScript |
+| Web server | Apache | Node.js 程式本身透過 Express 啟動 |
+| 常見回傳內容 | HTML | JSON |
+| 前端更新方式 | 常見是整頁刷新 | 常見是局部更新 UI |
+| 適合類型 | 傳統網站、資料庫頁面 | Web App、API server、即時互動系統 |
+| 本專案適合度 | 可以做，但不直覺 | 很適合 |
+| AI API 串接 | 可以，但教學上較分散 | JavaScript 前後端一致，較容易整合 |
+
+---
+
+#### 1.8.5 為什麼本專案比較適合 Node.js？
+
+因為這個專案需要：
+
+```text
+前端即時送出玩家指令
+後端即時回傳遊戲狀態
+呼叫 AI 產生旁白
+使用 JSON 作為資料格式
+未來可能接更多 API
+```
+
+這些都很適合 Node.js + Express。
+
+如果用 XAMPP + PHP 也不是不行，但會變成：
+
+```text
+前端 JavaScript
+後端 PHP
+AI API 呼叫 PHP 寫法
+遊戲邏輯 PHP 寫法
+JSON 處理 PHP 寫法
+```
+
+對教學或專案維護來說，技術切換會比較多。
+
+而現在用 Node.js，可以讓核心概念集中在：
+
+```text
+JavaScript
+API
+JSON
+fetch
+async/await
+Game Engine
+AI Agent
+```
+
+比較符合這個專案的目標。
+
+---
+
 
 ---
 
