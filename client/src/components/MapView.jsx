@@ -1,3 +1,5 @@
+import { useRef, useState } from "react";
+
 const DIRECTIONS = [
   { id: "north", label: "北", className: "col-start-2 row-start-1" },
   { id: "west", label: "西", className: "col-start-1 row-start-2" },
@@ -5,11 +7,58 @@ const DIRECTIONS = [
   { id: "south", label: "南", className: "col-start-2 row-start-3" },
 ];
 
+function RoomNameWithTooltip({ name, description, align = "center", className = "" }) {
+  const [visible, setVisible] = useState(false);
+  const timerRef = useRef(null);
+
+  function handleMouseEnter() {
+    window.clearTimeout(timerRef.current);
+    timerRef.current = window.setTimeout(() => {
+      setVisible(true);
+    }, 700);
+  }
+
+  function handleMouseLeave() {
+    window.clearTimeout(timerRef.current);
+    setVisible(false);
+  }
+
+  const alignClass =
+    align === "left"
+      ? "left-0"
+      : align === "right"
+        ? "right-0"
+        : "left-1/2 -translate-x-1/2";
+
+  return (
+    <span
+      className={`relative inline-flex max-w-full ${className}`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <span className="max-w-full cursor-help truncate border-b border-dashed border-white/25 pb-0.5">
+        {name || "未知房間"}
+      </span>
+
+      {visible ? (
+        <span
+          className={`pointer-events-none absolute top-full z-50 mt-3 w-72 max-w-[min(18rem,70vw)] rounded-lg border border-amber-200/30 bg-[#11100e] p-3 text-left text-sm font-normal leading-6 text-stone-100 shadow-2xl shadow-black/50 ${alignClass}`}
+        >
+          <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-amber-200">
+            Room Description
+          </span>
+          {description || "沒有描述。"}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
 function ExitButton({ direction, exitRoomId, exitRoom, loading, onMove }) {
   if (!exitRoomId) {
     return (
       <div
-        className={`${direction.className} flex min-h-28 flex-col items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] px-3 text-center text-stone-500`}
+        className={`${direction.className} flex min-h-0 flex-col items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] px-3 text-center text-stone-500`}
       >
         <span className="text-sm font-semibold">{direction.label}</span>
         <span className="mt-1 text-xs">封閉</span>
@@ -22,11 +71,14 @@ function ExitButton({ direction, exitRoomId, exitRoom, loading, onMove }) {
       type="button"
       disabled={loading}
       onClick={() => onMove(`move ${direction.id}`)}
-      className={`${direction.className} group flex min-h-28 flex-col items-center justify-center rounded-lg border border-amber-300/35 bg-amber-300/10 px-3 text-center transition hover:border-amber-200 hover:bg-amber-300/20 disabled:cursor-wait disabled:opacity-60`}
+      className={`${direction.className} group flex min-h-0 flex-col items-center justify-center rounded-lg border border-amber-300/35 bg-amber-300/10 px-3 text-center transition hover:border-amber-200 hover:bg-amber-300/20 disabled:cursor-wait disabled:opacity-60`}
     >
       <span className="text-sm font-semibold text-amber-200">{direction.label}</span>
-      <span className="mt-2 text-base font-semibold text-white">
-        {exitRoom?.name || exitRoomId}
+      <span className="mt-2 max-w-full text-base font-semibold text-white">
+        <RoomNameWithTooltip
+          name={exitRoom?.name || exitRoomId}
+          description={exitRoom?.description}
+        />
       </span>
       <span className="mt-1 font-mono text-[11px] uppercase text-amber-100/65">
         move {direction.id}
@@ -37,23 +89,27 @@ function ExitButton({ direction, exitRoomId, exitRoom, loading, onMove }) {
 
 export default function MapView({ currentRoom, player, roomsById, loading, onMove }) {
   const exits = currentRoom?.exits || {};
+  const exitDirections = Object.keys(exits);
 
   return (
-    <section className="flex flex-1 flex-col rounded-lg border border-white/10 bg-[#191714]/90 p-4 shadow-panel backdrop-blur sm:p-5">
+    <section className="rounded-lg border border-white/10 bg-[#191714]/90 p-4 shadow-panel backdrop-blur sm:p-5">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="font-mono text-xs uppercase text-teal-200">
-            Map
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
-            {currentRoom?.name || "載入中"}
+        <div className="min-w-0">
+          <p className="font-mono text-xs uppercase text-teal-200">Map</p>
+          <h2 className="mt-2 max-w-full text-2xl font-semibold text-white">
+            <RoomNameWithTooltip
+              name={currentRoom?.name || "載入中"}
+              description={currentRoom?.description}
+              align="left"
+            />
           </h2>
           <p className="mt-1 font-mono text-xs text-stone-400">
             {player?.currentRoomId || currentRoom?.id || "..."}
           </p>
         </div>
+
         {currentRoom?.monster ? (
-          <div className="rounded-lg border border-red-300/30 bg-red-950/40 px-4 py-3 text-sm text-red-100">
+          <div className="shrink-0 rounded-lg border border-red-300/30 bg-red-950/40 px-4 py-3 text-sm text-red-100">
             <div className="font-semibold">{currentRoom.monster.name}</div>
             <div className="mt-1 font-mono text-xs">
               HP {currentRoom.monster.hp}/{currentRoom.monster.maxHp}
@@ -62,7 +118,7 @@ export default function MapView({ currentRoom, player, roomsById, loading, onMov
         ) : null}
       </div>
 
-      <div className="grid min-h-[360px] flex-1 grid-cols-3 grid-rows-3 gap-3">
+      <div className="grid h-[390px] grid-cols-3 grid-rows-3 gap-3 sm:h-[430px] xl:h-[460px]">
         {DIRECTIONS.map((direction) => {
           const exitRoomId = exits[direction.id];
           return (
@@ -77,36 +133,27 @@ export default function MapView({ currentRoom, player, roomsById, loading, onMov
           );
         })}
 
-        <div className="col-start-2 row-start-2 flex min-h-36 flex-col items-center justify-center rounded-lg border border-teal-200/30 bg-teal-300/10 p-4 text-center shadow-ember">
+        <div className="col-start-2 row-start-2 flex min-h-0 flex-col items-center justify-center rounded-lg border border-teal-200/30 bg-teal-300/10 p-4 text-center shadow-ember">
           <span className="text-xs font-semibold uppercase text-teal-100">
             Current Room
           </span>
-          <span className="mt-3 text-xl font-semibold text-white">
-            {currentRoom?.name || "未知房間"}
+          <span className="mt-3 max-w-full text-xl font-semibold text-white">
+            <RoomNameWithTooltip
+              name={currentRoom?.name || "未知房間"}
+              description={currentRoom?.description}
+            />
           </span>
-          <span className="mt-3 line-clamp-3 text-sm leading-6 text-stone-300">
-            {currentRoom?.description || "正在讀取場景資訊。"}
+          <span className="mt-3 font-mono text-xs uppercase text-teal-100/60">
+            {player?.currentRoomId || currentRoom?.id || "unknown"}
+          </span>
+          <span className="mt-2 text-xs text-stone-400">
+            停留在房名上可查看描述
           </span>
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-lg border border-white/10 bg-black/20 p-3">
-          <p className="text-xs font-semibold uppercase text-stone-400">
-            Items
-          </p>
-          <p className="mt-2 text-sm text-stone-200">
-            {currentRoom?.items?.length ? currentRoom.items.join("、") : "無可拾取道具"}
-          </p>
-        </div>
-        <div className="rounded-lg border border-white/10 bg-black/20 p-3">
-          <p className="text-xs font-semibold uppercase text-stone-400">
-            Exits
-          </p>
-          <p className="mt-2 text-sm text-stone-200">
-            {Object.keys(exits).length ? Object.keys(exits).join("、") : "無出口"}
-          </p>
-        </div>
+      <div className="mt-3 flex justify-end text-xs text-stone-400">
+        可移動方向：{exitDirections.length ? exitDirections.join("、") : "無"}
       </div>
     </section>
   );
