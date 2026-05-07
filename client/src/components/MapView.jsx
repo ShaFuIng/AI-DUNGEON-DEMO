@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import MissionLogOverlay from "./MissionLogOverlay.jsx";
 
 const DIRECTIONS = [
   { id: "north", label: "北", className: "col-start-2 row-start-1" },
@@ -87,12 +88,14 @@ function ExitButton({ direction, exitRoomId, exitRoom, loading, onMove }) {
   );
 }
 
-export default function MapView({ currentRoom, player, roomsById, loading, onMove }) {
+export default function MapView({ currentRoom, player, roomsById, logs = [], loading, onMove }) {
   const exits = currentRoom?.exits || {};
   const exitDirections = Object.keys(exits);
 
   return (
-    <section className="rounded-lg border border-white/10 bg-[#191714]/90 p-4 shadow-panel backdrop-blur sm:p-5">
+    <section className="relative overflow-visible rounded-lg border border-white/10 bg-[#191714]/90 p-4 shadow-panel backdrop-blur sm:p-5">
+      <MissionLogOverlay logs={logs} />
+
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <p className="font-mono text-xs uppercase text-teal-200">Map</p>
@@ -118,7 +121,7 @@ export default function MapView({ currentRoom, player, roomsById, loading, onMov
         ) : null}
       </div>
 
-      <div className="grid h-[360px] grid-cols-3 grid-rows-3 gap-3 sm:h-[360px] xl:h-[360px]">
+      <div className="grid h-[360px] grid-cols-3 grid-rows-3 gap-3">
         {DIRECTIONS.map((direction) => {
           const exitRoomId = exits[direction.id];
           return (
