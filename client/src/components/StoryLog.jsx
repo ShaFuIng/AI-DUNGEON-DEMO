@@ -25,43 +25,31 @@ function StoryLine({ line }) {
   );
 }
 
-export default function StoryLog({ storyLines, stateLog, className = "" }) {
+export default function StoryLog({ storyLines, className = "" }) {
   const scrollRef = useRef(null);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [storyLines, stateLog]);
+  }, [storyLines]);
 
   return (
     <section
-      className={`flex min-h-0 flex-col rounded-lg border border-white/10 bg-[#171a1f]/90 shadow-panel backdrop-blur ${className}`}
+      className={`flex min-h-0 flex-col overflow-hidden rounded-lg border border-white/10 bg-[#171a1f]/90 shadow-panel backdrop-blur ${className}`}
     >
-      <div className="border-b border-white/10 px-4 py-4 sm:px-5">
-        <p className="font-mono text-xs uppercase text-teal-200">
-          Story
-        </p>
+      <div className="shrink-0 border-b border-white/10 px-4 py-4 sm:px-5">
+        <p className="font-mono text-xs uppercase text-teal-200">Story</p>
         <h2 className="mt-2 text-xl font-semibold text-white">敘事紀錄</h2>
       </div>
 
-      <div ref={scrollRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 sm:p-5">
+      <div
+        ref={scrollRef}
+        className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4 sm:p-5"
+      >
         {storyLines.map((line) => (
           <StoryLine key={line.id} line={line} />
         ))}
-
-        {stateLog.length ? (
-          <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
-            <p className="mb-2 font-mono text-xs uppercase text-stone-500">
-              Log
-            </p>
-            <div className="space-y-1 text-sm text-stone-400">
-              {stateLog.slice(-5).map((line, index) => (
-                <p key={`${line}-${index}`}>{line}</p>
-              ))}
-            </div>
-          </div>
-        ) : null}
       </div>
     </section>
   );
