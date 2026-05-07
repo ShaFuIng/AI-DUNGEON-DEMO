@@ -145,6 +145,7 @@ export default function App() {
               currentRoom={gameState?.currentRoom}
               player={gameState?.player}
               roomsById={roomsById}
+              logs={gameState?.log || []}
               loading={loading}
               onMove={sendCommand}
             />
@@ -158,11 +159,7 @@ export default function App() {
 
           <div className="flex min-h-0 flex-col gap-4">
             <CharacterPanel player={gameState?.player} flags={gameState?.flags} />
-            <StoryLog
-              storyLines={storyLines}
-              stateLog={gameState?.log || []}
-              className="min-h-[460px] lg:flex-1"
-            />
+            <StoryLog storyLines={storyLines} className="h-[380px] lg:h-[420px]" />
           </div>
         </section>
       </div>
