@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import ActionButtons from "./components/ActionButtons.jsx";
 import CharacterPanel from "./components/CharacterPanel.jsx";
 import CommandBar from "./components/CommandBar.jsx";
+import InventoryPanel from "./components/InventoryPanel.jsx";
 import MapView from "./components/MapView.jsx";
 import StoryLog from "./components/StoryLog.jsx";
 
@@ -139,7 +139,7 @@ export default function App() {
           </div>
         ) : null}
 
-        <section className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_400px]">
+        <section className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
           <div className="flex min-h-0 flex-col gap-4">
             <MapView
               currentRoom={gameState?.currentRoom}
@@ -149,17 +149,18 @@ export default function App() {
               loading={loading}
               onMove={sendCommand}
             />
+            <StoryLog storyLines={storyLines} className="h-[300px] lg:h-[340px]" />
             <CommandBar loading={loading} onSubmit={sendCommand} />
-            <ActionButtons
-              gameState={gameState}
-              loading={loading}
-              onAction={sendCommand}
-            />
           </div>
 
           <div className="flex min-h-0 flex-col gap-4">
-            <CharacterPanel player={gameState?.player} flags={gameState?.flags} />
-            <StoryLog storyLines={storyLines} className="h-[380px] lg:h-[420px]" />
+            <CharacterPanel
+              player={gameState?.player}
+              flags={gameState?.flags}
+              loading={loading}
+              onAction={sendCommand}
+            />
+            <InventoryPanel inventory={gameState?.player?.inventory || []} />
           </div>
         </section>
       </div>
