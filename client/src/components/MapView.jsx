@@ -98,7 +98,7 @@ export default function MapView({ currentRoom, player, roomsById, logs = [], loa
 
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="font-mono text-xs uppercase text-teal-200">Map</p>
+          <p className="font-mono text-base leading-none uppercase text-teal-200">Map</p>
           <h2 className="mt-2 max-w-full text-2xl font-semibold text-white">
             <RoomNameWithTooltip
               name={currentRoom?.name || "載入中"}
@@ -106,9 +106,6 @@ export default function MapView({ currentRoom, player, roomsById, logs = [], loa
               align="left"
             />
           </h2>
-          <p className="mt-1 font-mono text-xs text-stone-400">
-            {player?.currentRoomId || currentRoom?.id || "..."}
-          </p>
         </div>
 
         {currentRoom?.monster ? (
