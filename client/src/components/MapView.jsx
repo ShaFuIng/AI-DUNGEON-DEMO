@@ -118,7 +118,7 @@ export default function MapView({ currentRoom, player, roomsById, loading, onMov
         ) : null}
       </div>
 
-      <div className="grid h-[390px] grid-cols-3 grid-rows-3 gap-3 sm:h-[430px] xl:h-[460px]">
+      <div className="grid h-[360px] grid-cols-3 grid-rows-3 gap-3 sm:h-[360px] xl:h-[360px]">
         {DIRECTIONS.map((direction) => {
           const exitRoomId = exits[direction.id];
           return (
