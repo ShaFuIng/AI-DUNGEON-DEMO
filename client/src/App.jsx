@@ -139,8 +139,8 @@ export default function App() {
           </div>
         ) : null}
 
-        <section className="grid flex-1 grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.7fr)]">
-          <div className="grid gap-5 lg:grid-rows-[minmax(420px,1fr)_auto]">
+        <section className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_400px]">
+          <div className="flex min-h-0 flex-col gap-4">
             <MapView
               currentRoom={gameState?.currentRoom}
               player={gameState?.player}
@@ -148,6 +148,7 @@ export default function App() {
               loading={loading}
               onMove={sendCommand}
             />
+            <CommandBar loading={loading} onSubmit={sendCommand} />
             <ActionButtons
               gameState={gameState}
               loading={loading}
@@ -155,12 +156,13 @@ export default function App() {
             />
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr] xl:grid-cols-1 xl:grid-rows-[auto_minmax(0,1fr)]">
+          <div className="flex min-h-0 flex-col gap-4">
             <CharacterPanel player={gameState?.player} flags={gameState?.flags} />
-            <div className="flex min-h-[520px] flex-col rounded-lg border border-white/10 bg-[#171a1f]/90 shadow-panel backdrop-blur">
-              <StoryLog storyLines={storyLines} stateLog={gameState?.log || []} />
-              <CommandBar loading={loading} onSubmit={sendCommand} />
-            </div>
+            <StoryLog
+              storyLines={storyLines}
+              stateLog={gameState?.log || []}
+              className="min-h-[460px] lg:flex-1"
+            />
           </div>
         </section>
       </div>

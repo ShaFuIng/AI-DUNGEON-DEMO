@@ -39,7 +39,7 @@ export default function MapView({ currentRoom, player, roomsById, loading, onMov
   const exits = currentRoom?.exits || {};
 
   return (
-    <section className="rounded-lg border border-white/10 bg-[#191714]/90 p-4 shadow-panel backdrop-blur sm:p-5">
+    <section className="flex flex-1 flex-col rounded-lg border border-white/10 bg-[#191714]/90 p-4 shadow-panel backdrop-blur sm:p-5">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="font-mono text-xs uppercase text-teal-200">
@@ -62,7 +62,7 @@ export default function MapView({ currentRoom, player, roomsById, loading, onMov
         ) : null}
       </div>
 
-      <div className="grid min-h-[360px] grid-cols-3 grid-rows-3 gap-3">
+      <div className="grid min-h-[360px] flex-1 grid-cols-3 grid-rows-3 gap-3">
         {DIRECTIONS.map((direction) => {
           const exitRoomId = exits[direction.id];
           return (

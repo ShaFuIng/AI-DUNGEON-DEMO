@@ -23,7 +23,7 @@ export default function ActionButtons({ gameState, loading, onAction }) {
   }
 
   return (
-    <section className="rounded-lg border border-white/10 bg-[#171a1f]/90 p-4 shadow-panel backdrop-blur">
+    <section className="rounded-lg border border-white/10 bg-[#171a1f]/90 p-3 shadow-panel backdrop-blur sm:p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
           <p className="font-mono text-xs uppercase text-amber-200">
@@ -33,7 +33,7 @@ export default function ActionButtons({ gameState, loading, onAction }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
         {actions.map((action) => (
           <button
             key={action.command}

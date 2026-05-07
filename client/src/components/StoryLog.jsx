@@ -25,7 +25,7 @@ function StoryLine({ line }) {
   );
 }
 
-export default function StoryLog({ storyLines, stateLog }) {
+export default function StoryLog({ storyLines, stateLog, className = "" }) {
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -35,7 +35,9 @@ export default function StoryLog({ storyLines, stateLog }) {
   }, [storyLines, stateLog]);
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col">
+    <section
+      className={`flex min-h-0 flex-col rounded-lg border border-white/10 bg-[#171a1f]/90 shadow-panel backdrop-blur ${className}`}
+    >
       <div className="border-b border-white/10 px-4 py-4 sm:px-5">
         <p className="font-mono text-xs uppercase text-teal-200">
           Story
