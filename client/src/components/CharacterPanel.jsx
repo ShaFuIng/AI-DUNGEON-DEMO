@@ -3,22 +3,25 @@ function ResourceBar({ label, value = 0, max = 1, tone }) {
   const toneClass = tone === "hp" ? "bg-red-400" : "bg-sky-300";
 
   return (
-    <div>
-      <div className="mb-2 flex items-center justify-between text-sm">
-        <span className="font-semibold text-stone-200">{label}</span>
-        <span className="font-mono text-stone-400">
-          {value}/{max}
-        </span>
-      </div>
-      <div className="h-3 overflow-hidden rounded-full bg-black/40 ring-1 ring-white/10">
+    <div className="flex items-center gap-3">
+      <span className="w-8 shrink-0 text-sm font-bold text-stone-200">
+        {label}
+      </span>
+
+      <div className="relative h-7 flex-1 overflow-hidden rounded-full bg-black/40 ring-1 ring-white/10">
         <div
           className={`h-full rounded-full ${toneClass} transition-all`}
           style={{ width: `${percent}%` }}
         />
+
+        <span className="absolute inset-0 flex items-center justify-center font-mono text-xs font-semibold text-white drop-shadow">
+          {value}/{max}
+        </span>
       </div>
     </div>
   );
 }
+
 
 function StatCard({ label, value }) {
   return (
@@ -80,25 +83,26 @@ export default function CharacterPanel({ player, flags, loading, onAction }) {
   const canRunAction = typeof onAction === "function";
 
   return (
-    <aside className="rounded-lg border border-white/10 bg-[#171a1f]/90 p-4 shadow-panel backdrop-blur sm:p-5">
+    <aside className="h-[550px] overflow-y-auto rounded-lg border border-white/10 bg-[#171a1f]/90 p-4 shadow-panel backdrop-blur sm:p-5">
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="font-mono text-xs uppercase text-amber-200">Character</p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">探索者</h2>
-          <p className="mt-1 text-sm text-stone-400">人類 / 冒險者</p>
+        <div className="flex min-w-0 items-baseline gap-3">
+          <h2 className="shrink-0 text-2xl font-semibold text-white">探索者</h2>
+          <p className="shrink-0 text-2xl font-semibold text-stone-300">人類</p>
+          <p className="shrink-0 text-2xl font-semibold text-stone-300">冒險者</p>  
         </div>
         <span className="rounded-full border border-amber-200/30 bg-amber-300/10 px-3 py-1 font-mono text-xs font-semibold text-amber-100">
           Lv. {level}
         </span>
       </div>
 
-      <div className="mt-5 grid grid-cols-[minmax(0,1fr)_118px] gap-4">
-        <div className="relative min-h-48 overflow-hidden rounded-xl border border-amber-200/25 bg-[radial-gradient(circle_at_50%_18%,rgba(245,158,11,0.28),transparent_34%),linear-gradient(160deg,rgba(245,158,11,0.14),rgba(20,184,166,0.18))] p-4">
-          <div className="absolute inset-x-6 bottom-0 h-36 rounded-t-full border border-white/10 bg-black/25" />
-          <div className="absolute inset-x-10 bottom-8 h-20 rounded-t-full bg-amber-100/10 blur-sm" />
-          <div className="relative z-10 flex h-full min-h-40 flex-col items-center justify-center text-center">
+      <div className="mt-4 grid grid-cols-[minmax(0,1fr)_118px] gap-4">
+        <div className="relative min-h-36 overflow-hidden rounded-xl border border-amber-200/25 bg-[radial-gradient(circle_at_50%_18%,rgba(245,158,11,0.28),transparent_34%),linear-gradient(160deg,rgba(245,158,11,0.14),rgba(20,184,166,0.18))] p-4">
+          <div className="absolute inset-x-6 bottom-0 h-28 rounded-t-full border border-white/10 bg-black/25" />
+          <div className="absolute inset-x-10 bottom-6 h-16 rounded-t-full bg-amber-100/10 blur-sm" />
+
+          <div className="relative z-10 flex h-full min-h-36 flex-col items-center justify-center text-center">
             <span className="text-5xl font-black tracking-tight text-white/90">AD</span>
-            <span className="mt-3 font-mono text-[11px] uppercase tracking-[0.24em] text-amber-100/70">
+            <span className="mt-2 font-mono text-[11px] uppercase tracking-[0.24em] text-amber-100/70">
               Adventurer
             </span>
           </div>
