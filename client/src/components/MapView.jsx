@@ -36,7 +36,7 @@ function RoomNameWithTooltip({ name, description, align = "center", className = 
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <span className="max-w-full cursor-help truncate border-b border-dashed border-white/25 pb-0.5">
+      <span className="max-w-full cursor-pointer truncate border-b border-dashed border-white/25 pb-0.5">
         {name || "未知房間"}
       </span>
 
@@ -145,9 +145,6 @@ export default function MapView({ currentRoom, player, roomsById, loading, onMov
           </span>
           <span className="mt-3 font-mono text-xs uppercase text-teal-100/60">
             {player?.currentRoomId || currentRoom?.id || "unknown"}
-          </span>
-          <span className="mt-2 text-xs text-stone-400">
-            停留在房名上可查看描述
           </span>
         </div>
       </div>
