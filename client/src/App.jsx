@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import ActionTabsPanel from "./components/ActionTabsPanel.jsx";
 import CharacterPanel from "./components/CharacterPanel.jsx";
 import CommandBar from "./components/CommandBar.jsx";
-import InventoryPanel from "./components/InventoryPanel.jsx";
 import MapView from "./components/MapView.jsx";
 import StoryLog from "./components/StoryLog.jsx";
 
@@ -154,13 +154,12 @@ export default function App() {
           </div>
 
           <div className="flex min-h-0 flex-col gap-4">
-            <CharacterPanel
-              player={gameState?.player}
-              flags={gameState?.flags}
+            <CharacterPanel player={gameState?.player} flags={gameState?.flags} />
+            <ActionTabsPanel
+              inventory={gameState?.player?.inventory || []}
               loading={loading}
               onAction={sendCommand}
             />
-            <InventoryPanel inventory={gameState?.player?.inventory || []} />
           </div>
         </section>
       </div>
