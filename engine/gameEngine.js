@@ -30,6 +30,10 @@ function createInitialGameState() {
       mp: 10,
       maxMp: 10,
       attack: 6,
+      defense: 2,
+      level: 1,
+      exp: 0,
+      nextExp: 100,
       inventory: [],
       currentRoom: initialRoomId,
       visitedRooms: [initialRoomId],
@@ -78,6 +82,10 @@ function getPublicGameState(gameState) {
       mp: gameState.player.mp,
       maxMp: gameState.player.maxMp,
       attack: gameState.player.attack,
+      defense: gameState.player.defense,
+      level: gameState.player.level,
+      exp: gameState.player.exp,
+      nextExp: gameState.player.nextExp,
       inventory: gameState.player.inventory.map((itemId) => {
         return gameData.items[itemId].name;
       }),
@@ -273,7 +281,7 @@ function handleStatus(gameState) {
 
   return createEventResult(
     "status",
-    `角色狀態：HP ${gameState.player.hp}/${gameState.player.maxHp}，MP ${gameState.player.mp}/${gameState.player.maxMp}，攻擊力 ${gameState.player.attack}，目前位置：${room.name}，背包：${inventoryNames}`
+    `角色狀態：Lv. ${gameState.player.level}，EXP ${gameState.player.exp}/${gameState.player.nextExp}，HP ${gameState.player.hp}/${gameState.player.maxHp}，MP ${gameState.player.mp}/${gameState.player.maxMp}，攻擊力 ${gameState.player.attack}，防禦力 ${gameState.player.defense}，目前位置：${room.name}，背包：${inventoryNames}`
   );
 }
 

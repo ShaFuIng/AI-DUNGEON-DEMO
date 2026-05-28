@@ -34,8 +34,10 @@ function StatCard({ label, value }) {
 }
 
 export default function CharacterPanel({ player, flags }) {
-  const level = 1;
-  const speed = 8;
+  const level = player?.level ?? 1;
+  const defense = player?.defense ?? 2;
+  const exp = player?.exp ?? 0;
+  const nextExp = player?.nextExp ?? 100;
 
   return (
     <aside className="h-[550px] overflow-hidden rounded-lg border border-white/10 bg-[#171a1f]/90 p-4 shadow-panel backdrop-blur sm:p-5">
@@ -65,8 +67,8 @@ export default function CharacterPanel({ player, flags }) {
 
         <div className="grid gap-3">
           <StatCard label="ATK" value={player?.attack ?? "-"} />
-          <StatCard label="SPD" value={speed} />
-          <StatCard label="Room" value={player?.currentRoom || "-"} />
+          <StatCard label="DEF" value={defense} />
+          <StatCard label="EXP" value={`${exp}/${nextExp}`} />
         </div>
       </div>
 
