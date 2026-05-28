@@ -1,6 +1,18 @@
-function ResourceBar({ label, value = 0, max = 1, tone }) {
+const EQUIPMENT = [
+  { slot: "武器", name: "Rusty Blade", icon: "†" },
+  { slot: "防具", name: "Empty", icon: "▣" },
+  { slot: "飾品", name: "Empty", icon: "◇" },
+  { slot: "飾品", name: "Empty", icon: "◇" },
+];
+
+function ResourceBar({ label, value = 0, max = 1, tone = "mp", slim = false }) {
   const percent = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
-  const toneClass = tone === "hp" ? "bg-red-400" : "bg-sky-300";
+  const toneClass =
+    {
+      hp: "bg-red-400",
+      mp: "bg-sky-300",
+      exp: "bg-emerald-300/70",
+    }[tone] || "bg-sky-300";
 
   return (
     <div className="flex items-center gap-3">
@@ -8,13 +20,21 @@ function ResourceBar({ label, value = 0, max = 1, tone }) {
         {label}
       </span>
 
-      <div className="relative h-7 flex-1 overflow-hidden rounded-full bg-black/40 ring-1 ring-white/10">
+      <div
+        className={`relative flex-1 overflow-hidden rounded-full bg-black/40 ring-1 ring-white/10 ${
+          slim ? "h-4" : "h-7"
+        }`}
+      >
         <div
           className={`h-full rounded-full ${toneClass} transition-all`}
           style={{ width: `${percent}%` }}
         />
 
-        <span className="absolute inset-0 flex items-center justify-center font-mono text-xs font-semibold text-white drop-shadow">
+        <span
+          className={`absolute inset-0 flex items-center justify-center font-mono font-semibold text-white drop-shadow ${
+            slim ? "text-[10px]" : "text-xs"
+          }`}
+        >
           {value}/{max}
         </span>
       </div>
@@ -22,13 +42,45 @@ function ResourceBar({ label, value = 0, max = 1, tone }) {
   );
 }
 
-function StatCard({ label, value }) {
+function StatCard({ label, value, muted = false }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-black/20 p-3">
+    <div
+      className={`rounded-lg border border-white/10 bg-black/20 p-3 text-center ${
+        muted ? "opacity-55" : ""
+      }`}
+    >
       <p className="font-mono text-[11px] uppercase tracking-wide text-stone-500">
         {label}
       </p>
-      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
+      <p
+        className={`mt-2 text-2xl font-semibold ${
+          muted ? "text-stone-500" : "text-white"
+        }`}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function EquipmentSlot({ equipment }) {
+  const isEmpty = equipment.name === "Empty";
+
+  return (
+    <div className="grid min-h-[58px] grid-cols-[42px_minmax(0,1fr)] items-center gap-3 rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+      <span className="grid h-9 w-9 place-items-center rounded-md border border-white/10 bg-white/[0.04] text-base text-amber-100/80">
+        {equipment.icon}
+      </span>
+      <div className="min-w-0">
+        <p className="text-xs font-semibold text-stone-400">{equipment.slot}</p>
+        <p
+          className={`truncate text-sm font-semibold ${
+            isEmpty ? "text-stone-500" : "text-white"
+          }`}
+        >
+          {equipment.name}
+        </p>
+      </div>
     </div>
   );
 }
@@ -40,7 +92,7 @@ export default function CharacterPanel({ player, flags }) {
   const nextExp = player?.nextExp ?? 100;
 
   return (
-    <aside className="h-[550px] overflow-hidden rounded-lg border border-white/10 bg-[#171a1f]/90 p-4 shadow-panel backdrop-blur sm:p-5">
+    <aside className="min-h-[650px] overflow-hidden rounded-lg border border-white/10 bg-[#171a1f]/90 p-4 shadow-panel backdrop-blur sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-baseline gap-3">
           <h2 className="shrink-0 text-2xl font-semibold text-white">探索者</h2>
@@ -52,23 +104,23 @@ export default function CharacterPanel({ player, flags }) {
         </span>
       </div>
 
-      <div className="mt-4 grid grid-cols-[minmax(0,1fr)_118px] gap-4">
-        <div className="relative min-h-36 overflow-hidden rounded-xl border border-amber-200/25 bg-[radial-gradient(circle_at_50%_18%,rgba(245,158,11,0.28),transparent_34%),linear-gradient(160deg,rgba(245,158,11,0.14),rgba(20,184,166,0.18))] p-4">
-          <div className="absolute inset-x-6 bottom-0 h-28 rounded-t-full border border-white/10 bg-black/25" />
-          <div className="absolute inset-x-10 bottom-6 h-16 rounded-t-full bg-amber-100/10 blur-sm" />
+      <div className="mt-4 grid grid-cols-[minmax(0,1fr)_150px] gap-4">
+        <div className="relative min-h-[260px] overflow-hidden rounded-xl border border-amber-200/25 bg-[radial-gradient(circle_at_50%_18%,rgba(245,158,11,0.28),transparent_34%),linear-gradient(160deg,rgba(245,158,11,0.14),rgba(20,184,166,0.18))] p-4">
+          <div className="absolute inset-x-8 bottom-0 h-44 rounded-t-full border border-white/10 bg-black/25" />
+          <div className="absolute inset-x-14 bottom-10 h-28 rounded-t-full bg-amber-100/10 blur-sm" />
 
-          <div className="relative z-10 flex h-full min-h-36 flex-col items-center justify-center text-center">
-            <span className="text-5xl font-black tracking-tight text-white/90">AD</span>
-            <span className="mt-2 font-mono text-[11px] uppercase tracking-[0.24em] text-amber-100/70">
+          <div className="relative z-10 flex h-full min-h-[260px] flex-col items-center justify-center text-center">
+            <span className="text-7xl font-black tracking-tight text-white/90">AD</span>
+            <span className="mt-3 font-mono text-[11px] uppercase tracking-[0.24em] text-amber-100/70">
               Adventurer
             </span>
           </div>
         </div>
 
-        <div className="grid gap-3">
-          <StatCard label="ATK" value={player?.attack ?? "-"} />
-          <StatCard label="DEF" value={defense} />
-          <StatCard label="EXP" value={`${exp}/${nextExp}`} />
+        <div className="grid content-start gap-3">
+          {EQUIPMENT.map((equipment) => (
+            <EquipmentSlot key={`${equipment.slot}-${equipment.name}`} equipment={equipment} />
+          ))}
         </div>
       </div>
 
@@ -85,6 +137,14 @@ export default function CharacterPanel({ player, flags }) {
           max={player?.maxMp ?? 1}
           tone="mp"
         />
+        <ResourceBar label="EXP" value={exp} max={nextExp} tone="exp" slim />
+      </div>
+
+      <div className="mt-5 grid grid-cols-4 gap-3">
+        <StatCard label="ATK" value={player?.attack ?? "-"} />
+        <StatCard label="DEF" value={defense} />
+        <StatCard label="SPD" value="--" muted />
+        <StatCard label="LCK" value="--" muted />
       </div>
 
       <div className="mt-5 flex flex-wrap gap-2">

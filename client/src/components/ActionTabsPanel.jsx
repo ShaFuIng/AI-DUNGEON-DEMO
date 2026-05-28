@@ -13,7 +13,6 @@ const BATTLE_SIDE_TABS = [
 
 const INVENTORY_SIDE_TABS = [
   { id: "items", label: "道具" },
-  { id: "equipment", label: "裝備" },
 ];
 
 const SKILLS = [
@@ -65,13 +64,6 @@ const QUICK_ACTIONS = [
   { label: "Help", command: "help", icon: "?" },
   { label: "Log", command: "log", icon: "☰" },
   { label: "Reset", command: "reset", icon: "↺", danger: true },
-];
-
-const EQUIPMENT = [
-  { slot: "武器", name: "Rusty Blade", icon: "🗡" },
-  { slot: "裝備", name: "Empty", icon: "▣" },
-  { slot: "首飾", name: "Empty", icon: "◇" },
-  { slot: "首飾", name: "Empty", icon: "◇" },
 ];
 
 const ITEM_META = {
@@ -305,47 +297,18 @@ function ItemDetail({ selectedItem, loading, onAction }) {
   );
 }
 
-function EquipmentList() {
-  return (
-    <div className="grid gap-2">
-      {EQUIPMENT.map((equipment) => (
-        <div
-          key={`${equipment.slot}-${equipment.name}`}
-          className="grid grid-cols-[64px_minmax(0,1fr)] items-center gap-3 rounded-lg border border-white/10 bg-black/20 px-3 py-2"
-        >
-          <span className="font-semibold text-stone-400">{equipment.slot}</span>
-          <div className="flex min-w-0 items-center gap-3 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2">
-            <span className="text-base">{equipment.icon}</span>
-            <span
-              className={`truncate text-sm font-semibold ${
-                equipment.name === "Empty" ? "text-stone-500" : "text-white"
-              }`}
-            >
-              {equipment.name}
-            </span>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function InventoryTab({ activeSideTab, setActiveSideTab, inventory, selectedItem, setSelectedItem, loading, onAction }) {
   return (
     <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_54px] gap-3">
       <div className="min-h-0 overflow-y-auto pr-1">
-        {activeSideTab === "items" ? (
-          <div className="space-y-4">
-            <ItemGrid
-              inventory={inventory}
-              selectedItem={selectedItem}
-              setSelectedItem={setSelectedItem}
-            />
-            <ItemDetail selectedItem={selectedItem} loading={loading} onAction={onAction} />
-          </div>
-        ) : (
-          <EquipmentList />
-        )}
+        <div className="space-y-4">
+          <ItemGrid
+            inventory={inventory}
+            selectedItem={selectedItem}
+            setSelectedItem={setSelectedItem}
+          />
+          <ItemDetail selectedItem={selectedItem} loading={loading} onAction={onAction} />
+        </div>
       </div>
 
       <div className="grid content-start gap-2">
