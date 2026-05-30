@@ -158,7 +158,7 @@ export default function App() {
           </div>
         ) : null}
 
-        <section className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_520px] 2xl:grid-cols-[minmax(0,1fr)_560px]">
+        <section className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_480px]">
           <div className="flex min-h-0 flex-col gap-4">
             <MapView
               currentRoom={gameState?.currentRoom}
@@ -173,8 +173,12 @@ export default function App() {
           </div>
 
           <div className="flex min-h-0 flex-col gap-4">
-            <div className="relative overflow-visible">
-              <CharacterPanel player={gameState?.player} flags={gameState?.flags} />
+            <div className="relative flex min-h-[760px] overflow-visible">
+              <CharacterPanel
+                player={gameState?.player}
+                flags={gameState?.flags}
+                className="w-full"
+              />
               <CharacterSideTabs
                 activeWindow={activeWindow}
                 onOpenWindow={setActiveWindow}
