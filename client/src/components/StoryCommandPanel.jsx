@@ -54,7 +54,7 @@ export default function StoryCommandPanel({
 
   return (
     <section
-      className={`flex min-h-0 flex-col overflow-hidden rounded-lg border border-white/20 bg-[#171a1f]/90 shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_18px_45px_rgba(0,0,0,0.45)] backdrop-blur ${className}`}
+      className={`flex min-h-0 flex-col overflow-hidden rounded-lg border border-slate-200/15 bg-[radial-gradient(circle_at_12%_10%,rgba(45,212,191,0.08),transparent_30%),linear-gradient(145deg,rgba(25,28,34,0.96),rgba(14,15,19,0.97))] shadow-[0_0_0_1px_rgba(255,255,255,0.035),0_18px_45px_rgba(0,0,0,0.45)] backdrop-blur ${className}`}
     >
       <header className="shrink-0 border-b border-white/10 px-4 py-3 sm:px-5">
         <div className="flex items-baseline gap-3">

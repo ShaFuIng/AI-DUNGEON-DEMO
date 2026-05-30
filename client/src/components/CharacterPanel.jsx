@@ -64,7 +64,7 @@ export default function CharacterPanel({ player, flags, className = "" }) {
 
   return (
     <aside
-      className={`flex h-full min-h-[760px] flex-col overflow-hidden rounded-lg border border-white/20 bg-[#171a1f]/90 p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_18px_45px_rgba(0,0,0,0.45)] backdrop-blur sm:p-5 ${className}`}
+      className={`flex h-full min-h-[760px] flex-col overflow-hidden rounded-lg border border-white/15 bg-[radial-gradient(circle_at_50%_0%,rgba(245,158,11,0.10),transparent_34%),radial-gradient(circle_at_100%_30%,rgba(20,184,166,0.08),transparent_36%),linear-gradient(160deg,rgba(27,30,36,0.96),rgba(14,16,20,0.98))] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.035),0_18px_45px_rgba(0,0,0,0.48)] backdrop-blur sm:p-5 ${className}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-baseline gap-3">
