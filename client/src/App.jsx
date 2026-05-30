@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import CharacterPanel from "./components/CharacterPanel.jsx";
 import CharacterSideTabs from "./components/CharacterSideTabs.jsx";
-import CommandBar from "./components/CommandBar.jsx";
 import FloatingGameWindow from "./components/FloatingGameWindow.jsx";
 import MapView from "./components/MapView.jsx";
 import QuickActionsModal from "./components/QuickActionsModal.jsx";
-import StoryLog from "./components/StoryLog.jsx";
+import StoryCommandPanel from "./components/StoryCommandPanel.jsx";
 import EquipmentWindowContent from "./components/windowContents/EquipmentWindowContent.jsx";
 import InventoryWindowContent from "./components/windowContents/InventoryWindowContent.jsx";
 import SkillsWindowContent from "./components/windowContents/SkillsWindowContent.jsx";
@@ -168,8 +167,12 @@ export default function App() {
               loading={loading}
               onMove={sendCommand}
             />
-            <StoryLog storyLines={storyLines} className="h-[300px] lg:h-[340px]" />
-            <CommandBar loading={loading} onSubmit={sendCommand} />
+            <StoryCommandPanel
+              storyLines={storyLines}
+              loading={loading}
+              onSubmit={sendCommand}
+              className="h-[420px]"
+            />
           </div>
 
           <div className="flex min-h-0 flex-col gap-4">
