@@ -93,32 +93,20 @@ export default function MapView({ currentRoom, player, roomsById, logs = [], loa
   const exitDirections = Object.keys(exits);
 
   return (
-    <section className="relative overflow-visible rounded-lg border border-white/10 bg-[#191714]/90 p-4 shadow-panel backdrop-blur sm:p-5">
+    <section className="relative overflow-visible rounded-lg border border-white/10 bg-[#191714]/90 p-4 shadow-panel backdrop-blur">
       <MissionLogOverlay logs={logs} />
 
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <p className="font-mono text-base leading-none uppercase text-teal-200">Map</p>
-          <h2 className="mt-2 max-w-full text-2xl font-semibold text-white">
-            <RoomNameWithTooltip
-              name={currentRoom?.name || "載入中"}
-              description={currentRoom?.description}
-              align="left"
-            />
-          </h2>
-        </div>
-
-        {currentRoom?.monster ? (
-          <div className="shrink-0 rounded-lg border border-red-300/30 bg-red-950/40 px-4 py-3 text-sm text-red-100">
-            <div className="font-semibold">{currentRoom.monster.name}</div>
-            <div className="mt-1 font-mono text-xs">
-              HP {currentRoom.monster.hp}/{currentRoom.monster.maxHp}
-            </div>
-          </div>
-        ) : null}
+      <div className="pointer-events-auto absolute left-4 top-4 z-10">
+        <h2 className="max-w-full text-2xl font-semibold text-white">
+          <RoomNameWithTooltip
+            name={currentRoom?.name || "載入中"}
+            description={currentRoom?.description}
+            align="left"
+          />
+        </h2>
       </div>
 
-      <div className="mx-auto grid h-[480px] w-full max-w-[640px] grid-cols-3 grid-rows-3 gap-3">
+      <div className="mx-auto grid h-[360px] w-full max-w-[480px] grid-cols-3 grid-rows-3 gap-3">
         {DIRECTIONS.map((direction) => {
           const exitRoomId = exits[direction.id];
           return (
