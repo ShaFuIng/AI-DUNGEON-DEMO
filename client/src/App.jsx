@@ -1,9 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import ActionTabsPanel from "./components/ActionTabsPanel.jsx";
 import CharacterPanel from "./components/CharacterPanel.jsx";
+import CharacterSideTabs from "./components/CharacterSideTabs.jsx";
 import CommandBar from "./components/CommandBar.jsx";
+import FloatingGameWindow from "./components/FloatingGameWindow.jsx";
 import MapView from "./components/MapView.jsx";
+import QuickActionsModal from "./components/QuickActionsModal.jsx";
 import StoryLog from "./components/StoryLog.jsx";
+import EquipmentWindowContent from "./components/windowContents/EquipmentWindowContent.jsx";
+import InventoryWindowContent from "./components/windowContents/InventoryWindowContent.jsx";
+import SkillsWindowContent from "./components/windowContents/SkillsWindowContent.jsx";
 
 function createStoryLine(type, text) {
   return {
@@ -19,6 +24,8 @@ export default function App() {
   const [storyLines, setStoryLines] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [activeWindow, setActiveWindow] = useState(null);
+  const [quickActionsOpen, setQuickActionsOpen] = useState(false);
 
   const roomsById = useMemo(() => gameData?.rooms || {}, [gameData]);
 
@@ -109,6 +116,18 @@ export default function App() {
     loadGameState();
   }, [loadGameState]);
 
+  useEffect(() => {
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setQuickActionsOpen((open) => !open);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   return (
     <main className="min-h-screen bg-[#15120f] text-stone-100">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_20%_10%,rgba(245,158,11,0.22),transparent_32%),radial-gradient(circle_at_84%_20%,rgba(20,184,166,0.18),transparent_30%),linear-gradient(135deg,#18130f_0%,#202129_46%,#0e1512_100%)]" />
@@ -154,15 +173,60 @@ export default function App() {
           </div>
 
           <div className="flex min-h-0 flex-col gap-4">
-            <CharacterPanel player={gameState?.player} flags={gameState?.flags} />
-            <ActionTabsPanel
-              inventory={gameState?.player?.inventory || []}
-              loading={loading}
-              onAction={sendCommand}
-            />
+            <div className="relative overflow-visible">
+              <CharacterPanel player={gameState?.player} flags={gameState?.flags} />
+              <CharacterSideTabs
+                activeWindow={activeWindow}
+                onOpenWindow={setActiveWindow}
+              />
+            </div>
           </div>
         </section>
       </div>
+
+      {activeWindow === "equipment" ? (
+        <FloatingGameWindow
+          title="裝備"
+          onClose={() => setActiveWindow(null)}
+          defaultPosition={{ x: 980, y: 120 }}
+          defaultSize={{ width: 420, height: 420 }}
+        >
+          <EquipmentWindowContent />
+        </FloatingGameWindow>
+      ) : null}
+
+      {activeWindow === "inventory" ? (
+        <FloatingGameWindow
+          title="背包"
+          onClose={() => setActiveWindow(null)}
+          defaultPosition={{ x: 960, y: 140 }}
+          defaultSize={{ width: 460, height: 560 }}
+        >
+          <InventoryWindowContent
+            inventory={gameState?.player?.inventory || []}
+            loading={loading}
+            onAction={sendCommand}
+          />
+        </FloatingGameWindow>
+      ) : null}
+
+      {activeWindow === "skills" ? (
+        <FloatingGameWindow
+          title="技能"
+          onClose={() => setActiveWindow(null)}
+          defaultPosition={{ x: 940, y: 160 }}
+          defaultSize={{ width: 480, height: 560 }}
+        >
+          <SkillsWindowContent loading={loading} onAction={sendCommand} />
+        </FloatingGameWindow>
+      ) : null}
+
+      <QuickActionsModal
+        open={quickActionsOpen}
+        loading={loading}
+        onAction={sendCommand}
+        onClose={() => setQuickActionsOpen(false)}
+      />
     </main>
   );
 }
