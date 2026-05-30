@@ -54,7 +54,7 @@ export default function StoryCommandPanel({
 
   return (
     <section
-      className={`flex min-h-0 flex-col overflow-hidden rounded-lg border border-white/10 bg-[#171a1f]/90 shadow-panel backdrop-blur ${className}`}
+      className={`flex min-h-0 flex-col overflow-hidden rounded-lg border border-white/20 bg-[#171a1f]/90 shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_18px_45px_rgba(0,0,0,0.45)] backdrop-blur ${className}`}
     >
       <header className="shrink-0 border-b border-white/10 px-4 py-3 sm:px-5">
         <div className="flex items-baseline gap-3">

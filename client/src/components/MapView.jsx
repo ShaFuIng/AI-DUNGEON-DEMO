@@ -93,7 +93,7 @@ export default function MapView({ currentRoom, player, roomsById, logs = [], loa
   const exitDirections = Object.keys(exits);
 
   return (
-    <section className="relative overflow-visible rounded-lg border border-white/10 bg-[#191714]/90 p-4 shadow-panel backdrop-blur">
+    <section className="relative overflow-visible rounded-lg border border-white/20 bg-[#171a1f]/90 p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.04),0_18px_45px_rgba(0,0,0,0.45)] backdrop-blur">
       <MissionLogOverlay logs={logs} />
 
       <div className="pointer-events-auto absolute left-4 top-4 z-10">
