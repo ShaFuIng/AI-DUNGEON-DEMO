@@ -4,6 +4,7 @@
 - `Game Engine`（規則與 state）
 - `Narrator Agent`（Runtime 敘事）
 - `Content Designer Agent`（Development-time 內容草案流程）
+- `React UI`（Map / Character / StoryCommand / Floating Window 前端介面）
 
 ## 啟動遊戲
 ```bash
@@ -93,6 +94,12 @@ npm start
 - 文件：`docs/CONTENT_DESIGNER_RUNTIME_MERGE_STRATEGY.md`
 - 目前推薦先建立 experimental gameData，不直接覆蓋 `data/gameData.js`
 
+## React UI 版面重構進度
+- 文件：`docs/UI_LAYOUT_PROGRESS.md`
+- 目前 UI 主版面已暫停在 Map / Character / StoryCommand / Floating Window 架構。
+- 下一輪優先處理字體大小、容器邊框明顯度、浮動視窗拖曳問題。
+- 此階段不新增 BattleView、不修改 game engine、不改戰鬥流程。
+
 ## .env.example 用途
 請依 `.env.example` 建立本機 `.env`：
 ```env
@@ -120,4 +127,5 @@ GEMINI_MODEL=gemini-2.5-flash-lite
 - `docs/CONTENT_DESIGNER_HUMAN_REVIEW_CHECKLIST.md`
 - `docs/CONTENT_DESIGNER_PATCH_SUGGESTION.md`
 - `docs/CONTENT_DESIGNER_RUNTIME_MERGE_STRATEGY.md`
+- `docs/UI_LAYOUT_PROGRESS.md`
 - `outputs/generatedArea.humanReview.md`
