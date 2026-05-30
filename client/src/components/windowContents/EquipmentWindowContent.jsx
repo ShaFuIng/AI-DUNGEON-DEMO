@@ -8,12 +8,12 @@ const EQUIPMENT = [
 export default function EquipmentWindowContent() {
   return (
     <div className="grid gap-3">
-      {EQUIPMENT.map((equipment) => {
+      {EQUIPMENT.map((equipment, index) => {
         const isEmpty = equipment.name === "Empty";
 
         return (
           <div
-            key={`${equipment.slot}-${equipment.name}`}
+            key={`${equipment.slot}-${equipment.name}-${index}`}
             className="grid grid-cols-[64px_minmax(0,1fr)] items-center gap-3 rounded-lg border border-white/10 bg-black/20 px-3 py-3"
           >
             <span className="grid h-12 w-12 place-items-center rounded-md border border-white/10 bg-white/[0.04] text-lg text-amber-100/80">

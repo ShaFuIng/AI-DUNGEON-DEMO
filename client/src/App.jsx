@@ -23,7 +23,11 @@ export default function App() {
   const [storyLines, setStoryLines] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [activeWindow, setActiveWindow] = useState(null);
+  const [openWindows, setOpenWindows] = useState({
+    equipment: false,
+    inventory: false,
+    skills: false,
+  });
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
 
   const roomsById = useMemo(() => gameData?.rooms || {}, [gameData]);
@@ -111,6 +115,20 @@ export default function App() {
     }
   }, []);
 
+  function openWindow(windowType) {
+    setOpenWindows((windows) => ({
+      ...windows,
+      [windowType]: true,
+    }));
+  }
+
+  function closeWindow(windowType) {
+    setOpenWindows((windows) => ({
+      ...windows,
+      [windowType]: false,
+    }));
+  }
+
   useEffect(() => {
     loadGameState();
   }, [loadGameState]);
@@ -157,7 +175,7 @@ export default function App() {
           </div>
         ) : null}
 
-        <section className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_480px]">
+        <section className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
           <div className="flex min-h-0 flex-col gap-4">
             <MapView
               currentRoom={gameState?.currentRoom}
@@ -183,18 +201,18 @@ export default function App() {
                 className="w-full"
               />
               <CharacterSideTabs
-                activeWindow={activeWindow}
-                onOpenWindow={setActiveWindow}
+                openWindows={openWindows}
+                onOpenWindow={openWindow}
               />
             </div>
           </div>
         </section>
       </div>
 
-      {activeWindow === "equipment" ? (
+      {openWindows.equipment ? (
         <FloatingGameWindow
           title="裝備"
-          onClose={() => setActiveWindow(null)}
+          onClose={() => closeWindow("equipment")}
           defaultPosition={{ x: 980, y: 120 }}
           defaultSize={{ width: 420, height: 420 }}
         >
@@ -202,10 +220,10 @@ export default function App() {
         </FloatingGameWindow>
       ) : null}
 
-      {activeWindow === "inventory" ? (
+      {openWindows.inventory ? (
         <FloatingGameWindow
           title="背包"
-          onClose={() => setActiveWindow(null)}
+          onClose={() => closeWindow("inventory")}
           defaultPosition={{ x: 960, y: 140 }}
           defaultSize={{ width: 460, height: 560 }}
         >
@@ -217,10 +235,10 @@ export default function App() {
         </FloatingGameWindow>
       ) : null}
 
-      {activeWindow === "skills" ? (
+      {openWindows.skills ? (
         <FloatingGameWindow
           title="技能"
-          onClose={() => setActiveWindow(null)}
+          onClose={() => closeWindow("skills")}
           defaultPosition={{ x: 940, y: 160 }}
           defaultSize={{ width: 480, height: 560 }}
         >
