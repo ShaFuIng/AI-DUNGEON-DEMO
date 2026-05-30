@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import BattleView from "./components/BattleView.jsx";
 import CharacterPanel from "./components/CharacterPanel.jsx";
 import CharacterSideTabs from "./components/CharacterSideTabs.jsx";
@@ -33,6 +33,11 @@ export default function App() {
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
   const [battleMode, setBattleMode] = useState(false);
   const [encounterOpen, setEncounterOpen] = useState(false);
+  const [activeEnemy, setActiveEnemy] = useState(null);
+  const [battleLog, setBattleLog] = useState([]);
+  const [battleTurn, setBattleTurn] = useState(1);
+  const [battleEnding, setBattleEnding] = useState(false);
+  const battleEndTimerRef = useRef(null);
 
   const roomsById = useMemo(() => gameData?.rooms || {}, [gameData]);
   const mockEnemy = useMemo(
@@ -46,6 +51,13 @@ export default function App() {
     }),
     [],
   );
+
+  function createBattleEnemy() {
+    return {
+      ...mockEnemy,
+      hp: mockEnemy.maxHp,
+    };
+  }
 
   const loadGameState = useCallback(async () => {
     setLoading(true);
@@ -86,6 +98,16 @@ export default function App() {
       setStoryLines((lines) => [
         ...lines,
         createStoryLine("system", "請輸入指令。"),
+      ]);
+      return;
+    }
+
+    if (normalizedCommand === "encounter") {
+      setEncounterOpen(true);
+      setStoryLines((lines) => [
+        ...lines,
+        createStoryLine("command", normalizedCommand),
+        createStoryLine("system", "你感受到某種敵意正在逼近。"),
       ]);
       return;
     }
@@ -144,12 +166,17 @@ export default function App() {
     }));
   }
 
-  function openEncounterModal() {
-    setEncounterOpen(true);
-  }
-
   function confirmEncounter() {
+    const enemy = createBattleEnemy();
+
     setEncounterOpen(false);
+    setActiveEnemy(enemy);
+    setBattleTurn(1);
+    setBattleEnding(false);
+    setBattleLog([
+      `${enemy.name} 擋住了你的去路。`,
+      "戰鬥開始，請選擇你的行動。",
+    ]);
     setBattleMode(true);
   }
 
@@ -159,11 +186,109 @@ export default function App() {
 
   function exitBattle() {
     setBattleMode(false);
+    setActiveEnemy(null);
+    setBattleLog([]);
+    setBattleTurn(1);
+    setBattleEnding(false);
+    if (battleEndTimerRef.current) {
+      window.clearTimeout(battleEndTimerRef.current);
+      battleEndTimerRef.current = null;
+    }
+  }
+
+  function finishBattleWithVictory() {
+    setBattleEnding(true);
+
+    if (battleEndTimerRef.current) {
+      window.clearTimeout(battleEndTimerRef.current);
+    }
+
+    battleEndTimerRef.current = window.setTimeout(() => {
+      setBattleMode(false);
+      setActiveEnemy(null);
+      setBattleLog([]);
+      setBattleEnding(false);
+      setBattleTurn(1);
+      battleEndTimerRef.current = null;
+
+      setStoryLines((lines) => [
+        ...lines,
+        createStoryLine("system", "戰鬥勝利，你回到探索狀態。"),
+      ]);
+    }, 1200);
+  }
+
+  function handleBattleAction(action) {
+    if (!activeEnemy || battleEnding) return;
+
+    const actionConfig = {
+      attack: {
+        damage: 6,
+        message: "你揮出武器，擊中了敵人。",
+      },
+      "skill fireball": {
+        damage: 10,
+        message: "你施放火球，火焰吞沒了敵人的核心。",
+      },
+      guard: {
+        damage: 0,
+        message: "你舉起防禦姿態，觀察敵人的動作。",
+      },
+      item: {
+        damage: 0,
+        message: "你檢查背包，但目前沒有可用的戰鬥道具。",
+      },
+    };
+
+    const config = actionConfig[action] || actionConfig.attack;
+    const nextHp = Math.max(0, activeEnemy.hp - config.damage);
+
+    setActiveEnemy((enemy) =>
+      enemy
+        ? {
+            ...enemy,
+            hp: nextHp,
+          }
+        : enemy,
+    );
+
+    setBattleLog((logs) => {
+      const nextLogs = [
+        ...logs,
+        config.damage > 0
+          ? `${config.message} ${activeEnemy.name} 受到 ${config.damage} 點傷害。`
+          : config.message,
+      ];
+
+      if (nextHp <= 0) {
+        nextLogs.push(`${activeEnemy.name} 倒下了。`);
+        nextLogs.push("戰鬥結束，你回到探索狀態。");
+      } else {
+        nextLogs.push(`${activeEnemy.name} 正在重新調整姿態。`);
+      }
+
+      return nextLogs.slice(-5);
+    });
+
+    if (nextHp <= 0) {
+      finishBattleWithVictory();
+      return;
+    }
+
+    setBattleTurn((turn) => turn + 1);
   }
 
   useEffect(() => {
     loadGameState();
   }, [loadGameState]);
+
+  useEffect(() => {
+    return () => {
+      if (battleEndTimerRef.current) {
+        window.clearTimeout(battleEndTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     function handleKeyDown(event) {
@@ -212,13 +337,12 @@ export default function App() {
             {battleMode ? (
               <BattleView
                 player={gameState?.player}
-                enemy={mockEnemy}
-                battleLog={[
-                  "遺跡守衛擋住了你的去路。",
-                  "戰鬥開始，請選擇你的行動。",
-                ]}
-                loading={loading}
-                onAction={sendCommand}
+                enemy={activeEnemy || mockEnemy}
+                battleLog={battleLog}
+                loading={loading || battleEnding}
+                turn={battleTurn}
+                battleEnding={battleEnding}
+                onAction={handleBattleAction}
                 onExitBattle={exitBattle}
               />
             ) : (
@@ -231,15 +355,6 @@ export default function App() {
                 onMove={sendCommand}
               />
             )}
-            {!battleMode ? (
-              <button
-                type="button"
-                onClick={openEncounterModal}
-                className="self-start rounded-lg border border-red-200/30 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-100 transition hover:bg-red-400/20"
-              >
-                測試遭遇敵人
-              </button>
-            ) : null}
             <StoryCommandPanel
               storyLines={storyLines}
               loading={loading}

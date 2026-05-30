@@ -72,6 +72,8 @@ export default function BattleView({
   enemy,
   battleLog = [],
   loading,
+  turn = 1,
+  battleEnding = false,
   onAction,
   onExitBattle,
 }) {
@@ -97,10 +99,10 @@ export default function BattleView({
         </div>
         <div className="flex flex-wrap gap-2 text-xs font-medium text-stone-300">
           <span className="rounded-full border border-red-200/25 bg-red-400/10 px-3 py-1">
-            Turn 1
+            Turn {turn}
           </span>
           <span className="rounded-full border border-amber-200/25 bg-amber-300/10 px-3 py-1">
-            Player Turn
+            {battleEnding ? "Victory" : "Player Turn"}
           </span>
         </div>
       </header>
@@ -155,7 +157,7 @@ export default function BattleView({
             <button
               key={action.id}
               type="button"
-              disabled={loading}
+              disabled={loading || battleEnding}
               onClick={() => onAction?.(action.command)}
               className="rounded-lg border border-amber-200/25 bg-amber-300/10 px-3 py-2 text-sm font-semibold text-amber-50 transition hover:bg-amber-300/20 disabled:cursor-wait disabled:opacity-60"
             >
@@ -164,7 +166,7 @@ export default function BattleView({
           ))}
           <button
             type="button"
-            disabled={loading}
+            disabled={loading || battleEnding}
             onClick={onExitBattle}
             className="rounded-lg border border-red-200/30 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-100 transition hover:bg-red-400/20 disabled:cursor-wait disabled:opacity-60"
           >
