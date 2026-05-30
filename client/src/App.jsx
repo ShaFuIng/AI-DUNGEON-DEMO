@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import BattleView from "./components/BattleView.jsx";
 import CharacterPanel from "./components/CharacterPanel.jsx";
 import CharacterSideTabs from "./components/CharacterSideTabs.jsx";
+import EncounterModal from "./components/EncounterModal.jsx";
 import FloatingGameWindow from "./components/FloatingGameWindow.jsx";
 import MapView from "./components/MapView.jsx";
 import QuickActionsModal from "./components/QuickActionsModal.jsx";
@@ -29,8 +31,21 @@ export default function App() {
     skills: false,
   });
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
+  const [battleMode, setBattleMode] = useState(false);
+  const [encounterOpen, setEncounterOpen] = useState(false);
 
   const roomsById = useMemo(() => gameData?.rooms || {}, [gameData]);
+  const mockEnemy = useMemo(
+    () => ({
+      name: "遺跡守衛",
+      level: 1,
+      hp: 18,
+      maxHp: 18,
+      intent: "蓄力攻擊",
+      description: "覆滿銅鏽的古代守衛，胸口的核心散發微弱紅光。",
+    }),
+    [],
+  );
 
   const loadGameState = useCallback(async () => {
     setLoading(true);
@@ -129,6 +144,23 @@ export default function App() {
     }));
   }
 
+  function openEncounterModal() {
+    setEncounterOpen(true);
+  }
+
+  function confirmEncounter() {
+    setEncounterOpen(false);
+    setBattleMode(true);
+  }
+
+  function cancelEncounter() {
+    setEncounterOpen(false);
+  }
+
+  function exitBattle() {
+    setBattleMode(false);
+  }
+
   useEffect(() => {
     loadGameState();
   }, [loadGameState]);
@@ -177,14 +209,37 @@ export default function App() {
 
         <section className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
           <div className="flex min-h-0 flex-col gap-4">
-            <MapView
-              currentRoom={gameState?.currentRoom}
-              player={gameState?.player}
-              roomsById={roomsById}
-              logs={gameState?.log || []}
-              loading={loading}
-              onMove={sendCommand}
-            />
+            {battleMode ? (
+              <BattleView
+                player={gameState?.player}
+                enemy={mockEnemy}
+                battleLog={[
+                  "遺跡守衛擋住了你的去路。",
+                  "戰鬥開始，請選擇你的行動。",
+                ]}
+                loading={loading}
+                onAction={sendCommand}
+                onExitBattle={exitBattle}
+              />
+            ) : (
+              <MapView
+                currentRoom={gameState?.currentRoom}
+                player={gameState?.player}
+                roomsById={roomsById}
+                logs={gameState?.log || []}
+                loading={loading}
+                onMove={sendCommand}
+              />
+            )}
+            {!battleMode ? (
+              <button
+                type="button"
+                onClick={openEncounterModal}
+                className="self-start rounded-lg border border-red-200/30 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-100 transition hover:bg-red-400/20"
+              >
+                測試遭遇敵人
+              </button>
+            ) : null}
             <StoryCommandPanel
               storyLines={storyLines}
               loading={loading}
@@ -251,6 +306,12 @@ export default function App() {
         loading={loading}
         onAction={sendCommand}
         onClose={() => setQuickActionsOpen(false)}
+      />
+      <EncounterModal
+        open={encounterOpen}
+        enemy={mockEnemy}
+        onConfirm={confirmEncounter}
+        onCancel={cancelEncounter}
       />
     </main>
   );
