@@ -92,7 +92,7 @@ export default function CharacterPanel({ player, flags }) {
   const nextExp = player?.nextExp ?? 100;
 
   return (
-    <aside className="min-h-[650px] overflow-hidden rounded-lg border border-white/10 bg-[#171a1f]/90 p-4 shadow-panel backdrop-blur sm:p-5">
+    <aside className="min-h-[600px] overflow-hidden rounded-lg border border-white/10 bg-[#171a1f]/90 p-4 shadow-panel backdrop-blur sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-baseline gap-3">
           <h2 className="shrink-0 text-2xl font-semibold text-white">探索者</h2>
@@ -104,12 +104,12 @@ export default function CharacterPanel({ player, flags }) {
         </span>
       </div>
 
-      <div className="mt-4 grid grid-cols-[minmax(0,1fr)_150px] gap-4">
-        <div className="relative min-h-[260px] overflow-hidden rounded-xl border border-amber-200/25 bg-[radial-gradient(circle_at_50%_18%,rgba(245,158,11,0.28),transparent_34%),linear-gradient(160deg,rgba(245,158,11,0.14),rgba(20,184,166,0.18))] p-4">
+      <div className="mt-4 grid grid-cols-[minmax(0,1fr)_200px] gap-4">
+        <div className="relative min-h-[300px] overflow-hidden rounded-xl border border-amber-200/25 bg-[radial-gradient(circle_at_50%_18%,rgba(245,158,11,0.28),transparent_34%),linear-gradient(160deg,rgba(245,158,11,0.14),rgba(20,184,166,0.18))] p-4">
           <div className="absolute inset-x-8 bottom-0 h-44 rounded-t-full border border-white/10 bg-black/25" />
           <div className="absolute inset-x-14 bottom-10 h-28 rounded-t-full bg-amber-100/10 blur-sm" />
 
-          <div className="relative z-10 flex h-full min-h-[260px] flex-col items-center justify-center text-center">
+          <div className="relative z-10 flex h-full min-h-[300px] flex-col items-center justify-center text-center">
             <span className="text-7xl font-black tracking-tight text-white/90">AD</span>
             <span className="mt-3 font-mono text-[11px] uppercase tracking-[0.24em] text-amber-100/70">
               Adventurer
