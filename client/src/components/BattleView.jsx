@@ -1,17 +1,9 @@
-const fallbackEnemy = {
-  name: "遺跡守衛",
-  level: 1,
-  hp: 18,
-  maxHp: 18,
-  intent: "蓄力攻擊",
-  description: "覆滿銅鏽的古代守衛，胸口的核心散發微弱紅光。",
-};
-
 function StatBar({ label, value, max, tone = "amber" }) {
   const safeMax = Math.max(Number(max) || 1, 1);
   const safeValue = Math.max(0, Math.min(Number(value) || 0, safeMax));
   const percentage = Math.round((safeValue / safeMax) * 100);
-  const fillClass = tone === "red" ? "bg-red-300" : "bg-amber-300";
+  const fillClass =
+    tone === "red" ? "bg-red-300" : tone === "sky" ? "bg-sky-300" : "bg-amber-300";
 
   return (
     <div>
@@ -31,7 +23,7 @@ function StatBar({ label, value, max, tone = "amber" }) {
   );
 }
 
-function CombatantCard({ title, name, level, hp, maxHp, description, intent, tone }) {
+function CombatantCard({ title, name, level, hp, maxHp, mp, maxMp, description, intent, tone }) {
   return (
     <article className="flex min-h-[190px] flex-col justify-between rounded-lg border border-white/10 bg-black/20 p-4">
       <div>
@@ -62,6 +54,11 @@ function CombatantCard({ title, name, level, hp, maxHp, description, intent, ton
 
       <div className="mt-4">
         <StatBar label="HP" value={hp} max={maxHp} tone={tone} />
+        {maxMp ? (
+          <div className="mt-3">
+            <StatBar label="MP" value={mp} max={maxMp} tone="sky" />
+          </div>
+        ) : null}
       </div>
     </article>
   );
@@ -74,20 +71,80 @@ export default function BattleView({
   loading,
   turn = 1,
   battleEnding = false,
+  gameOver = false,
   onAction,
   onExitBattle,
 }) {
-  const activeEnemy = enemy || fallbackEnemy;
+  const activeEnemy = enemy || null;
   const playerHp = player?.hp ?? player?.stats?.hp ?? 24;
   const playerMaxHp = player?.maxHp ?? player?.stats?.maxHp ?? playerHp;
+  const playerMp = player?.mp ?? player?.stats?.mp ?? 0;
+  const playerMaxMp = player?.maxMp ?? player?.stats?.maxMp ?? playerMp;
+  const hasPotion = (player?.inventory || []).some((item) => {
+    const normalized = String(item).toLowerCase();
+    return normalized === "small_potion" || normalized.includes("小型藥水");
+  });
+  const statusText = gameOver
+    ? "無法行動"
+    : battleEnding
+      ? "勝利"
+      : !activeEnemy
+        ? "沒有敵人"
+        : playerHp <= Math.ceil(playerMaxHp * 0.25)
+          ? "瀕死"
+          : "戰鬥中";
+  const statusTone = gameOver
+    ? "border-red-200/35 bg-red-500/15 text-red-50"
+    : battleEnding
+      ? "border-emerald-200/35 bg-emerald-400/15 text-emerald-50"
+      : "border-amber-200/25 bg-amber-300/10 text-amber-50";
 
   const actions = [
-    { id: "attack", label: "Attack", command: "attack" },
-    { id: "slash", label: "Slash", command: "skill slash" },
-    { id: "fireball", label: "Fireball", command: "skill fireball" },
-    { id: "guard", label: "Guard", command: "skill guard" },
-    { id: "potion", label: "Potion", command: "use small_potion" },
+    { id: "attack", label: "Attack", command: "attack", disabled: !activeEnemy },
+    { id: "slash", label: "Slash", command: "skill slash", disabled: !activeEnemy },
+    {
+      id: "fireball",
+      label: "Fireball",
+      command: "skill fireball",
+      disabled: !activeEnemy || playerMp < 4,
+    },
+    {
+      id: "guard",
+      label: "Guard",
+      command: "skill guard",
+      disabled: !activeEnemy || playerMp < 2,
+    },
+    {
+      id: "potion",
+      label: "Potion",
+      command: "use small_potion",
+      disabled: !hasPotion || playerHp >= playerMaxHp,
+    },
   ];
+  const controlsDisabled = loading || battleEnding || gameOver;
+
+  if (!activeEnemy) {
+    return (
+      <section className="relative min-h-[420px] overflow-hidden rounded-lg border border-red-200/20 bg-[linear-gradient(145deg,rgba(29,20,20,0.96),rgba(13,14,18,0.98))] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.035),0_18px_45px_rgba(0,0,0,0.48)] backdrop-blur">
+        <header className="border-b border-white/10 pb-4">
+          <p className="font-mono text-xs uppercase tracking-wide text-red-200">
+            Battle
+          </p>
+          <h2 className="mt-1 text-2xl font-semibold text-white">戰鬥資料缺失</h2>
+        </header>
+        <div className="py-8 text-sm leading-7 text-stone-300">
+          <p>目前沒有可戰鬥的敵人資料。你可以先回到地圖，重新觀察房間狀態。</p>
+        </div>
+        <button
+          type="button"
+          onClick={onExitBattle}
+          className="rounded-lg border border-amber-200/35 bg-amber-300/15 px-4 py-2 text-sm font-semibold text-amber-50 transition hover:bg-amber-300/25"
+        >
+          返回地圖
+        </button>
+      </section>
+    );
+  }
 
   return (
     <section className="relative min-h-[420px] overflow-hidden rounded-lg border border-red-200/20 bg-[radial-gradient(circle_at_50%_0%,rgba(248,113,113,0.12),transparent_34%),linear-gradient(145deg,rgba(29,20,20,0.96),rgba(13,14,18,0.98))] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.035),0_18px_45px_rgba(0,0,0,0.48)] backdrop-blur animate-[battleIn_220ms_ease-out]">
@@ -102,8 +159,8 @@ export default function BattleView({
           <span className="rounded-full border border-red-200/25 bg-red-400/10 px-3 py-1">
             Turn {turn}
           </span>
-          <span className="rounded-full border border-amber-200/25 bg-amber-300/10 px-3 py-1">
-            {battleEnding ? "Victory" : "Player Turn"}
+          <span className={`rounded-full border px-3 py-1 ${statusTone}`}>
+            {statusText}
           </span>
         </div>
       </header>
@@ -115,6 +172,8 @@ export default function BattleView({
           level={player?.level || 1}
           hp={playerHp}
           maxHp={playerMaxHp}
+          mp={playerMp}
+          maxMp={playerMaxMp}
           description="你握緊武器，觀察敵人的動作。"
           tone="amber"
         />
@@ -143,9 +202,9 @@ export default function BattleView({
             Battle Log
           </p>
           <div className="space-y-1 text-sm text-stone-200">
-            {(battleLog.length ? battleLog : ["戰鬥開始，請選擇你的行動。"]).map(
+            {(battleLog.length ? battleLog.slice(-6) : ["戰鬥開始，請選擇你的行動。"]).map(
               (line, index) => (
-                <p key={`${line}-${index}`} className="truncate">
+                <p key={`${line}-${index}`} className="line-clamp-2">
                   {line}
                 </p>
               ),
@@ -158,7 +217,7 @@ export default function BattleView({
             <button
               key={action.id}
               type="button"
-              disabled={loading || battleEnding}
+              disabled={controlsDisabled || action.disabled}
               onClick={() => onAction?.(action.command)}
               className="rounded-lg border border-amber-200/25 bg-amber-300/10 px-3 py-2 text-sm font-semibold text-amber-50 transition hover:bg-amber-300/20 disabled:cursor-wait disabled:opacity-60"
             >
@@ -167,8 +226,8 @@ export default function BattleView({
           ))}
           <button
             type="button"
-            disabled={loading || battleEnding}
-            onClick={onExitBattle}
+            disabled={controlsDisabled || !activeEnemy}
+            onClick={() => onAction?.("escape")}
             className="rounded-lg border border-red-200/30 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-100 transition hover:bg-red-400/20 disabled:cursor-wait disabled:opacity-60"
           >
             Escape

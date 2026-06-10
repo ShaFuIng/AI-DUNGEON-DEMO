@@ -96,9 +96,11 @@ npm start
 
 ## React UI 版面重構進度
 - 文件：`docs/UI_LAYOUT_PROGRESS.md`
-- 目前 UI 主版面已暫停在 Map / Character / StoryCommand / Floating Window 架構。
-- 下一輪優先處理字體大小、容器邊框明顯度、浮動視窗拖曳問題。
-- 此階段不新增 BattleView、不修改 game engine、不改戰鬥流程。
+- 目前 UI 主版面維持 Map / Character / StoryCommand / Floating Window 架構。
+- `BattleView` 已存在，EncounterModal 已存在，遇到未擊敗怪物時可從遭遇提示進入戰鬥畫面。
+- 戰鬥 UI 目前可顯示玩家 / 敵人資訊、HP / MP、battle log、行動按鈕與戰鬥狀態。
+- 戰鬥機制仍屬基礎版：已有 attack、skill slash、skill fireball、skill guard、use small_potion、escape，但 battle state 仍主要由前端 `battleMode` 管理，後續可再整理成正式 gameState mode。
+- 近期優先完善 battle state、escape 流程、戰鬥中指令限制，以及 Floating Window 拖曳與可讀性細節；主版面不做大幅重排。
 
 ## .env.example 用途
 請依 `.env.example` 建立本機 `.env`：

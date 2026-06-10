@@ -135,6 +135,10 @@ function getRoomMonsterInfo(gameState, room) {
   };
 }
 
+function getActiveRoomMonsterInfo(gameState) {
+  return getRoomMonsterInfo(gameState, getCurrentRoom(gameState));
+}
+
 function handleCommand(gameState, rawCommand) {
   const command = rawCommand.trim().toLowerCase();
   const parts = command.split(/\s+/);
@@ -151,6 +155,16 @@ function handleCommand(gameState, rawCommand) {
     }
 
     return createEventResult("game_ended", "遊戲已結束，請輸入 reset 重新開始。");
+  }
+
+  const isExplorationAction = action === "move" || action === "take";
+  const activeMonster = getActiveRoomMonsterInfo(gameState);
+
+  if (activeMonster && isExplorationAction) {
+    return createEventResult(
+      "blocked_by_battle",
+      `${activeMonster.name} 仍擋在你面前。此刻無法探索，請先戰鬥或嘗試 escape。`
+    );
   }
 
   switch (action) {
@@ -174,6 +188,9 @@ function handleCommand(gameState, rawCommand) {
 
     case "skill":
       return handleSkill(gameState, target);
+
+    case "escape":
+      return handleEscape(gameState);
 
     case "use":
       return handleUseItem(gameState, target);
@@ -219,6 +236,7 @@ function handleHelp() {
       "- skill slash：施放斬擊",
       "- skill fireball：施放火球術",
       "- skill guard：施放防禦姿態",
+      "- escape：嘗試脫離目前戰鬥",
       "- use small_potion：使用藥水",
       "- log：查看最近行動紀錄",
       "- reset：重新開始",
@@ -257,6 +275,7 @@ function handleLook(gameState) {
     actionHints.push("skill slash");
     actionHints.push("skill fireball");
     actionHints.push("skill guard");
+    actionHints.push("escape");
   }
 
   if (gameState.player.inventory.includes("small_potion")) {
@@ -336,6 +355,14 @@ function handleMove(gameState, direction) {
 
 function handleTake(gameState, targetName) {
   const room = getCurrentRoom(gameState);
+  const monsterInfo = getRoomMonsterInfo(gameState, room);
+
+  if (monsterInfo) {
+    return createEventResult(
+      "blocked_by_battle",
+      `${monsterInfo.name} 的殺意逼近，你無法分心搜刮道具。請先戰鬥或嘗試 escape。`
+    );
+  }
 
   if (!targetName) {
     return createEventResult("take_missing_item", "請指定要拿取的道具，例如 take torch。");
@@ -397,6 +424,14 @@ function handleSkill(gameState, skillName) {
   }
 
   const skill = gameData.skills[skillId];
+  const monsterInfo = getActiveRoomMonsterInfo(gameState);
+
+  if (!monsterInfo) {
+    return createEventResult(
+      "no_monster_for_skill",
+      `四周暫時沒有敵人，${skill.name} 沒有施放的目標。`
+    );
+  }
 
   if (gameState.player.mp < skill.mpCost) {
     return createEventResult("not_enough_mp", `MP 不足，${skill.name} 需要 ${skill.mpCost} MP。`);
@@ -420,6 +455,43 @@ function handleSkill(gameState, skillName) {
     damage: skill.damage,
     mpCost: skill.mpCost,
   });
+}
+
+function handleEscape(gameState) {
+  const monsterInfo = getActiveRoomMonsterInfo(gameState);
+
+  if (!monsterInfo) {
+    return createEventResult("no_monster_to_escape", "四周沒有敵人，你不需要逃跑。");
+  }
+
+  const room = getCurrentRoom(gameState);
+  const monsterData = gameData.monsters[monsterInfo.id];
+  const escapeSucceeded = Math.random() < 0.6;
+
+  if (escapeSucceeded) {
+    addLog(gameState, `你從 ${monsterData.name} 面前撤退。`);
+
+    return createEventResult(
+      "escape_success",
+      `你抓住 ${monsterData.name} 動作的空隙，退回 ${room.name} 的陰影裡。戰鬥暫時中止。`
+    );
+  }
+
+  const counterText = performMonsterCounterAttack(gameState, monsterData);
+  checkGameOver(gameState);
+
+  const messageLines = [
+    `你試圖脫離戰鬥，但 ${monsterData.name} 封住了退路。`,
+    counterText,
+  ];
+
+  if (gameState.flags.gameOver) {
+    messageLines.push("你的 HP 歸零了。輸入 reset 可重新開始。");
+  }
+
+  addLog(gameState, `你逃離 ${monsterData.name} 失敗。`);
+
+  return createEventResult("escape_failed", messageLines.join("\n"));
 }
 
 function performPlayerAttack(gameState, attackInfo) {

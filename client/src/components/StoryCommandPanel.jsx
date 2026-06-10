@@ -28,6 +28,8 @@ function StoryLine({ line }) {
 export default function StoryCommandPanel({
   storyLines,
   loading,
+  disabled = false,
+  placeholder = "look / status / attack / skill fireball / reset",
   onSubmit,
   className = "",
 }) {
@@ -44,7 +46,7 @@ export default function StoryCommandPanel({
     event.preventDefault();
     const normalizedCommand = command.trim();
 
-    if (!normalizedCommand) {
+    if (disabled || !normalizedCommand) {
       return;
     }
 
@@ -83,14 +85,14 @@ export default function StoryCommandPanel({
           <input
             value={command}
             onChange={(event) => setCommand(event.target.value)}
-            disabled={loading}
+            disabled={loading || disabled}
             className="min-w-0 flex-1 rounded-lg border border-white/10 bg-[#101216] px-4 text-sm text-white outline-none transition placeholder:text-stone-600 focus:border-amber-200/70 focus:ring-2 focus:ring-amber-200/15 disabled:cursor-wait disabled:opacity-60"
-            placeholder="look / status / attack / skill fireball / reset"
+            placeholder={placeholder}
             autoComplete="off"
           />
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || disabled}
             className="min-w-20 rounded-lg border border-amber-200/40 bg-amber-300/15 px-4 text-sm font-semibold text-amber-50 transition hover:bg-amber-300/25 disabled:cursor-wait disabled:opacity-60"
           >
             送出

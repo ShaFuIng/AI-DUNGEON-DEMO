@@ -61,17 +61,7 @@ export default function App() {
   const battleEndTimerRef = useRef(null);
 
   const roomsById = useMemo(() => gameData?.rooms || {}, [gameData]);
-  const mockEnemy = useMemo(
-    () => ({
-      name: "遺跡守衛",
-      level: 1,
-      hp: 18,
-      maxHp: 18,
-      intent: "蓄力攻擊",
-      description: "覆滿銅鏽的古代守衛，胸口的核心散發微弱紅光。",
-    }),
-    [],
-  );
+  const currentEnemy = useMemo(() => normalizeEnemyFromState(gameState), [gameState]);
 
   const loadGameState = useCallback(async () => {
     setLoading(true);
@@ -117,14 +107,24 @@ export default function App() {
     }
 
     if (normalizedCommand === "encounter") {
-      const debugEnemy = normalizeEnemyFromState(gameState) || mockEnemy;
-      setPendingEncounterEnemy(debugEnemy);
-      setEncounterOpen(true);
+      const roomEnemy = normalizeEnemyFromState(gameState);
+
       setStoryLines((lines) => [
         ...lines,
         createStoryLine("command", normalizedCommand),
-        createStoryLine("system", "你感受到某種敵意正在逼近。"),
+        createStoryLine(
+          "system",
+          roomEnemy
+            ? "你感受到某種敵意正在逼近。"
+            : "此處沒有未擊敗的敵人，無法進入戰鬥。",
+        ),
       ]);
+
+      if (roomEnemy) {
+        setPendingEncounterEnemy(roomEnemy);
+        setEncounterOpen(true);
+      }
+
       return;
     }
 
@@ -157,6 +157,12 @@ export default function App() {
         ...lines,
         createStoryLine("story", nextStoryText),
       ]);
+
+      if (data.eventResult?.type === "reset") {
+        exitBattle();
+        setLastEncounterMonsterId(null);
+        return;
+      }
 
       const encounteredEnemy = normalizeEnemyFromState(data.state);
 
@@ -200,8 +206,17 @@ export default function App() {
   }
 
   function confirmEncounter() {
-    const enemy =
-      pendingEncounterEnemy || normalizeEnemyFromState(gameState) || mockEnemy;
+    const enemy = pendingEncounterEnemy || normalizeEnemyFromState(gameState);
+
+    if (!enemy) {
+      setEncounterOpen(false);
+      setPendingEncounterEnemy(null);
+      setStoryLines((lines) => [
+        ...lines,
+        createStoryLine("system", "此處沒有未擊敗的敵人，無法進入戰鬥。"),
+      ]);
+      return;
+    }
 
     setEncounterOpen(false);
     setActiveEnemy(enemy);
@@ -231,6 +246,21 @@ export default function App() {
       window.clearTimeout(battleEndTimerRef.current);
       battleEndTimerRef.current = null;
     }
+  }
+
+  function finishBattleWithEscape(nextStoryText) {
+    setBattleMode(false);
+    setActiveEnemy(null);
+    setPendingEncounterEnemy(null);
+    setBattleLog([]);
+    setBattleTurn(1);
+    setBattleEnding(false);
+
+    setStoryLines((lines) => [
+      ...lines,
+      createStoryLine("story", nextStoryText),
+      createStoryLine("system", "你暫時脫離戰鬥，回到探索狀態。"),
+    ]);
   }
 
   function finishBattleWithVictory(nextStoryText) {
@@ -288,6 +318,11 @@ export default function App() {
       setGameState(data.state);
       setBattleLog((logs) => [...logs, ...messageLines].slice(-6));
 
+      if (data.eventResult?.type === "escape_success") {
+        finishBattleWithEscape(nextStoryText);
+        return;
+      }
+
       const nextEnemy = normalizeEnemyFromState(data.state);
 
       if (nextEnemy) {
@@ -296,7 +331,9 @@ export default function App() {
         return;
       }
 
-      const defeated = data.eventResult?.type === "monster_defeated" || !nextEnemy;
+      const defeated =
+        data.eventResult?.type === "monster_defeated" ||
+        (data.eventResult?.type !== "no_monster" && !nextEnemy);
 
       if (defeated) {
         setBattleLog((logs) =>
@@ -371,11 +408,12 @@ export default function App() {
             {battleMode ? (
               <BattleView
                 player={gameState?.player}
-                enemy={activeEnemy || mockEnemy}
+                enemy={activeEnemy || currentEnemy}
                 battleLog={battleLog}
                 loading={loading || battleEnding}
                 turn={battleTurn}
                 battleEnding={battleEnding}
+                gameOver={gameState?.flags?.gameOver}
                 onAction={handleBattleAction}
                 onExitBattle={exitBattle}
               />
@@ -392,6 +430,12 @@ export default function App() {
             <StoryCommandPanel
               storyLines={storyLines}
               loading={loading}
+              disabled={battleMode}
+              placeholder={
+                battleMode
+                  ? "戰鬥中請使用上方戰鬥按鈕"
+                  : "look / status / attack / skill fireball / reset"
+              }
               onSubmit={sendCommand}
               className="h-[420px]"
             />
@@ -458,7 +502,7 @@ export default function App() {
       />
       <EncounterModal
         open={encounterOpen}
-        enemy={pendingEncounterEnemy || activeEnemy || mockEnemy}
+        enemy={pendingEncounterEnemy || activeEnemy || currentEnemy}
         onConfirm={confirmEncounter}
         onCancel={cancelEncounter}
       />
