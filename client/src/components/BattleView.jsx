@@ -83,9 +83,10 @@ export default function BattleView({
 
   const actions = [
     { id: "attack", label: "Attack", command: "attack" },
-    { id: "skill", label: "Skill", command: "skill fireball" },
-    { id: "guard", label: "Guard", command: "guard" },
-    { id: "item", label: "Item", command: "item" },
+    { id: "slash", label: "Slash", command: "skill slash" },
+    { id: "fireball", label: "Fireball", command: "skill fireball" },
+    { id: "guard", label: "Guard", command: "skill guard" },
+    { id: "potion", label: "Potion", command: "use small_potion" },
   ];
 
   return (

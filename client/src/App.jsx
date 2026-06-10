@@ -19,6 +19,25 @@ function createStoryLine(type, text) {
   };
 }
 
+function normalizeEnemyFromState(state) {
+  const monster = state?.currentRoom?.monster;
+
+  if (!monster) {
+    return null;
+  }
+
+  return {
+    id: monster.id,
+    name: monster.name || monster.id || "未知敵人",
+    level: monster.level ?? 1,
+    hp: monster.hp ?? monster.maxHp ?? 1,
+    maxHp: monster.maxHp ?? monster.hp ?? 1,
+    attack: monster.attack ?? 0,
+    intent: monster.intent || "準備攻擊",
+    description: monster.description || "敵人擋住了你的去路。",
+  };
+}
+
 export default function App() {
   const [gameState, setGameState] = useState(null);
   const [gameData, setGameData] = useState(null);
@@ -34,9 +53,11 @@ export default function App() {
   const [battleMode, setBattleMode] = useState(false);
   const [encounterOpen, setEncounterOpen] = useState(false);
   const [activeEnemy, setActiveEnemy] = useState(null);
+  const [pendingEncounterEnemy, setPendingEncounterEnemy] = useState(null);
   const [battleLog, setBattleLog] = useState([]);
   const [battleTurn, setBattleTurn] = useState(1);
   const [battleEnding, setBattleEnding] = useState(false);
+  const [lastEncounterMonsterId, setLastEncounterMonsterId] = useState(null);
   const battleEndTimerRef = useRef(null);
 
   const roomsById = useMemo(() => gameData?.rooms || {}, [gameData]);
@@ -51,13 +72,6 @@ export default function App() {
     }),
     [],
   );
-
-  function createBattleEnemy() {
-    return {
-      ...mockEnemy,
-      hp: mockEnemy.maxHp,
-    };
-  }
 
   const loadGameState = useCallback(async () => {
     setLoading(true);
@@ -91,7 +105,7 @@ export default function App() {
     }
   }, []);
 
-  const sendCommand = useCallback(async (command) => {
+  async function sendCommand(command) {
     const normalizedCommand = command.trim();
 
     if (!normalizedCommand) {
@@ -103,6 +117,8 @@ export default function App() {
     }
 
     if (normalizedCommand === "encounter") {
+      const debugEnemy = normalizeEnemyFromState(gameState) || mockEnemy;
+      setPendingEncounterEnemy(debugEnemy);
       setEncounterOpen(true);
       setStoryLines((lines) => [
         ...lines,
@@ -141,6 +157,23 @@ export default function App() {
         ...lines,
         createStoryLine("story", nextStoryText),
       ]);
+
+      const encounteredEnemy = normalizeEnemyFromState(data.state);
+
+      if (!encounteredEnemy && !battleMode) {
+        setLastEncounterMonsterId(null);
+      }
+
+      if (
+        encounteredEnemy &&
+        !battleMode &&
+        !encounterOpen &&
+        encounteredEnemy.id !== lastEncounterMonsterId
+      ) {
+        setPendingEncounterEnemy(encounteredEnemy);
+        setLastEncounterMonsterId(encounteredEnemy.id);
+        setEncounterOpen(true);
+      }
     } catch (commandError) {
       setError("指令送出失敗，請稍後再試。");
       setStoryLines((lines) => [
@@ -150,7 +183,7 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }
 
   function openWindow(windowType) {
     setOpenWindows((windows) => ({
@@ -167,10 +200,12 @@ export default function App() {
   }
 
   function confirmEncounter() {
-    const enemy = createBattleEnemy();
+    const enemy =
+      pendingEncounterEnemy || normalizeEnemyFromState(gameState) || mockEnemy;
 
     setEncounterOpen(false);
     setActiveEnemy(enemy);
+    setPendingEncounterEnemy(null);
     setBattleTurn(1);
     setBattleEnding(false);
     setBattleLog([
@@ -182,11 +217,13 @@ export default function App() {
 
   function cancelEncounter() {
     setEncounterOpen(false);
+    setPendingEncounterEnemy(null);
   }
 
   function exitBattle() {
     setBattleMode(false);
     setActiveEnemy(null);
+    setPendingEncounterEnemy(null);
     setBattleLog([]);
     setBattleTurn(1);
     setBattleEnding(false);
@@ -196,7 +233,7 @@ export default function App() {
     }
   }
 
-  function finishBattleWithVictory() {
+  function finishBattleWithVictory(nextStoryText) {
     setBattleEnding(true);
 
     if (battleEndTimerRef.current) {
@@ -206,76 +243,73 @@ export default function App() {
     battleEndTimerRef.current = window.setTimeout(() => {
       setBattleMode(false);
       setActiveEnemy(null);
+      setPendingEncounterEnemy(null);
       setBattleLog([]);
       setBattleEnding(false);
       setBattleTurn(1);
+      setLastEncounterMonsterId(null);
       battleEndTimerRef.current = null;
 
       setStoryLines((lines) => [
         ...lines,
+        createStoryLine("story", nextStoryText),
         createStoryLine("system", "戰鬥勝利，你回到探索狀態。"),
       ]);
     }, 1200);
   }
 
-  function handleBattleAction(action) {
-    if (!activeEnemy || battleEnding) return;
+  async function handleBattleAction(command) {
+    if (loading || battleEnding) return;
 
-    const actionConfig = {
-      attack: {
-        damage: 6,
-        message: "你揮出武器，擊中了敵人。",
-      },
-      "skill fireball": {
-        damage: 10,
-        message: "你施放火球，火焰吞沒了敵人的核心。",
-      },
-      guard: {
-        damage: 0,
-        message: "你舉起防禦姿態，觀察敵人的動作。",
-      },
-      item: {
-        damage: 0,
-        message: "你檢查背包，但目前沒有可用的戰鬥道具。",
-      },
-    };
+    setLoading(true);
+    setError("");
+    setBattleLog((logs) => [...logs, `> ${command}`].slice(-6));
 
-    const config = actionConfig[action] || actionConfig.attack;
-    const nextHp = Math.max(0, activeEnemy.hp - config.damage);
+    try {
+      const response = await fetch("/api/command", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ command }),
+      });
 
-    setActiveEnemy((enemy) =>
-      enemy
-        ? {
-            ...enemy,
-            hp: nextHp,
-          }
-        : enemy,
-    );
-
-    setBattleLog((logs) => {
-      const nextLogs = [
-        ...logs,
-        config.damage > 0
-          ? `${config.message} ${activeEnemy.name} 受到 ${config.damage} 點傷害。`
-          : config.message,
-      ];
-
-      if (nextHp <= 0) {
-        nextLogs.push(`${activeEnemy.name} 倒下了。`);
-        nextLogs.push("戰鬥結束，你回到探索狀態。");
-      } else {
-        nextLogs.push(`${activeEnemy.name} 正在重新調整姿態。`);
+      if (!response.ok) {
+        throw new Error("battle_command_failed");
       }
 
-      return nextLogs.slice(-5);
-    });
+      const data = await response.json();
+      const nextStoryText =
+        data.narration || data.eventResult?.message || "指令已執行。";
+      const messageLines = data.eventResult?.message
+        ? String(data.eventResult.message).split("\n")
+        : [nextStoryText];
 
-    if (nextHp <= 0) {
-      finishBattleWithVictory();
-      return;
+      setGameState(data.state);
+      setBattleLog((logs) => [...logs, ...messageLines].slice(-6));
+
+      const nextEnemy = normalizeEnemyFromState(data.state);
+
+      if (nextEnemy) {
+        setActiveEnemy(nextEnemy);
+        setBattleTurn((turn) => turn + 1);
+        return;
+      }
+
+      const defeated = data.eventResult?.type === "monster_defeated" || !nextEnemy;
+
+      if (defeated) {
+        setBattleLog((logs) =>
+          [...logs, "戰鬥結束，你回到探索狀態。"].slice(-6),
+        );
+        finishBattleWithVictory(nextStoryText);
+      }
+    } catch (battleError) {
+      setError("戰鬥指令送出失敗，請稍後再試。");
+      setBattleLog((logs) => [...logs, "戰鬥指令送出失敗。"].slice(-6));
+    } finally {
+      setLoading(false);
     }
-
-    setBattleTurn((turn) => turn + 1);
   }
 
   useEffect(() => {
@@ -424,7 +458,7 @@ export default function App() {
       />
       <EncounterModal
         open={encounterOpen}
-        enemy={mockEnemy}
+        enemy={pendingEncounterEnemy || activeEnemy || mockEnemy}
         onConfirm={confirmEncounter}
         onCancel={cancelEncounter}
       />
