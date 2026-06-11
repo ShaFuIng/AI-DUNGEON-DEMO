@@ -102,14 +102,14 @@ npm start
 - 戰鬥狀態已由後端 `gameEngine` 管理：`mode`、`activeMonsterId`、`activeMonster`、`battle.turn`、`battle.log`、`battle.status` 會隨 `/api/command` 回傳。
 - EncounterModal 確認後會送出 `battle start` 指令進入 battle mode；前端 `BattleView` 依後端 `gameState.mode` 顯示，敗北的 `gameOver` 狀態也會保留戰鬥畫面並停用按鈕。
 - 一般遭遇戰不可取消；玩家必須先進入戰鬥，若要脫離則在戰鬥中使用 `escape`。
-- Boss 房間會顯示危險提示；按「暫時撤退」會送出 `retreat` 指令，後端會把玩家退回安全房間，不進入戰鬥、不標記 Boss defeated。
+- Boss 房間會顯示危險提示；按「暫時撤退」會直接呼叫後端撤退流程並退回安全房間，不會在 StoryCommandPanel 顯示成玩家輸入了 `retreat`。手動 `retreat` 仍保留作為備用指令。
 - 戰鬥機制仍屬基礎版：已有 attack、skill slash、skill fireball、skill guard、use small_potion、escape；escape 目前是 60% 成功率的簡化機率制。
 - Battle Log 已改為固定高度可滾動，不會隨訊息增加撐高 BattleView。
 - 背包視窗支援 hover tooltip 顯示道具類型、描述、效果與用途提示；點擊道具會開啟小型「使用」action menu。
 - `use item` 後端已支援 consumable 與 key 類道具的環境判斷；鑰匙開門流程已改為「在對應門前使用鑰匙 → 消耗鑰匙 → 記錄 unlocked door → 才能通過」，不再只是背包有鑰匙就能進入鎖門。
 - 後端已加入基礎 EXP / Level Up 系統，怪物可設定 `expReward` 與固定 `drops`。
 - Content Designer prompt / validator / schema 已要求 item description、usageHint、equipment stats、monster drops、expReward。
-- Map 九宮格已略向右移，讓左側 Recent Log 有更多空間；Recent Log 維持最近 5 筆、舊到新排列、最新訊息從底部淡入，第 6 筆出現時最舊訊息會淡出上移。
+- Map 九宮格以置中為基準略向右偏移，讓左側 Recent Log 可稍微加寬；Recent Log 維持最近 5 筆、舊到新排列、最新訊息從底部淡入，第 6 筆出現時最舊訊息會淡出上移。
 - 近期優先完善完整回合制、敵人 AI、狀態效果、技能冷卻、戰鬥動畫，以及 Floating Window 拖曳與可讀性細節；主版面不做大幅重排。
 
 ## .env.example 用途

@@ -166,3 +166,8 @@ schemas/generatedArea.schema.json
 - `retreat` 目前只在 `boss_room` 且 `ruin_guardian` 未擊敗時生效；手動 `move west` 會提示使用 `retreat`。
 - Map 九宮格略向右移，替左上 Recent Log 留出閱讀空間。
 - Recent Log 寬度調回約 15rem，維持最近 5 筆、舊到新排列與進出動畫。
+## 近期精修：Boss modal 靜默撤退與 Map 微偏移
+- Boss 危險提示按「暫時撤退」時，前端會靜默呼叫後端 `retreat`，StoryCommandPanel 只顯示撤退敘事，不顯示 `> retreat`。
+- 手動 `retreat` 指令仍可作為備用流程。
+- Map 九宮格不再整個靠右，改為從置中位置微幅右移。
+- Recent Log 寬度調整到約 16rem，仍維持最近 5 筆、舊到新排列、最新在最下方與進出動畫。

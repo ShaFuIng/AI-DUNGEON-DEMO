@@ -53,3 +53,8 @@
 - `retreat` 不會進入 battle mode、不會標記 Boss defeated，也不會移除 Boss。手動在 Boss 房輸入 `move west` 會提示改用 `retreat`。
 - Map 九宮格已由置中改為略向右靠齊，Recent Log 可使用較舒適寬度但仍不遮住主要操作區。
 - Recent Log 維持最多 5 筆、舊到新排列、最新在最下方，並保留最舊離開與新訊息從底部進入的動畫。
+## 近期精修：Boss modal 靜默撤退與 Map 微偏移
+- Boss 危險提示按「暫時撤退」時，前端會直接呼叫 `/api/command` 送出 `retreat`，但不會把 `retreat` 顯示成玩家輸入的 command line。
+- 後端 `retreat` 指令仍保留，供手動輸入或 debug 使用。
+- Map 九宮格已從靠右改為以置中為基準微幅右移，避免貼近右側。
+- Recent Log 寬度調整為約 16rem，仍保留最近 5 筆、舊到新排列與進出動畫。

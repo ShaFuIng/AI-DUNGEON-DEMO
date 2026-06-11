@@ -325,13 +325,50 @@ export default function App() {
     sendCommand("battle start");
   }
 
+  async function handleBossRetreatFromModal() {
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/command", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ command: "retreat" }),
+      });
+
+      if (!response.ok) {
+        throw new Error("retreat_failed");
+      }
+
+      const data = await response.json();
+      const retreatText =
+        data.narration || data.eventResult?.message || "你暫時撤離了核心密室。";
+
+      setGameState(data.state);
+      setStoryLines((lines) => [
+        ...lines,
+        createStoryLine("story", retreatText),
+      ]);
+    } catch (retreatError) {
+      setError("撤退失敗，請稍後再試。");
+      setStoryLines((lines) => [
+        ...lines,
+        createStoryLine("system", "撤退失敗，請稍後再試。"),
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   function cancelEncounter() {
     if (pendingEncounterType === "boss" && pendingEncounterEnemy?.id) {
       setDismissedBossEncounterId(pendingEncounterEnemy.id);
       setEncounterOpen(false);
       setPendingEncounterEnemy(null);
       setPendingEncounterType("normal");
-      sendCommand("retreat");
+      handleBossRetreatFromModal();
       return;
       setStoryLines((lines) => [
         ...lines,

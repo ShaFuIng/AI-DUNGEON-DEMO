@@ -82,7 +82,7 @@ export default function MissionLogOverlay({ logs = [] }) {
   }, [entries, recentLogs]);
 
   return (
-    <aside className="pointer-events-none absolute left-4 top-20 z-20 w-[min(15rem,calc(100%-2rem))] text-xs text-stone-200">
+    <aside className="pointer-events-none absolute left-4 top-20 z-20 w-[min(16rem,calc(100%-2rem))] text-xs text-stone-200">
       <div className="rounded-lg border border-amber-100/15 bg-[#12100d]/70 px-2.5 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.34)] backdrop-blur-sm">
         <p className="mb-2 font-mono text-[10px] uppercase tracking-wide text-amber-200/80">
           Recent Log
