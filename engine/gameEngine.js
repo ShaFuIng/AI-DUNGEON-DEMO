@@ -1,6 +1,20 @@
 ﻿const { loadGameData } = require("../data/loadGameData");
 const gameData = loadGameData();
 
+const LOCKED_EXITS = [
+  {
+    fromRoomId: "altar",
+    direction: "east",
+    toRoomId: "boss_room",
+    keyItemId: "rusty_key",
+    lockedMessage: "通往核心密室的石門被鎖住了。你需要在這道門前使用對應的鑰匙。",
+    unlockMessage:
+      "你將生鏽鑰匙插入石門鎖孔。鏽蝕的齒輪發出沉重低鳴，通往核心密室的石門緩緩打開。鑰匙也在轉動後斷裂了。",
+    unlockLog: "你開啟了通往核心密室的石門",
+    alreadyUnlockedMessage: "這道門已經打開，不需要再使用鑰匙。",
+  },
+];
+
 function getInitialRoomId() {
   if (gameData.initialRoomId && gameData.rooms[gameData.initialRoomId]) {
     return gameData.initialRoomId;
@@ -49,6 +63,7 @@ function createInitialGameState() {
       bossDefeated: false,
       gameWon: false,
       gameOver: false,
+      unlockedDoors: [],
     },
 
     monsters: createMonsterState(),
@@ -615,8 +630,9 @@ function handleMove(gameState, direction) {
 
   const nextRoomId = room.exits[direction];
 
-  if (nextRoomId === "boss_room" && !gameState.player.inventory.includes("rusty_key")) {
-    return createEventResult("locked_door", "通往核心密室的石門被鎖住了，你需要一把鑰匙。");
+  const lockedExit = getLockedExit(room.id, direction, nextRoomId);
+  if (lockedExit && !isDoorUnlocked(gameState, room.id, direction, nextRoomId)) {
+    return createEventResult("locked_door", lockedExit.lockedMessage);
   }
 
   gameState.player.currentRoom = nextRoomId;
@@ -967,29 +983,26 @@ function handleUseItem(gameState, targetName) {
 
 function handleUseKeyItem(gameState, item) {
   const room = getCurrentRoom(gameState);
-  const exits = room.exits || {};
-  const unlocks = Array.isArray(item.unlocks) ? item.unlocks : [];
-  const matchedEntry = Object.entries(exits).find(([, roomId]) =>
-    unlocks.includes(roomId)
-  );
+  const matchedExit = findKeyUnlockTarget(gameState, room, item);
 
-  if (!matchedEntry) {
+  if (!matchedExit) {
     const message = `你拿出 ${item.name}，但附近沒有能使用它的機關或門鎖。`;
     addLog(gameState, `你嘗試使用 ${item.name}`);
     return createEventResult("use_key_no_target", message);
   }
 
-  const [, unlockedRoomId] = matchedEntry;
-  const unlockedRoom = gameData.rooms[unlockedRoomId];
-  const targetName = unlockedRoom?.name || unlockedRoomId;
-  const message =
-    item.id === "rusty_key" && unlockedRoomId === "boss_room"
-      ? "你將生鏽鑰匙插入石門鎖孔，沉重石門發出低鳴，通往核心密室的道路已經可以前進。"
-      : `你使用 ${item.name}，確認通往 ${targetName} 的道路已經可以前進。`;
+  if (matchedExit.unlocked) {
+    return createEventResult(
+      "use_key_already_unlocked",
+      matchedExit.lockedExit.alreadyUnlockedMessage
+    );
+  }
 
-  addLog(gameState, `你使用 ${item.name} 開啟了通往 ${targetName} 的道路`);
+  unlockDoor(gameState, room.id, matchedExit.direction, matchedExit.toRoomId);
+  removeItemFromInventory(gameState, item.id);
+  addLog(gameState, matchedExit.lockedExit.unlockLog);
 
-  return createEventResult("use_key", message);
+  return createEventResult("use_key", matchedExit.lockedExit.unlockMessage);
 }
 
 function removeItemFromInventory(gameState, itemId) {
@@ -998,6 +1011,66 @@ function removeItemFromInventory(gameState, itemId) {
   if (index !== -1) {
     gameState.player.inventory.splice(index, 1);
   }
+}
+
+function getDoorId(fromRoomId, direction, toRoomId) {
+  return `${fromRoomId}:${direction}:${toRoomId}`;
+}
+
+function getUnlockedDoors(gameState) {
+  if (!Array.isArray(gameState.flags.unlockedDoors)) {
+    gameState.flags.unlockedDoors = [];
+  }
+
+  return gameState.flags.unlockedDoors;
+}
+
+function getLockedExit(fromRoomId, direction, toRoomId) {
+  return LOCKED_EXITS.find(
+    (exit) =>
+      exit.fromRoomId === fromRoomId &&
+      exit.direction === direction &&
+      exit.toRoomId === toRoomId
+  );
+}
+
+function isDoorUnlocked(gameState, fromRoomId, direction, toRoomId) {
+  return getUnlockedDoors(gameState).includes(getDoorId(fromRoomId, direction, toRoomId));
+}
+
+function unlockDoor(gameState, fromRoomId, direction, toRoomId) {
+  const unlockedDoors = getUnlockedDoors(gameState);
+  const doorId = getDoorId(fromRoomId, direction, toRoomId);
+
+  if (!unlockedDoors.includes(doorId)) {
+    unlockedDoors.push(doorId);
+  }
+}
+
+function findKeyUnlockTarget(gameState, room, item) {
+  const exits = room.exits || {};
+  const unlocks = Array.isArray(item.unlocks) ? item.unlocks : [];
+
+  for (const [direction, toRoomId] of Object.entries(exits)) {
+    if (!unlocks.includes(toRoomId)) {
+      continue;
+    }
+
+    const lockedExit = getLockedExit(room.id, direction, toRoomId);
+
+    if (!lockedExit || lockedExit.keyItemId !== item.id) {
+      continue;
+    }
+
+    return {
+      direction,
+      toRoomId,
+      lockedExit,
+      unlocked: isDoorUnlocked(gameState, room.id, direction, toRoomId),
+    };
+  }
+
+  return null;
 }
 
 function checkGameOver(gameState) {

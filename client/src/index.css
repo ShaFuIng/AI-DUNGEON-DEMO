@@ -54,3 +54,39 @@ input {
     transform: scale(1) translateY(0);
   }
 }
+
+@keyframes recent-log-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes recent-log-leave {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+.recent-log-item {
+  will-change: opacity, transform;
+}
+
+.recent-log-item-entering {
+  animation: recent-log-enter 180ms ease-out both;
+}
+
+.recent-log-item-leaving {
+  animation: recent-log-leave 220ms ease-in both;
+}

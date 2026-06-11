@@ -40,3 +40,10 @@
 5. UI 下一輪：修正 `FloatingGameWindow` 拖曳、調整字體大小、強化容器邊框與可讀性
 6. Battle 下一輪：完善完整回合制、敵人 AI、狀態效果、技能冷卻、戰鬥動畫與更細緻的逃跑規則
 7. Content Designer 下一輪：讓 experimental runtime merge 更完整接入 generated items / monsters / equipment
+
+## 近期修正：門鎖與 Recent Log 動畫
+- `gameEngine` 已新增 `flags.unlockedDoors`，用來保存已解鎖的門。
+- `boss_room` 不再因玩家背包擁有 `rusty_key` 就直接開放；玩家必須在 `altar`，也就是 east exit 指向 `boss_room` 的位置，主動使用 `rusty_key`。
+- 鑰匙使用成功後會解鎖門、消耗 `rusty_key`，之後即使鑰匙已消耗，已解鎖的門仍可通過。
+- 鑰匙在不合理房間使用不會消耗，會回傳附近沒有可用機關或門鎖的繁體中文提示。
+- Recent Log 維持最多 5 筆，顯示順序改為舊到新；新訊息從底部淡入，第 6 筆出現時最舊訊息淡出上移，其餘 block 往上遞補。

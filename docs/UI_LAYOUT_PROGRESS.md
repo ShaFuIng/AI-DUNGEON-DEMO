@@ -1,3 +1,9 @@
+## 近期修正：門鎖與 Recent Log 動畫
+- 鑰匙開門流程已收斂為：在對應出口使用對應鑰匙，鑰匙被消耗，`flags.unlockedDoors` 記錄已解鎖門，之後移動才會放行。
+- `altar -> east -> boss_room` 目前會在 `rusty_key` 於祭壇使用前阻擋移動；只擁有鑰匙不足以通過鎖門。
+- Recent Log 維持窄版半透明 block 列表，最多 5 筆，顯示順序改為舊到新，最新訊息在最下方。
+- Recent Log 僅使用 CSS 動畫：新訊息從下方淡入，第 6 筆出現時最舊訊息往上淡出後移除。
+
 # AI-DUNGEON-DEMO UI Layout Progress
 
 > 本文件記錄目前 React UI 版面與戰鬥 UI 狀態。
@@ -32,7 +38,7 @@
 - 原 `StoryLog` 與 `CommandBar` 已整合為 `StoryCommandPanel`。
 - 顯示 story / command / system 訊息。
 - 戰鬥中目前會禁用一般輸入，避免 `move` / `take` 等探索指令混入戰鬥流程；戰鬥操作改由 `BattleView` 按鈕送到後端。
-- Map 左上 Recent Log 已改為較窄的固定最近 5 筆半透明 block 列表，最新一筆在最上方，不再輪播、不顯示 indicator。
+- Map 左上 Recent Log 已改為較窄的固定最近 5 筆半透明 block 列表，顯示順序為舊到新，最新一筆在最下方，不再輪播、不顯示 indicator。
 
 ### MapView
 
