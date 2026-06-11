@@ -85,10 +85,9 @@ export default function BattleView({
   const playerMaxHp = player?.maxHp ?? player?.stats?.maxHp ?? playerHp;
   const playerMp = player?.mp ?? player?.stats?.mp ?? 0;
   const playerMaxMp = player?.maxMp ?? player?.stats?.maxMp ?? playerMp;
-  const hasPotion = (player?.inventory || []).some((item) => {
-    const normalized = String(item).toLowerCase();
-    return normalized === "small_potion" || normalized.includes("小型藥水");
-  });
+  const consumables = (player?.inventoryItems || []).filter(
+    (item) => item?.type === "consumable"
+  );
   const statusText = gameOver
     ? "無法行動"
     : battleStatus === "victory"
@@ -120,12 +119,13 @@ export default function BattleView({
   const actions = [
     { id: "attack", label: "Attack", command: "attack", disabled: !activeEnemy },
     ...skillActions,
-    {
-      id: "potion",
-      label: "Potion",
-      command: "use small_potion",
-      disabled: !hasPotion || playerHp >= playerMaxHp,
-    },
+    ...consumables.map((item) => ({
+      id: item.id,
+      label: item.name || item.id,
+      command: `use ${item.id}`,
+      disabled: playerHp >= playerMaxHp,
+      detail: "Item",
+    })),
   ];
   const controlsDisabled = loading || mode === "gameOver" || gameOver;
 

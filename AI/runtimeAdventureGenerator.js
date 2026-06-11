@@ -1,4 +1,5 @@
 const { buildRuntimeAdventurePrompt } = require("./prompts/buildRuntimeAdventurePrompt");
+const { balanceRuntimeAdventure } = require("./balancers/balanceRuntimeAdventure");
 const { normalizeRuntimeGameData } = require("./normalizers/normalizeRuntimeGameData");
 const { generateRuntimeJson } = require("./runtimeProviders/geminiRuntimeProvider");
 const { validateRuntimeGameData } = require("./validators/validateRuntimeGameData");
@@ -12,8 +13,10 @@ async function generateRuntimeAdventure(input = {}) {
   });
   const parsedGameData = parseJsonObject(rawText);
   console.log("Runtime adventure raw summary:", summarizeGameDataShape(parsedGameData));
-  const gameData = normalizeRuntimeGameData(parsedGameData);
-  console.log("Runtime adventure normalized summary:", summarizeGameDataShape(gameData));
+  const normalizedGameData = normalizeRuntimeGameData(parsedGameData);
+  console.log("Runtime adventure normalized summary:", summarizeGameDataShape(normalizedGameData));
+  const gameData = balanceRuntimeAdventure(normalizedGameData, input);
+  console.log("Runtime adventure balanced summary:", summarizeGameDataShape(gameData));
   const validation = validateRuntimeGameData(gameData);
 
   if (!validation.ok) {

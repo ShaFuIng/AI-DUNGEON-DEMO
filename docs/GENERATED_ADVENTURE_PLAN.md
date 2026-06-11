@@ -95,6 +95,83 @@ raw Gemini JSON -> parse -> normalizeRuntimeGameData -> validateRuntimeGameData
 
 validator 不會因此被放鬆；normalizer 修正後仍必須完整通過 validator。
 
+## Adventure Design Pass
+
+Normalizer 後會執行 deterministic design pass：
+
+```txt
+raw Gemini JSON
+-> normalizeRuntimeGameData
+-> balanceRuntimeAdventure
+-> validateRuntimeGameData
+-> runtime gameData
+```
+
+`balanceRuntimeAdventure` 會補強 RPG 可玩性：
+
+- 每個 room 都會有 `kind`，例如 `start`、`combat`、`puzzle`、`treasure`、`rest`、`key`、`boss`、`lore`。
+- 每個 room 至少要有 gameplay function：道具、怪物、challenge、start/rest/lore/boss。
+- 至少補齊 1 個 healing consumable。
+- 難度較高時補齊額外補給。
+- 至少補齊 1 個 equipment item，並放在 Boss 前可取得的位置。
+- 至少補齊 1 個 puzzle/riddle/locked_door challenge。
+- Boss room 會持有 quest item，且 requiredBossDefeated 固定為 true。
+- 普通怪與 Boss 數值會依玩家 stats、skills、equipment 做 deterministic balance。
+
+## Equipment Runtime
+
+`engine/gameEngine.js` 已支援 `equipment`：
+
+```json
+{
+  "weapon": null,
+  "armor": null,
+  "accessory": null
+}
+```
+
+equipment item 必須包含：
+
+```json
+{
+  "type": "equipment",
+  "slot": "weapon",
+  "stats": { "attack": 2 }
+}
+```
+
+支援 stats：
+
+- `attack`
+- `defense`
+- `maxHp`
+- `maxMp`
+
+`use <equipment_id>` 會裝備道具，替換同 slot 舊裝備，並將舊裝備放回背包。公開 state 會回傳 base stats 與 effective stats，UI 預設使用 effective stats。
+
+## Challenge Runtime
+
+room 可包含：
+
+```json
+{
+  "challenge": {
+    "type": "puzzle",
+    "description": "...",
+    "requiredItemId": "ancient_symbol",
+    "solutionHint": "...",
+    "rewardItemIds": []
+  }
+}
+```
+
+Runtime 支援：
+
+- `look` 顯示 challenge description 與 hint。
+- `use requiredItemId` 會 resolve challenge。
+- `locked_door` challenge 未解開前會阻擋移動。
+- `gameState.flags.resolvedChallenges` 會記錄已解開的 room challenge。
+
 ## UI 流程
 
 1. 進入 `AdventureSetup`。

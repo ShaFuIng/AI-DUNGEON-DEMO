@@ -60,10 +60,12 @@ POST /api/adventure/generate
 Runtime 流程會先 normalize Gemini 輸出，再交給 validator：
 
 ```txt
-raw Gemini JSON -> parse -> normalizeRuntimeGameData -> validateRuntimeGameData
+raw Gemini JSON -> parse -> normalizeRuntimeGameData -> balanceRuntimeAdventure -> validateRuntimeGameData
 ```
 
 因此即使 Gemini 把 `items` / `monsters` / `skills` 產成 array，也會先轉成 engine 需要的 object map；若仍無法修正，才會回傳 422 與 validation details。
+
+`balanceRuntimeAdventure` 會補強可玩性：room.kind、challenge、補血道具、裝備、Boss 房勝利物品，以及普通怪 / Boss 數值平衡。`use <equipment_id>` 已可裝備 weapon / armor / accessory，戰鬥會使用 effective attack / defense / maxHp / maxMp。
 
 ## Content Designer 常用指令
 ```bash

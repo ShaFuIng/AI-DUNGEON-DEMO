@@ -38,6 +38,9 @@ function validateRuntimeGameData(gameData) {
     if (room.id !== roomId) errors.push(`room key ${roomId} must match room.id.`);
     if (!room.name) errors.push(`room ${roomId} is missing name.`);
     if (!room.description) errors.push(`room ${roomId} is missing description.`);
+    if (!["start", "combat", "puzzle", "treasure", "rest", "key", "boss", "lore"].includes(room.kind)) {
+      errors.push(`room ${roomId} is missing valid kind.`);
+    }
 
     for (const [direction, targetRoomId] of Object.entries(room.exits || {})) {
       if (!DIRECTIONS.includes(direction)) {
@@ -60,6 +63,27 @@ function validateRuntimeGameData(gameData) {
     if (room.monster !== null && room.monster !== undefined && !monsters[room.monster]) {
       errors.push(`room ${roomId} references missing monster ${room.monster}.`);
     }
+
+    if (room.challenge) {
+      if (!["puzzle", "locked_door", "trap", "riddle"].includes(room.challenge.type)) {
+        errors.push(`room ${roomId} challenge has invalid type.`);
+      }
+      if (!room.challenge.description) {
+        errors.push(`room ${roomId} challenge is missing description.`);
+      }
+      if (room.challenge.requiredItemId && !items[room.challenge.requiredItemId]) {
+        errors.push(`room ${roomId} challenge references missing requiredItemId ${room.challenge.requiredItemId}.`);
+      }
+      for (const rewardItemId of room.challenge.rewardItemIds || []) {
+        if (!items[rewardItemId]) {
+          errors.push(`room ${roomId} challenge references missing reward item ${rewardItemId}.`);
+        }
+      }
+      if (room.challenge.type === "locked_door") {
+        const keyItems = Object.values(items).filter((item) => item.type === "key");
+        if (keyItems.length === 0) errors.push(`room ${roomId} locked_door challenge requires at least one key item.`);
+      }
+    }
   }
 
   for (const [itemId, item] of Object.entries(items)) {
@@ -69,6 +93,14 @@ function validateRuntimeGameData(gameData) {
     }
     if (item.type === "consumable" && !Number.isFinite(Number(item.effect?.hp))) {
       errors.push(`consumable item ${itemId} must include effect.hp.`);
+    }
+    if (item.type === "equipment") {
+      if (!["weapon", "armor", "accessory"].includes(item.slot)) {
+        errors.push(`equipment item ${itemId} is missing slot.`);
+      }
+      if (!item.stats || typeof item.stats !== "object" || Array.isArray(item.stats)) {
+        errors.push(`equipment item ${itemId} is missing stats.`);
+      }
     }
   }
 
@@ -90,6 +122,9 @@ function validateRuntimeGameData(gameData) {
       if (skill[field] === undefined || skill[field] === null || skill[field] === "") {
         errors.push(`skill ${skillId} is missing ${field}.`);
       }
+    }
+    if (!["damage", "defense", "utility"].includes(skill.role)) {
+      errors.push(`skill ${skillId} is missing valid role.`);
     }
   }
 
@@ -119,9 +154,25 @@ function validateRuntimeGameData(gameData) {
   const hasPotion = Object.values(items).some((item) => item.type === "consumable" && Number(item.effect?.hp) > 0);
   const hasMonsterRoom = roomIds.some((roomId) => rooms[roomId].monster);
   const hasQuestItem = Object.values(items).some((item) => item.type === "quest");
+  const hasEquipment = Object.values(items).some((item) => item.type === "equipment");
+  const hasChallenge = Object.values(rooms).some((room) => room.challenge);
+  const functionalRoomCount = Object.values(rooms).filter((room) =>
+    hasGameplayFunction(room)
+  ).length;
+  const emptyRoomCount = roomIds.length - functionalRoomCount;
   if (!hasPotion) errors.push("at least one healing consumable is required.");
   if (!hasMonsterRoom) errors.push("at least one monster encounter is required.");
   if (!hasQuestItem) errors.push("at least one quest item is required.");
+  if (!hasEquipment) errors.push("at least one equipment item is required.");
+  if (!hasChallenge) errors.push("at least one puzzle challenge is required.");
+  if (roomIds.length > 0 && emptyRoomCount / roomIds.length > 0.2) {
+    errors.push(`too many empty rooms: ${emptyRoomCount}/${roomIds.length}`);
+  }
+  if (!hasSkillRole(skills, "damage")) errors.push("at least one damage skill is required.");
+  if (!Object.values(skills).some((skill) => ["defense", "utility"].includes(skill.role))) {
+    errors.push("at least one defense or utility skill is required.");
+  }
+  validateBossBalance(gameData, rooms, monsters, errors);
   if (winCondition.requiredBossDefeated) {
     const guardingRoom = Object.values(rooms).find((room) =>
       (room.items || []).includes(winCondition.requiredItemId)
@@ -135,6 +186,48 @@ function validateRuntimeGameData(gameData) {
     ok: errors.length === 0,
     errors,
   };
+}
+
+function hasGameplayFunction(room) {
+  return (
+    room.kind === "start" ||
+    room.kind === "rest" ||
+    room.kind === "lore" ||
+    room.kind === "boss" ||
+    Boolean(room.monster) ||
+    Boolean(room.challenge) ||
+    (room.items || []).length > 0
+  );
+}
+
+function hasSkillRole(skills, role) {
+  return Object.values(skills || {}).some((skill) => skill.role === role);
+}
+
+function validateBossBalance(gameData, rooms, monsters, errors) {
+  const playerMaxHp = Number(gameData.player?.maxHp) || 30;
+  const playerAttack = Number(gameData.player?.attack) || 6;
+  const expectedDpr = Math.max(playerAttack, averageDamageSkill(gameData));
+  const bossRoom = Object.values(rooms).find((room) => room.kind === "boss");
+
+  if (!bossRoom?.monster || !monsters[bossRoom.monster]) {
+    errors.push("boss room must contain a boss monster.");
+    return;
+  }
+
+  const boss = monsters[bossRoom.monster];
+  if (Number(boss.attack) > Math.ceil(playerMaxHp / 4)) {
+    errors.push("boss attack is too high for player maxHp.");
+  }
+  if (Number(boss.maxHp) > expectedDpr * 10) {
+    errors.push("boss maxHp is too high for level 1 player.");
+  }
+}
+
+function averageDamageSkill(gameData) {
+  const damageSkills = Object.values(gameData.skills || {}).filter((skill) => Number(skill.damage) > 0);
+  if (damageSkills.length === 0) return 0;
+  return Math.round(damageSkills.reduce((sum, skill) => sum + Number(skill.damage), 0) / damageSkills.length);
 }
 
 function assertObjectMap(value, fieldName, errors) {

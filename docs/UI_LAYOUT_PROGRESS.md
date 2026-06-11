@@ -147,6 +147,13 @@
 - `SkillsWindowContent` 會顯示 runtime skill name、role、MP cost 與 description，並送出 `skill <skill.id>`。
 - Start Screen 的 API key 欄位只會存到瀏覽器 localStorage；後端只在該次生成 request 使用。
 
+## 近期新增：Runtime Equipment 與 Adventure Design Pass
+- Generated Adventure pipeline 新增 `balanceRuntimeAdventure`，會補齊 room.kind、challenge、裝備、補給、Boss room 與數值平衡。
+- `EquipmentWindowContent` 改為讀取 `gameState.player.equipmentItems`，顯示 weapon / armor / accessory、stats 與 description。
+- `CharacterPanel` 顯示 effective ATK / DEF；若裝備提供加成，會以 `8 (+2)` 形式呈現。
+- `BattleView` 的補給按鈕改為讀取 runtime consumable，不再只支援 `small_potion`。
+- 後端 `use equipment` 已可裝備道具；戰鬥傷害與怪物反擊會使用 effective attack / defense。
+
 ## 8. 重要檔案
 
 ```txt

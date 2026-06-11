@@ -21,6 +21,8 @@
       "id": "entrance",
       "name": "破曉入口",
       "description": "石門半開，潮濕空氣從地下深處湧出。",
+      "kind": "start",
+      "challenge": null,
       "ascii": "",
       "exits": { "north": "hallway" },
       "items": [],
@@ -30,15 +32,25 @@
       "id": "hallway",
       "name": "回聲長廊",
       "description": "牆上迴盪著細碎腳步聲。",
+      "kind": "puzzle",
+      "challenge": {
+        "type": "riddle",
+        "description": "牆上的符號需要古代符記才能安定。",
+        "requiredItemId": "ancient_symbol",
+        "solutionHint": "使用古代符記觀察符號。",
+        "rewardItemIds": []
+      },
       "ascii": "",
       "exits": { "south": "entrance", "east": "boss_room" },
-      "items": ["healing_potion"],
+      "items": ["healing_potion", "ancient_symbol", "balanced_blade"],
       "monster": "goblin_scout"
     },
     "boss_room": {
       "id": "boss_room",
       "name": "封印書庫",
       "description": "古老卷軸在石台上微微發光。",
+      "kind": "boss",
+      "challenge": null,
       "ascii": "",
       "exits": { "west": "hallway" },
       "items": ["ancient_scroll"],
@@ -60,6 +72,23 @@
       "description": "完成任務所需的核心物品。",
       "type": "quest",
       "usageHint": "帶回入口即可完成冒險。"
+    },
+    "ancient_symbol": {
+      "id": "ancient_symbol",
+      "name": "古代符記",
+      "description": "能與遺跡謎題共鳴的小石片。",
+      "type": "key",
+      "usageHint": "可用於解開符號謎題。",
+      "unlocks": []
+    },
+    "balanced_blade": {
+      "id": "balanced_blade",
+      "name": "平衡短刃",
+      "description": "提高穩定攻擊力的短刃。",
+      "type": "equipment",
+      "usageHint": "Boss 戰前裝備。",
+      "slot": "weapon",
+      "stats": { "attack": 2 }
     }
   },
   "monsters": {

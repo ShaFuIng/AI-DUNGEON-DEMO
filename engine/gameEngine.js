@@ -66,6 +66,11 @@ function createInitialGameState(nextGameData = gameData) {
       exp: 0,
       nextExp: getExpToNextLevel(1),
       inventory: [],
+      equipment: {
+        weapon: null,
+        armor: null,
+        accessory: null,
+      },
       skills: startingSkills,
       currentRoom: initialRoomId,
       visitedRooms: [initialRoomId],
@@ -79,6 +84,7 @@ function createInitialGameState(nextGameData = gameData) {
       gameOver: false,
       unlockedDoors: [],
       collectedItems: [],
+      resolvedChallenges: [],
     },
 
     monsters: createMonsterState(),
@@ -153,6 +159,7 @@ function getAvailableRoomItemIds(gameState, room = getCurrentRoom(gameState)) {
 function getPublicGameState(gameState) {
   const currentRoom = getCurrentRoom(gameState);
   const activeMonster = getActiveBattleMonsterInfo(gameState);
+  const effectiveStats = getEffectivePlayerStats(gameState);
 
   return {
     mode: gameState.mode,
@@ -168,11 +175,15 @@ function getPublicGameState(gameState) {
 
     player: {
       hp: gameState.player.hp,
-      maxHp: gameState.player.maxHp,
+      maxHp: effectiveStats.maxHp,
       mp: gameState.player.mp,
-      maxMp: gameState.player.maxMp,
-      attack: gameState.player.attack,
-      defense: gameState.player.defense,
+      maxMp: effectiveStats.maxMp,
+      attack: effectiveStats.attack,
+      defense: effectiveStats.defense,
+      baseAttack: gameState.player.attack,
+      baseDefense: gameState.player.defense,
+      baseMaxHp: gameState.player.maxHp,
+      baseMaxMp: gameState.player.maxMp,
       level: gameState.player.level,
       exp: gameState.player.exp,
       nextExp: getExpToNextLevel(gameState.player.level),
@@ -185,6 +196,10 @@ function getPublicGameState(gameState) {
       currentRoom: currentRoom.name,
       currentRoomId: currentRoom.id,
       visitedRooms: gameState.player.visitedRooms,
+      equipment: gameState.player.equipment || {},
+      equipmentItems: getEquippedItemIds(gameState)
+        .map((itemId) => getPublicItemInfo(itemId))
+        .filter(Boolean),
       skills: getPlayerSkillIds(gameState).map((skillId) => getPublicSkillInfo(skillId)).filter(Boolean),
       skillIds: getPlayerSkillIds(gameState),
     },
@@ -195,6 +210,8 @@ function getPublicGameState(gameState) {
       id: currentRoom.id,
       name: currentRoom.name,
       description: currentRoom.description,
+      kind: currentRoom.kind || "lore",
+      challenge: getPublicChallengeInfo(gameState, currentRoom),
       ascii: currentRoom.ascii,
       exits: currentRoom.exits,
       items: getAvailableRoomItemIds(gameState, currentRoom)
@@ -226,6 +243,64 @@ function getPlayerSkillIds(gameState) {
   }
 
   return Object.keys(gameData.skills || {}).slice(0, 3);
+}
+
+function getEquippedItemIds(gameState) {
+  const equipment = gameState.player.equipment || {};
+  return ["weapon", "armor", "accessory"].map((slot) => equipment[slot]).filter(Boolean);
+}
+
+function getEquipmentStats(gameState) {
+  return getEquippedItemIds(gameState).reduce(
+    (totals, itemId) => {
+      const stats = gameData.items[itemId]?.stats || {};
+      return {
+        attack: totals.attack + (Number(stats.attack) || 0),
+        defense: totals.defense + (Number(stats.defense) || 0),
+        maxHp: totals.maxHp + (Number(stats.maxHp) || 0),
+        maxMp: totals.maxMp + (Number(stats.maxMp) || 0),
+      };
+    },
+    { attack: 0, defense: 0, maxHp: 0, maxMp: 0 }
+  );
+}
+
+function getEffectivePlayerStats(gameState) {
+  const equipmentStats = getEquipmentStats(gameState);
+
+  return {
+    attack: gameState.player.attack + equipmentStats.attack,
+    defense: gameState.player.defense + equipmentStats.defense,
+    maxHp: gameState.player.maxHp + equipmentStats.maxHp,
+    maxMp: gameState.player.maxMp + equipmentStats.maxMp,
+  };
+}
+
+function getResolvedChallenges(gameState) {
+  if (!Array.isArray(gameState.flags.resolvedChallenges)) {
+    gameState.flags.resolvedChallenges = [];
+  }
+
+  return gameState.flags.resolvedChallenges;
+}
+
+function getChallengeId(room) {
+  return `${room.id}:challenge`;
+}
+
+function isChallengeResolved(gameState, room) {
+  return getResolvedChallenges(gameState).includes(getChallengeId(room));
+}
+
+function getPublicChallengeInfo(gameState, room) {
+  if (!room.challenge) {
+    return null;
+  }
+
+  return {
+    ...room.challenge,
+    resolved: isChallengeResolved(gameState, room),
+  };
 }
 
 function getPublicItemInfo(itemId) {
@@ -617,8 +692,9 @@ function awardExperience(gameState, monsterData) {
     gameState.player.nextExp = getExpToNextLevel(gameState.player.level);
 
     // MVP rule: level up fully restores HP/MP so the player can continue exploring.
-    gameState.player.hp = gameState.player.maxHp;
-    gameState.player.mp = gameState.player.maxMp;
+    const effectiveStats = getEffectivePlayerStats(gameState);
+    gameState.player.hp = effectiveStats.maxHp;
+    gameState.player.mp = effectiveStats.maxMp;
 
     messages.push(
       [
@@ -748,8 +824,12 @@ function getUsefulInventoryItemIds(gameState, room = getCurrentRoom(gameState)) 
       return true;
     }
 
+    if (item.type === "equipment") {
+      return true;
+    }
+
     if (item.type === "key") {
-      return Boolean(findKeyUnlockTarget(gameState, room, item));
+      return Boolean(findKeyUnlockTarget(gameState, room, item) || findChallengeUseTarget(gameState, room, item));
     }
 
     if (item.type === "quest") {
@@ -773,6 +853,10 @@ function handleLook(gameState) {
   const monsterText = monsterInfo
     ? `你看到怪物：${monsterInfo.name}（HP ${monsterInfo.hp}/${monsterInfo.maxHp}）`
     : "這裡沒有怪物。";
+  const challenge = room.challenge && !isChallengeResolved(gameState, room) ? room.challenge : null;
+  const challengeText = challenge
+    ? `你注意到挑戰：${challenge.description}${challenge.solutionHint ? ` 提示：${challenge.solutionHint}` : ""}`
+    : "這裡沒有尚未解開的挑戰。";
 
   const actionHints = [];
 
@@ -792,17 +876,22 @@ function handleLook(gameState) {
     actionHints.push("use small_potion");
   }
 
+  if (challenge?.requiredItemId && gameState.player.inventory.includes(challenge.requiredItemId)) {
+    actionHints.push(`use ${challenge.requiredItemId}`);
+  }
+
   actionHints.push("status");
   actionHints.push("help");
 
   return createEventResult(
     "look",
-    `${room.description}\n${itemText}\n${monsterText}\n可用建議：\n- ${actionHints.join("\n- ")}`
+    `${room.description}\n${itemText}\n${monsterText}\n${challengeText}\n可用建議：\n- ${actionHints.join("\n- ")}`
   );
 }
 
 function handleStatus(gameState) {
   const room = getCurrentRoom(gameState);
+  const effectiveStats = getEffectivePlayerStats(gameState);
   const inventoryNames =
     gameState.player.inventory.length > 0
       ? gameState.player.inventory.map((id) => gameData.items[id].name).join("、")
@@ -810,7 +899,7 @@ function handleStatus(gameState) {
 
   return createEventResult(
     "status",
-    `角色狀態：Lv. ${gameState.player.level}，EXP ${gameState.player.exp}/${gameState.player.nextExp}，HP ${gameState.player.hp}/${gameState.player.maxHp}，MP ${gameState.player.mp}/${gameState.player.maxMp}，攻擊力 ${gameState.player.attack}，防禦力 ${gameState.player.defense}，目前位置：${room.name}，背包：${inventoryNames}`
+    `角色狀態：Lv. ${gameState.player.level}，EXP ${gameState.player.exp}/${gameState.player.nextExp}，HP ${gameState.player.hp}/${effectiveStats.maxHp}，MP ${gameState.player.mp}/${effectiveStats.maxMp}，攻擊力 ${effectiveStats.attack}，防禦力 ${effectiveStats.defense}，目前位置：${room.name}，背包：${inventoryNames}`
   );
 }
 
@@ -826,7 +915,7 @@ function handleBattleLook(gameState) {
     [
       `你正在與 ${monsterInfo.name} 戰鬥。`,
       `${monsterInfo.name} HP：${monsterInfo.hp}/${monsterInfo.maxHp}`,
-      `你的 HP：${gameState.player.hp}/${gameState.player.maxHp}，MP：${gameState.player.mp}/${gameState.player.maxMp}`,
+      `你的 HP：${gameState.player.hp}/${getEffectivePlayerStats(gameState).maxHp}，MP：${gameState.player.mp}/${getEffectivePlayerStats(gameState).maxMp}`,
       `目前回合：${gameState.battle.turn}`,
     ].join("\n")
   );
@@ -859,6 +948,14 @@ function handleMove(gameState, direction) {
   const lockedExit = getLockedExit(room.id, direction, nextRoomId);
   if (lockedExit && !isDoorUnlocked(gameState, room.id, direction, nextRoomId)) {
     return createEventResult("locked_door", lockedExit.lockedMessage);
+  }
+
+  const unresolvedChallenge = room.challenge && !isChallengeResolved(gameState, room) ? room.challenge : null;
+  if (unresolvedChallenge?.type === "locked_door") {
+    return createEventResult(
+      "challenge_blocks_exit",
+      `${unresolvedChallenge.description} ${unresolvedChallenge.solutionHint || "先解開這個挑戰再繼續前進。"}`
+    );
   }
 
   gameState.player.currentRoom = nextRoomId;
@@ -943,7 +1040,7 @@ function handleAttack(gameState) {
   return performPlayerAttack(gameState, {
     type: "attack",
     name: "普通攻擊",
-    damage: gameState.player.attack,
+    damage: getEffectivePlayerStats(gameState).attack,
     mpCost: 0,
   });
 }
@@ -1089,12 +1186,18 @@ function performPlayerAttack(gameState, attackInfo) {
   const monsterId = monsterInfo.id;
   const monsterData = gameData.monsters[monsterId];
   const monsterState = gameState.monsters[monsterId];
+  const equipmentStats = getEquipmentStats(gameState);
+  const rawDamage =
+    attackInfo.type === "skill"
+      ? attackInfo.damage + equipmentStats.attack
+      : attackInfo.damage;
+  const finalDamage = Math.max(1, rawDamage - (monsterData.defense || 0));
 
-  monsterState.hp -= attackInfo.damage;
+  monsterState.hp -= finalDamage;
 
   let messageLines = [];
 
-  messageLines.push(`你使用 ${attackInfo.name}，對 ${monsterData.name} 造成 ${attackInfo.damage} 點傷害。`);
+  messageLines.push(`你使用 ${attackInfo.name}，對 ${monsterData.name} 造成 ${finalDamage} 點傷害。`);
 
   if (monsterState.hp <= 0) {
     monsterState.hp = 0;
@@ -1142,10 +1245,11 @@ function performPlayerAttack(gameState, attackInfo) {
 }
 
 function performMonsterCounterAttack(gameState, monsterData) {
-  let damage = monsterData.attack;
+  const effectiveStats = getEffectivePlayerStats(gameState);
+  let damage = Math.max(1, monsterData.attack - effectiveStats.defense);
 
   if (gameState.player.isDefending) {
-    damage = Math.ceil(damage / 2);
+    damage = Math.max(1, Math.ceil(damage / 2));
     gameState.player.isDefending = false;
   }
 
@@ -1174,20 +1278,26 @@ function handleUseItem(gameState, targetName) {
   }
 
   const item = gameData.items[itemId];
+  const challengeResult = handleUseChallengeItem(gameState, item);
+
+  if (challengeResult) {
+    return challengeResult;
+  }
 
   if (item.type === "consumable" && item.effect && item.effect.hp) {
     const oldHp = gameState.player.hp;
+    const effectiveStats = getEffectivePlayerStats(gameState);
     gameState.player.hp += item.effect.hp;
 
-    if (gameState.player.hp > gameState.player.maxHp) {
-      gameState.player.hp = gameState.player.maxHp;
+    if (gameState.player.hp > effectiveStats.maxHp) {
+      gameState.player.hp = effectiveStats.maxHp;
     }
 
     const healed = gameState.player.hp - oldHp;
 
     removeItemFromInventory(gameState, itemId);
     addLog(gameState, `你使用了 ${item.name}`);
-    const message = `你使用了 ${item.name}，恢復 ${healed} 點 HP。現在 HP：${gameState.player.hp}/${gameState.player.maxHp}`;
+    const message = `你使用了 ${item.name}，恢復 ${healed} 點 HP。現在 HP：${gameState.player.hp}/${effectiveStats.maxHp}`;
 
     if (gameState.mode === "battle") {
       gameState.battle.turn += 1;
@@ -1211,9 +1321,7 @@ function handleUseItem(gameState, targetName) {
   }
 
   if (item.type === "equipment") {
-    const message = `裝備系統尚未開放，暫時無法使用 ${item.name}。`;
-    addLog(gameState, `你嘗試使用 ${item.name}`);
-    return createEventResult("use_equipment_unavailable", message);
+    return equipItem(gameState, itemId);
   }
 
   if (item.type === "material") {
@@ -1223,6 +1331,71 @@ function handleUseItem(gameState, targetName) {
   }
 
   return createEventResult("use_no_effect", `${item.name} 沒有可用效果。`);
+}
+
+function handleUseChallengeItem(gameState, item) {
+  const room = getCurrentRoom(gameState);
+  const challengeTarget = findChallengeUseTarget(gameState, room, item);
+
+  if (!challengeTarget) {
+    return null;
+  }
+
+  const resolvedChallenges = getResolvedChallenges(gameState);
+  const challengeId = getChallengeId(room);
+
+  if (!resolvedChallenges.includes(challengeId)) {
+    resolvedChallenges.push(challengeId);
+  }
+
+  for (const rewardItemId of challengeTarget.rewardItemIds || []) {
+    if (gameData.items[rewardItemId] && !room.items.includes(rewardItemId)) {
+      room.items.push(rewardItemId);
+    }
+  }
+
+  addLog(gameState, `你解開了 ${room.name} 的挑戰`);
+
+  return createEventResult(
+    "challenge_resolved",
+    `你使用 ${item.name} 解開了眼前的挑戰。${challengeTarget.solutionHint || ""}`
+  );
+}
+
+function equipItem(gameState, itemId) {
+  const item = gameData.items[itemId];
+  const slot = item.slot;
+
+  if (!["weapon", "armor", "accessory"].includes(slot)) {
+    return createEventResult("equipment_missing_slot", `${item.name} 缺少有效裝備欄位，無法裝備。`);
+  }
+
+  if (!gameState.player.equipment) {
+    gameState.player.equipment = { weapon: null, armor: null, accessory: null };
+  }
+
+  const previousItemId = gameState.player.equipment[slot];
+  gameState.player.equipment[slot] = itemId;
+  removeItemFromInventory(gameState, itemId);
+
+  if (previousItemId && !gameState.player.inventory.includes(previousItemId)) {
+    gameState.player.inventory.push(previousItemId);
+  }
+
+  clampPlayerResourcesToEffectiveMax(gameState);
+  addLog(gameState, `你裝備了 ${item.name}`);
+
+  const previousText = previousItemId ? `，換下 ${gameData.items[previousItemId]?.name || previousItemId}` : "";
+  return createEventResult(
+    "equip_item",
+    `你裝備了 ${item.name}${previousText}。目前攻擊 ${getEffectivePlayerStats(gameState).attack}，防禦 ${getEffectivePlayerStats(gameState).defense}。`
+  );
+}
+
+function clampPlayerResourcesToEffectiveMax(gameState) {
+  const effectiveStats = getEffectivePlayerStats(gameState);
+  gameState.player.hp = Math.min(gameState.player.hp, effectiveStats.maxHp);
+  gameState.player.mp = Math.min(gameState.player.mp, effectiveStats.maxMp);
 }
 
 function handleUseKeyItem(gameState, item) {
@@ -1315,6 +1488,18 @@ function findKeyUnlockTarget(gameState, room, item) {
   }
 
   return null;
+}
+
+function findChallengeUseTarget(gameState, room, item) {
+  if (!room.challenge || isChallengeResolved(gameState, room)) {
+    return null;
+  }
+
+  if (room.challenge.requiredItemId && room.challenge.requiredItemId !== item.id) {
+    return null;
+  }
+
+  return room.challenge;
 }
 
 function checkGameOver(gameState) {

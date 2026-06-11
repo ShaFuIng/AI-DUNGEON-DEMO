@@ -46,7 +46,7 @@ function StatCard({ label, value, muted = false }) {
         {label}
       </p>
       <p
-        className={`mt-2 text-2xl font-semibold ${
+        className={`mt-2 text-xl font-semibold ${
           muted ? "text-stone-500" : "text-white"
         }`}
       >
@@ -54,6 +54,15 @@ function StatCard({ label, value, muted = false }) {
       </p>
     </div>
   );
+}
+
+function formatEffectiveStat(value, baseValue) {
+  if (!Number.isFinite(Number(value)) || !Number.isFinite(Number(baseValue)) || value === baseValue) {
+    return value ?? "-";
+  }
+
+  const bonus = value - baseValue;
+  return `${value} (+${bonus})`;
 }
 
 export default function CharacterPanel({ player, flags, className = "" }) {
@@ -108,8 +117,14 @@ export default function CharacterPanel({ player, flags, className = "" }) {
       </div>
 
       <div className="mt-5 grid grid-cols-4 gap-3">
-        <StatCard label="ATK" value={player?.attack ?? "-"} />
-        <StatCard label="DEF" value={defense} />
+        <StatCard
+          label="ATK"
+          value={formatEffectiveStat(player?.attack, player?.baseAttack)}
+        />
+        <StatCard
+          label="DEF"
+          value={formatEffectiveStat(defense, player?.baseDefense)}
+        />
         <StatCard label="SPD" value="--" muted />
         <StatCard label="LCK" value="--" muted />
       </div>

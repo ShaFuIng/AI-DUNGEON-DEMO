@@ -11,10 +11,12 @@ function normalizeRuntimeGameData(rawGameData = {}) {
         id: toSnakeCaseId(room.id || roomId || room.name, `room_${index + 1}`),
         name: room.name || `房間 ${index + 1}`,
         description: room.description || "這裡還沒有明確描述。",
+        kind: normalizeRoomKind(room.kind, index),
         ascii: room.ascii || "",
         exits: normalizeExits(room.exits),
         items: room.items || [],
         monster: room.monster ?? null,
+        challenge: normalizeChallengeShape(room.challenge),
       };
 
       return [normalizedRoom.id, normalizedRoom];
@@ -30,6 +32,7 @@ function normalizeRuntimeGameData(rawGameData = {}) {
   gameData.player = normalizePlayer(gameData.player, gameData.skills);
 
   normalizeRoomReferences(gameData);
+  normalizeChallengeReferences(gameData);
   normalizeWinCondition(gameData);
 
   return gameData;
@@ -53,6 +56,11 @@ function normalizeItems(rawItems) {
 
       if (type === "consumable") {
         normalizedItem.effect = normalizeHealingEffect(item.effect, item);
+      }
+
+      if (type === "equipment") {
+        normalizedItem.slot = normalizeEquipmentSlot(item.slot, index);
+        normalizedItem.stats = normalizeEquipmentStats(item.stats, normalizedItem.slot);
       }
 
       return [id, normalizedItem];
@@ -154,6 +162,23 @@ function normalizeRoomReferences(gameData) {
     } else {
       room.monster = matchEntityId(room.monster, gameData.monsters, monsterIdMap);
     }
+  }
+}
+
+function normalizeChallengeReferences(gameData) {
+  const itemIdMap = buildNameMap(gameData.items);
+
+  for (const room of Object.values(gameData.rooms || {})) {
+    if (!room.challenge) continue;
+
+    room.challenge.requiredItemId = matchEntityId(
+      room.challenge.requiredItemId,
+      gameData.items,
+      itemIdMap
+    );
+    room.challenge.rewardItemIds = (room.challenge.rewardItemIds || [])
+      .map((itemId) => matchEntityId(itemId, gameData.items, itemIdMap))
+      .filter(Boolean);
   }
 }
 
@@ -265,6 +290,61 @@ function normalizeItemType(type) {
     return normalized;
   }
   return "material";
+}
+
+function normalizeRoomKind(kind, index) {
+  const normalized = String(kind || "").toLowerCase();
+  const allowed = ["start", "combat", "puzzle", "treasure", "rest", "key", "boss", "lore"];
+
+  if (allowed.includes(normalized)) {
+    return normalized;
+  }
+
+  return index === 0 ? "start" : "lore";
+}
+
+function normalizeChallengeShape(challenge) {
+  if (!challenge || typeof challenge !== "object" || Array.isArray(challenge)) {
+    return null;
+  }
+
+  const type = String(challenge.type || "puzzle").toLowerCase();
+
+  return {
+    type: ["puzzle", "locked_door", "trap", "riddle"].includes(type) ? type : "puzzle",
+    description: challenge.description || "這裡有一個尚未解開的機關。",
+    requiredItemId: challenge.requiredItemId || null,
+    solutionHint: challenge.solutionHint || "仔細觀察並嘗試使用合適的物品。",
+    rewardItemIds: Array.isArray(challenge.rewardItemIds) ? challenge.rewardItemIds : [],
+  };
+}
+
+function normalizeEquipmentSlot(slot, index) {
+  const normalized = String(slot || "").toLowerCase();
+
+  if (["weapon", "armor", "accessory"].includes(normalized)) {
+    return normalized;
+  }
+
+  return index % 3 === 0 ? "weapon" : index % 3 === 1 ? "armor" : "accessory";
+}
+
+function normalizeEquipmentStats(stats, slot) {
+  const normalizedStats = stats && typeof stats === "object" && !Array.isArray(stats) ? stats : {};
+  const result = {};
+
+  for (const stat of ["attack", "defense", "maxHp", "maxMp"]) {
+    const value = nonNegativeNumber(normalizedStats[stat], 0);
+    if (value > 0) result[stat] = value;
+  }
+
+  if (Object.keys(result).length > 0) {
+    return result;
+  }
+
+  if (slot === "weapon") return { attack: 2 };
+  if (slot === "armor") return { defense: 1, maxHp: 4 };
+  return { maxMp: 2 };
 }
 
 function normalizeSkillRole(role, index) {

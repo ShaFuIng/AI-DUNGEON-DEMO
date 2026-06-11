@@ -41,7 +41,7 @@ function normalizeEnemy(monster) {
 }
 
 function isBossEncounter(enemy, currentRoom) {
-  return enemy?.id === "ruin_guardian" || currentRoom?.id === "boss_room";
+  return enemy?.id === "ruin_guardian" || currentRoom?.id === "boss_room" || currentRoom?.kind === "boss";
 }
 
 function getEncounterType(enemy, currentRoom) {
@@ -98,8 +98,12 @@ function buildAvailableCommands(gameState) {
       "/help",
     ];
 
-    if (getInventoryItemIds(gameState.player).includes("small_potion")) {
-      commands.splice(4, 0, "use small_potion");
+    const consumableItemIds = getInventoryItemIds(gameState.player).filter(
+      (itemId) => gameState.itemDetails?.[itemId]?.type === "consumable"
+    );
+
+    for (const itemId of consumableItemIds) {
+      commands.splice(Math.max(1, commands.length - 4), 0, `use ${itemId}`);
     }
 
     return commands;
@@ -736,7 +740,7 @@ export default function App() {
           defaultPosition={{ x: 980, y: 120 }}
           defaultSize={{ width: 420, height: 420 }}
         >
-          <EquipmentWindowContent />
+          <EquipmentWindowContent equipmentItems={gameState?.player?.equipmentItems || []} />
         </FloatingGameWindow>
       ) : null}
 

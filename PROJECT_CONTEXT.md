@@ -59,6 +59,15 @@
 - `validateRuntimeGameData` 仍是最後守門；如果收到未正規化 array，錯誤會明確顯示 `items must be object map, but got array`。
 - 新增 samples：`AI/samples/runtimeAdventure.valid.json` 與 `AI/samples/runtimeAdventure.arrayInput.json`。
 
+## 近期新增：Adventure Design Pass 與裝備 runtime
+- 新增 `AI/balancers/balanceRuntimeAdventure.js`，runtime generation 流程改為 `parse -> normalize -> balance -> validate`。
+- balancer 會補齊 room.kind、challenge、healing consumable、equipment、Boss room quest item，以及普通怪 / Boss 數值平衡。
+- `validateRuntimeGameData` 增加 adventure design 檢查：empty room ratio、equipment item、puzzle challenge、skill role、Boss balance、equipment slot/stats、challenge references。
+- `engine/gameEngine.js` 新增 player equipment：weapon / armor / accessory。
+- `use <equipment_id>` 會裝備道具；public player state 回傳 base stats 與 effective stats。
+- 戰鬥公式改用 effective attack / defense；怪物攻擊會扣玩家防禦，技能傷害會吃武器攻擊加成。
+- `EquipmentWindowContent` 改為顯示 runtime equipment，不再硬編碼 Rusty Blade / Empty。
+
 ## 近期修正：門鎖與 Recent Log 動畫
 - `gameEngine` 已新增 `flags.unlockedDoors`，用來保存已解鎖的門。
 - `boss_room` 不再因玩家背包擁有 `rusty_key` 就直接開放；玩家必須在 `altar`，也就是 east exit 指向 `boss_room` 的位置，主動使用 `rusty_key`。
