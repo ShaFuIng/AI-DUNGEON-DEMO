@@ -288,10 +288,21 @@ function handleCommand(gameState, rawCommand) {
     return createEventResult("no_battle_to_escape", "現在沒有需要逃跑的戰鬥。");
   }
 
+  if (action === "retreat" || (action === "boss" && target === "retreat")) {
+    return handleBossRetreat(gameState);
+  }
+
   const isExplorationAction = action === "move" || action === "take";
   const activeMonster = getActiveRoomMonsterInfo(gameState);
 
   if (activeMonster && isExplorationAction) {
+    if (isBossThreat(gameState) && action === "move") {
+      return createEventResult(
+        "boss_retreat_required",
+        "遺跡守護者壓迫著整個密室。若要撤退，請使用 retreat。"
+      );
+    }
+
     return createEventResult(
       "blocked_by_battle",
       `${activeMonster.name} 仍擋在你面前。此刻無法探索，請先戰鬥或嘗試 escape。`
@@ -435,6 +446,46 @@ function handleBattleStart(gameState) {
   return createEventResult(
     "battle_started",
     `你面對 ${monsterInfo.name} 擺開架勢。戰鬥開始。`
+  );
+}
+
+function isBossThreat(gameState) {
+  const room = getCurrentRoom(gameState);
+  const monsterInfo = getRoomMonsterInfo(gameState, room);
+
+  return room?.id === "boss_room" && monsterInfo?.id === "ruin_guardian";
+}
+
+function handleBossRetreat(gameState) {
+  const room = getCurrentRoom(gameState);
+  const monsterInfo = getRoomMonsterInfo(gameState, room);
+  const retreatRoomId = room?.exits?.west;
+
+  if (room?.id !== "boss_room" || monsterInfo?.id !== "ruin_guardian") {
+    return createEventResult(
+      "retreat_unavailable",
+      "這裡沒有需要立刻撤退的 Boss 威脅。"
+    );
+  }
+
+  if (!retreatRoomId || !gameData.rooms[retreatRoomId]) {
+    return createEventResult(
+      "retreat_blocked",
+      "你想撤退，但身後沒有安全退路。"
+    );
+  }
+
+  gameState.player.currentRoom = retreatRoomId;
+
+  if (!gameState.player.visitedRooms.includes(retreatRoomId)) {
+    gameState.player.visitedRooms.push(retreatRoomId);
+  }
+
+  addLog(gameState, "你暫時撤離了核心密室");
+
+  return createEventResult(
+    "boss_retreat",
+    "你壓低腳步，趁遺跡守護者完全甦醒前退回祭壇大廳。"
   );
 }
 
@@ -693,6 +744,7 @@ function handleTake(gameState, targetName) {
 
   if (itemId === "ancient_core") {
     gameState.flags.hasAncientCore = true;
+    checkWinCondition(gameState);
   }
 
   addLog(gameState, `你取得了 ${gameData.items[itemId].name}`);
@@ -1084,11 +1136,13 @@ function checkGameOver(gameState) {
 
 function checkWinCondition(gameState) {
   if (
+    !gameState.flags.gameWon &&
     gameState.flags.hasAncientCore &&
     gameState.flags.bossDefeated &&
     gameState.player.currentRoom === "entrance"
   ) {
     gameState.flags.gameWon = true;
+    addLog(gameState, "你帶著古代核心回到了遺跡入口，探索完成。");
   }
 }
 

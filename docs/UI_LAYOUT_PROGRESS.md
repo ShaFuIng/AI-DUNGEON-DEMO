@@ -160,3 +160,9 @@ AI/contentDesignerProviders/geminiProvider.js
 tools/validateArea.js
 schemas/generatedArea.schema.json
 ```
+## 近期修正：Boss 撤退與 Map Log 佈局
+- 一般遭遇戰不可取消；普通怪仍會阻擋探索行動，玩家要先進入戰鬥，再透過 `escape` 脫離。
+- Boss 危險提示的「暫時撤退」會呼叫後端 `retreat`，玩家會直接退回安全房間，不進入 Boss 戰。
+- `retreat` 目前只在 `boss_room` 且 `ruin_guardian` 未擊敗時生效；手動 `move west` 會提示使用 `retreat`。
+- Map 九宮格略向右移，替左上 Recent Log 留出閱讀空間。
+- Recent Log 寬度調回約 15rem，維持最近 5 筆、舊到新排列與進出動畫。

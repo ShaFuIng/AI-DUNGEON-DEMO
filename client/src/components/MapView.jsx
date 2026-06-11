@@ -106,7 +106,7 @@ export default function MapView({ currentRoom, player, roomsById, logs = [], loa
         </h2>
       </div>
 
-      <div className="mx-auto grid h-[360px] w-full max-w-[480px] grid-cols-3 grid-rows-3 gap-3">
+      <div className="ml-auto mr-0 grid h-[360px] w-full max-w-[480px] grid-cols-3 grid-rows-3 gap-3 sm:mr-4 lg:mr-8">
         {DIRECTIONS.map((direction) => {
           const exitRoomId = exits[direction.id];
           return (

@@ -36,6 +36,63 @@ function normalizeEnemy(monster) {
   };
 }
 
+function isBossEncounter(enemy, currentRoom) {
+  return enemy?.id === "ruin_guardian" || currentRoom?.id === "boss_room";
+}
+
+function getEncounterType(enemy, currentRoom) {
+  return isBossEncounter(enemy, currentRoom) ? "boss" : "normal";
+}
+
+function VictoryModal({ open, player, flags, onReset, onStay }) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
+      <section className="w-full max-w-lg overflow-hidden rounded-lg border border-amber-200/30 bg-[radial-gradient(circle_at_20%_0%,rgba(245,158,11,0.16),transparent_34%),linear-gradient(145deg,rgba(28,24,18,0.98),rgba(13,18,16,0.98))] shadow-[0_0_0_1px_rgba(255,255,255,0.045),0_24px_70px_rgba(0,0,0,0.68)]">
+        <header className="border-b border-white/10 px-5 py-4">
+          <p className="font-mono text-xs uppercase tracking-wide text-amber-200">
+            Victory
+          </p>
+          <h2 className="mt-1 text-2xl font-semibold text-white">探索完成</h2>
+        </header>
+
+        <div className="space-y-4 px-5 py-5 text-sm leading-7 text-stone-200">
+          <p>
+            你擊敗了遺跡守護者，取回古代核心，並成功回到遺跡入口。古老遺跡的能量逐漸平息，這次探索宣告完成。
+          </p>
+          <div className="grid grid-cols-2 gap-2 rounded-lg border border-amber-100/15 bg-amber-300/10 p-3 text-amber-50">
+            <span>等級：Lv. {player?.level ?? 1}</span>
+            <span>
+              HP / MP：{player?.hp ?? 0}/{player?.maxHp ?? 0} · {player?.mp ?? 0}/
+              {player?.maxMp ?? 0}
+            </span>
+            <span>已擊敗 Boss：{flags?.bossDefeated ? "是" : "否"}</span>
+            <span>已取得古代核心：{flags?.hasAncientCore ? "是" : "否"}</span>
+          </div>
+        </div>
+
+        <footer className="flex justify-end gap-2 border-t border-white/10 bg-black/15 px-5 py-4">
+          <button
+            type="button"
+            onClick={onStay}
+            className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-semibold text-stone-200 transition hover:bg-white/[0.08]"
+          >
+            停留查看
+          </button>
+          <button
+            type="button"
+            onClick={onReset}
+            className="rounded-lg border border-amber-200/35 bg-amber-300/15 px-4 py-2 text-sm font-semibold text-amber-50 transition hover:bg-amber-300/25"
+          >
+            重新開始
+          </button>
+        </footer>
+      </section>
+    </div>
+  );
+}
+
 export default function App() {
   const [gameState, setGameState] = useState(null);
   const [gameData, setGameData] = useState(null);
@@ -50,7 +107,10 @@ export default function App() {
   const [quickActionsOpen, setQuickActionsOpen] = useState(false);
   const [encounterOpen, setEncounterOpen] = useState(false);
   const [pendingEncounterEnemy, setPendingEncounterEnemy] = useState(null);
+  const [pendingEncounterType, setPendingEncounterType] = useState("normal");
   const [lastEncounterMonsterId, setLastEncounterMonsterId] = useState(null);
+  const [dismissedBossEncounterId, setDismissedBossEncounterId] = useState(null);
+  const [victoryModalDismissed, setVictoryModalDismissed] = useState(false);
 
   const roomsById = useMemo(() => gameData?.rooms || {}, [gameData]);
   const currentRoomEnemy = useMemo(
@@ -63,6 +123,7 @@ export default function App() {
   );
   const isBattle = gameState?.mode === "battle";
   const isGameOver = gameState?.mode === "gameOver" || gameState?.gameOver;
+  const isVictory = Boolean(gameState?.flags?.gameWon);
   const showBattleView = isBattle || (isGameOver && gameState?.battle?.status === "defeat");
 
   const loadGameState = useCallback(async () => {
@@ -97,6 +158,27 @@ export default function App() {
     }
   }, []);
 
+  function openEncounterForEnemy(enemy, state = gameState, { force = false } = {}) {
+    if (!enemy) {
+      return false;
+    }
+
+    const encounterType = getEncounterType(enemy, state?.currentRoom);
+
+    if (
+      encounterType === "boss" &&
+      !force &&
+      dismissedBossEncounterId === enemy.id
+    ) {
+      return false;
+    }
+
+    setPendingEncounterEnemy(enemy);
+    setPendingEncounterType(encounterType);
+    setEncounterOpen(true);
+    return true;
+  }
+
   async function sendCommand(command) {
     const normalizedCommand = command.trim();
 
@@ -121,8 +203,7 @@ export default function App() {
       ]);
 
       if (currentRoomEnemy) {
-        setPendingEncounterEnemy(currentRoomEnemy);
-        setEncounterOpen(true);
+        openEncounterForEnemy(currentRoomEnemy, gameState, { force: true });
       }
 
       return;
@@ -161,7 +242,10 @@ export default function App() {
       if (data.eventResult?.type === "reset") {
         setEncounterOpen(false);
         setPendingEncounterEnemy(null);
+        setPendingEncounterType("normal");
         setLastEncounterMonsterId(null);
+        setDismissedBossEncounterId(null);
+        setVictoryModalDismissed(false);
         return;
       }
 
@@ -170,6 +254,8 @@ export default function App() {
       if (data.state?.mode === "battle") {
         setEncounterOpen(false);
         setPendingEncounterEnemy(null);
+        setPendingEncounterType("normal");
+        setDismissedBossEncounterId(null);
         setLastEncounterMonsterId(data.state.activeMonsterId || encounteredEnemy?.id || null);
         return;
       }
@@ -189,9 +275,10 @@ export default function App() {
         !encounterOpen &&
         encounteredEnemy.id !== lastEncounterMonsterId
       ) {
-        setPendingEncounterEnemy(encounteredEnemy);
-        setLastEncounterMonsterId(encounteredEnemy.id);
-        setEncounterOpen(true);
+        const opened = openEncounterForEnemy(encounteredEnemy, data.state);
+        if (opened) {
+          setLastEncounterMonsterId(encounteredEnemy.id);
+        }
       }
     } catch (commandError) {
       setError("指令送出失敗，請稍後再試。");
@@ -224,6 +311,7 @@ export default function App() {
     if (!enemy) {
       setEncounterOpen(false);
       setPendingEncounterEnemy(null);
+      setPendingEncounterType("normal");
       setStoryLines((lines) => [
         ...lines,
         createStoryLine("system", "此處沒有未擊敗的敵人，無法進入戰鬥。"),
@@ -233,12 +321,27 @@ export default function App() {
 
     setEncounterOpen(false);
     setPendingEncounterEnemy(null);
+    setPendingEncounterType("normal");
     sendCommand("battle start");
   }
 
   function cancelEncounter() {
+    if (pendingEncounterType === "boss" && pendingEncounterEnemy?.id) {
+      setDismissedBossEncounterId(pendingEncounterEnemy.id);
+      setEncounterOpen(false);
+      setPendingEncounterEnemy(null);
+      setPendingEncounterType("normal");
+      sendCommand("retreat");
+      return;
+      setStoryLines((lines) => [
+        ...lines,
+        createStoryLine("system", "你暫時退開核心密室的戰場邊緣，遺跡守護者仍在深處等待。"),
+      ]);
+    }
+
     setEncounterOpen(false);
     setPendingEncounterEnemy(null);
+    setPendingEncounterType("normal");
   }
 
   async function handleBattleAction(command) {
@@ -249,6 +352,12 @@ export default function App() {
   useEffect(() => {
     loadGameState();
   }, [loadGameState]);
+
+  useEffect(() => {
+    if (!isVictory) {
+      setVictoryModalDismissed(false);
+    }
+  }, [isVictory]);
 
   useEffect(() => {
     function handleKeyDown(event) {
@@ -393,8 +502,20 @@ export default function App() {
       <EncounterModal
         open={encounterOpen}
         enemy={pendingEncounterEnemy || currentRoomEnemy}
+        variant={pendingEncounterType}
+        canCancel={pendingEncounterType === "boss"}
         onConfirm={confirmEncounter}
         onCancel={cancelEncounter}
+      />
+      <VictoryModal
+        open={isVictory && !victoryModalDismissed}
+        player={gameState?.player}
+        flags={gameState?.flags}
+        onReset={() => {
+          setVictoryModalDismissed(true);
+          sendCommand("reset");
+        }}
+        onStay={() => setVictoryModalDismissed(true)}
       />
     </main>
   );
