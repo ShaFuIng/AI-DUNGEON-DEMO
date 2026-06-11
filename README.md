@@ -212,15 +212,17 @@ COMFYUI_BASE_URL=http://127.0.0.1:8188
 
 ## ComfyUI Integration Phase 4
 
-第四階段已開始接 ComfyUI integration；目前只完成健康檢查，不會生成圖片，也不會呼叫 ComfyUI `/prompt`。
+第四階段已開始接 ComfyUI integration；目前完成健康檢查與 Step 2 角色立繪生成。
 
 - 預設 ComfyUI URL：`http://127.0.0.1:8188`
 - 可用 `.env` 的 `COMFYUI_BASE_URL` 覆蓋，例如 `COMFYUI_BASE_URL=http://127.0.0.1:8188`
-- 新增 `GET /api/comfy/status`
-- 後端會檢查 `${COMFYUI_BASE_URL}/system_stats`
-- ComfyUI 未啟動時仍回 HTTP 200，body 會是 `ok: false`
-- ComfyUI 未啟動不會影響文字 RPG 生成流程、Default Demo Mode 或 Generated Adventure Mode
-- 下一階段才會加入角色立繪生成
+- 新增 `GET /api/comfy/status`，後端會檢查 `${COMFYUI_BASE_URL}/system_stats`
+- 新增 `POST /api/image/character`，會讀取 `AI/image/workflows/character_portrait_api.json`
+- 角色立繪 API 會把 Step 2 的 `portraitPrompt.positive` / `portraitPrompt.negative` 填入 ComfyUI workflow，預設尺寸是 `512x768`
+- workflow 會覆蓋 node id：`26:24` positive、`25:24` negative、`13` width/height、`3` seed、`9` filename prefix
+- 後端會呼叫 ComfyUI `/prompt`，poll `/history/{promptId}`，再透過 `/view` 取回圖片並存到 `public/generated/comfy/`
+- 成功時 API 回傳 `imageUrl`，例如 `/generated/comfy/character_portrait_xxx.png`
+- ComfyUI 未啟動時仍不會影響文字 RPG 生成流程、Default Demo Mode 或 Generated Adventure Mode
 
 ## Content Designer Agent 安全邊界
 - Development-time only。

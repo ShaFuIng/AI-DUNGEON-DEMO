@@ -14,7 +14,10 @@ const {
 const { narrate } = require("./AI/narrator");
 const { generateCharacterPreview } = require("./AI/characterPreviewGenerator");
 const { buildAdventurePreview, generateRuntimeAdventure } = require("./AI/runtimeAdventureGenerator");
-const { checkComfyStatus } = require("./AI/image/comfyClient");
+const {
+  checkComfyStatus,
+  generateCharacterPortrait,
+} = require("./AI/image/comfyClient");
 const { formatGeneratedJsonError } = require("./AI/utils/parseGeneratedJson");
 
 const app = express();
@@ -47,6 +50,45 @@ app.get("/api/health", (req, res) => {
 app.get("/api/comfy/status", async (req, res) => {
   const status = await checkComfyStatus();
   res.json(status);
+});
+
+app.post("/api/image/character", async (req, res) => {
+  try {
+    const {
+      positive = "",
+      negative = "",
+      width = 512,
+      height = 768,
+      seed,
+      filenamePrefix = "character_portrait",
+    } = req.body || {};
+
+    if (!String(positive).trim()) {
+      res.status(400).json({
+        ok: false,
+        message: "positive prompt is required",
+      });
+      return;
+    }
+
+    const result = await generateCharacterPortrait({
+      positive,
+      negative,
+      width,
+      height,
+      seed,
+      filenamePrefix,
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error("ComfyUI image generation failed:", getPublicErrorDetails(error));
+    res.status(502).json({
+      ok: false,
+      message: "ComfyUI image generation failed",
+      error: getPublicErrorDetails(error),
+    });
+  }
 });
 
 // 取得遊戲資料 API

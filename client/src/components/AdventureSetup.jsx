@@ -94,6 +94,10 @@ export default function AdventureSetup({
     loading: false,
     data: null,
   });
+  const [portraitGeneration, setPortraitGeneration] = useState({
+    loading: false,
+    error: "",
+  });
 
   useEffect(() => {
     setApiKey(localStorage.getItem("aiDungeonGeminiApiKey") || "");
@@ -161,6 +165,7 @@ export default function AdventureSetup({
       if (!response.ok) throw new Error(data?.message || "character_preview_failed");
       setCharacterPreview(data.character);
       setAdventurePreview(null);
+      setPortraitGeneration({ loading: false, error: "" });
       setStep("character");
     } catch {
       setPreviewError("角色預覽生成失敗，請調整角色描述或稍後再試。");
@@ -191,6 +196,65 @@ export default function AdventureSetup({
     } finally {
       setIsGeneratingAdventure(false);
     }
+  }
+
+  async function generateCharacterPortrait() {
+    const portraitPrompt = characterPreview?.portraitPrompt || {};
+    const positive = portraitPrompt.positive || characterPreview?.imagePrompt || "";
+    const negative = portraitPrompt.negative || "";
+    const { width, height } = getPortraitSize(portraitPrompt.aspectRatio);
+
+    if (!positive.trim()) {
+      setPortraitGeneration({
+        loading: false,
+        error: "缺少角色立繪 positive prompt，請重新生成角色預覽。",
+      });
+      return;
+    }
+
+    setPortraitGeneration({ loading: true, error: "" });
+
+    try {
+      const response = await fetch("/api/image/character", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          positive,
+          negative,
+          width,
+          height,
+          filenamePrefix: "character_portrait",
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data?.ok) {
+        throw new Error(data?.message || "portrait_generation_failed");
+      }
+
+      setCharacterPreview((current) =>
+        current
+          ? {
+              ...current,
+              generatedPortrait: data,
+            }
+          : current
+      );
+      setPortraitGeneration({ loading: false, error: "" });
+    } catch {
+      setPortraitGeneration({
+        loading: false,
+        error: "角色立繪生成失敗，請確認 ComfyUI 與 workflow 後再試。",
+      });
+    }
+  }
+
+  function getPortraitSize(aspectRatio) {
+    if (aspectRatio === "3:4") {
+      return { width: 512, height: 768 };
+    }
+
+    return { width: 512, height: 768 };
   }
 
   function startGeneratedAdventure() {
@@ -336,6 +400,15 @@ export default function AdventureSetup({
                   <p className="font-semibold text-white">Portrait Prompt</p>
                   <p className="mt-2 text-xs leading-5 text-stone-300">{characterPreview.portraitPrompt?.positive || characterPreview.imagePrompt}</p>
                   <p className="mt-3 font-mono text-xs text-red-200/80">{characterPreview.portraitPrompt?.negative}</p>
+                  {characterPreview.generatedPortrait?.imageUrl ? (
+                    <div className="mt-4 overflow-hidden rounded-lg border border-teal-200/20 bg-black/30">
+                      <img
+                        src={characterPreview.generatedPortrait.imageUrl}
+                        alt={`${characterPreview.name} portrait`}
+                        className="aspect-[2/3] w-full object-cover"
+                      />
+                    </div>
+                  ) : null}
                 </div>
                 <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
                   <p className="font-semibold text-white">ComfyUI</p>
@@ -356,10 +429,21 @@ export default function AdventureSetup({
                     <button type="button" onClick={checkComfyStatus} disabled={comfyStatus.loading} className="rounded-lg border border-teal-200/30 bg-teal-300/10 px-3 py-2 text-xs font-semibold text-teal-50 transition hover:bg-teal-300/20 disabled:cursor-wait disabled:opacity-60">
                       {comfyStatus.loading ? "檢查中" : "重新檢查 ComfyUI"}
                     </button>
-                    <button type="button" disabled className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-semibold text-stone-500">
-                      生成角色立繪（下一階段）
+                    <button type="button" onClick={generateCharacterPortrait} disabled={!comfyStatus.data?.ok || portraitGeneration.loading} className="rounded-lg border border-amber-200/40 bg-amber-300/15 px-3 py-2 text-xs font-semibold text-amber-50 transition hover:bg-amber-300/25 disabled:cursor-not-allowed disabled:opacity-55">
+                      {portraitGeneration.loading ? "生成角色立繪中..." : "生成角色立繪"}
                     </button>
                   </div>
+                  {!comfyStatus.data?.ok ? (
+                    <p className="mt-3 text-xs leading-5 text-stone-500">ComfyUI 未連線時無法生成角色立繪，但不影響文字 RPG。</p>
+                  ) : null}
+                  {portraitGeneration.error ? (
+                    <p className="mt-3 text-xs leading-5 text-red-200">{portraitGeneration.error}</p>
+                  ) : null}
+                  {characterPreview.generatedPortrait ? (
+                    <p className="mt-3 text-xs leading-5 text-teal-100">
+                      角色立繪已生成：{characterPreview.generatedPortrait.filename}
+                    </p>
+                  ) : null}
                 </div>
               </aside>
             </div>

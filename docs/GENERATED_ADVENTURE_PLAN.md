@@ -287,7 +287,7 @@ The runtime JSON parser is centralized in `AI/utils/parseGeneratedJson.js`; inva
 
 ## ComfyUI Integration Phase 4
 
-第四階段開始接 ComfyUI integration。目前範圍只包含健康檢查，不會生成圖片、不會新增 workflow JSON，也不會呼叫 ComfyUI `/prompt`。
+第四階段開始接 ComfyUI integration。目前已完成健康檢查與 Step 2 角色立繪生成。
 
 - `COMFYUI_BASE_URL` 可在 `.env` 設定。
 - 未設定時預設 `http://127.0.0.1:8188`。
@@ -295,5 +295,10 @@ The runtime JSON parser is centralized in `AI/utils/parseGeneratedJson.js`; inva
 - API 會檢查 `${COMFYUI_BASE_URL}/system_stats`。
 - ComfyUI 已啟動時回 `ok: true`、`message: "ComfyUI connected"`、`baseUrl` 與 `system`。
 - ComfyUI 未啟動時仍回 HTTP 200 + `ok: false`、`message: "ComfyUI is not reachable"`。
-- ComfyUI 未啟動不會影響角色預覽、冒險預覽、開始冒險或文字 RPG command flow。
-- 下一階段才會加入角色立繪生成。
+- 後端新增 `POST /api/image/character`，request body 支援 `positive`、`negative`、`width`、`height`、`seed`、`filenamePrefix`。
+- `positive` 必填；`negative`、`width`、`height`、`seed`、`filenamePrefix` 可省略。
+- workflow 檔案是 `AI/image/workflows/character_portrait_api.json`。
+- workflow node 對應：`26:24` positive、`25:24` negative、`13` width/height、`3` seed、`9` filename prefix。
+- 後端會呼叫 ComfyUI `/prompt`、poll `/history/{promptId}` 最多 60 秒，然後從 SaveImage output 取得圖片。
+- 圖片會透過 ComfyUI `/view` 下載到 `public/generated/comfy/`，前端使用 `/generated/comfy/<filename>` 顯示。
+- ComfyUI 未啟動或產圖失敗不會影響角色預覽、冒險預覽、開始冒險或文字 RPG command flow。

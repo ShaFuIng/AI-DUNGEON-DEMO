@@ -124,10 +124,11 @@
 
 ## ComfyUI Integration Phase 4
 
-- 第四階段已開始接 ComfyUI integration。
-- 目前只完成健康檢查，不會生成圖片，不會接 workflow，也不會呼叫 `/prompt`。
+- 第四階段已開始接 ComfyUI integration，現在包含健康檢查與 Step 2 角色立繪生成。
 - 後端透過 `COMFYUI_BASE_URL` 讀取 ComfyUI URL，未設定時預設 `http://127.0.0.1:8188`。
-- 新增 `GET /api/comfy/status`，內部檢查 `${COMFYUI_BASE_URL}/system_stats`。
-- ComfyUI 未啟動時仍回 HTTP 200 + `ok: false`，不會影響文字 RPG 生成流程。
-- Adventure Setup Step 2 角色預覽區會顯示 ComfyUI 已連線 / 未連線，並提供重新檢查按鈕。
-- 下一階段才會加入角色立繪生成。
+- `GET /api/comfy/status` 會檢查 `${COMFYUI_BASE_URL}/system_stats`。
+- 新增 `POST /api/image/character`，使用 `AI/image/workflows/character_portrait_api.json`。
+- `comfyClient` 會覆蓋 workflow node：`26:24` positive、`25:24` negative、`13` width/height、`3` seed、`9` filename prefix。
+- 生成流程會呼叫 ComfyUI `/prompt`、poll `/history/{promptId}`，再用 `/view` 取回圖片並保存到 `public/generated/comfy/`。
+- Adventure Setup Step 2 會顯示 ComfyUI 狀態、重新檢查按鈕、生成角色立繪按鈕與生成後圖片。
+- ComfyUI 未啟動或產圖失敗不會影響文字 RPG 生成流程。
