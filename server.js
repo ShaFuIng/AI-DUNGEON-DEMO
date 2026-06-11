@@ -12,7 +12,9 @@ const {
   setRuntimeGameData,
 } = require("./engine/gameEngine");
 const { narrate } = require("./AI/narrator");
-const { generateRuntimeAdventure } = require("./AI/runtimeAdventureGenerator");
+const { generateCharacterPreview } = require("./AI/characterPreviewGenerator");
+const { buildAdventurePreview, generateRuntimeAdventure } = require("./AI/runtimeAdventureGenerator");
+const { formatGeneratedJsonError } = require("./AI/utils/parseGeneratedJson");
 
 const app = express();
 const PORT = 3000;
@@ -50,6 +52,81 @@ app.get("/api/state", (req, res) => {
   res.json(getPublicGameState(gameState));
 });
 
+app.post("/api/character/preview", async (req, res) => {
+  try {
+    const {
+      apiKey,
+      model = "gemini-2.5-flash-lite",
+      genre = "奇幻遺跡",
+      characterPrompt = "",
+      difficulty = 4,
+    } = req.body || {};
+
+    const character = await generateCharacterPreview({
+      apiKey,
+      model,
+      genre,
+      characterPrompt,
+      difficulty,
+    });
+
+    res.json({ character });
+  } catch (error) {
+    console.error("Character preview generation failed:", error.message);
+    res.status(422).json({
+      error: "character_preview_failed",
+      message: "角色預覽生成失敗，請調整角色設定或稍後再試。",
+      details: getPublicErrorDetails(error),
+    });
+  }
+});
+
+app.post("/api/adventure/preview", async (req, res) => {
+  try {
+    const {
+      apiKey,
+      model = "gemini-2.5-flash-lite",
+      genre = "奇幻遺跡",
+      characterPrompt = "",
+      adventurePrompt = "",
+      roomCount = 5,
+      difficulty = 4,
+      confirmedCharacter = null,
+    } = req.body || {};
+
+    const { gameData: previewGameData, generationSummary } =
+      await generateRuntimeAdventure({
+        apiKey,
+        model,
+        genre,
+        characterPrompt,
+        adventurePrompt,
+        roomCount,
+        difficulty,
+        confirmedCharacter,
+        label: "adventure preview",
+      });
+    const previewState = createInitialGameState(previewGameData);
+    const publicPreviewState = getPublicGameState(previewState);
+    setRuntimeGameData(currentGameData);
+
+    res.json({
+      state: publicPreviewState,
+      gameData: previewGameData,
+      generationSummary,
+      preview: buildAdventurePreview(previewGameData, generationSummary),
+    });
+  } catch (error) {
+    console.error("Adventure preview generation failed:", error.message);
+    setRuntimeGameData(currentGameData);
+    res.status(422).json({
+      error: "adventure_preview_failed",
+      message: "冒險預覽生成失敗，請調整 prompt 或稍後再試。",
+      details: getPublicErrorDetails(error),
+    });
+  }
+});
+
 app.post("/api/adventure/generate", async (req, res) => {
   try {
     const {
@@ -60,6 +137,7 @@ app.post("/api/adventure/generate", async (req, res) => {
       adventurePrompt = "",
       roomCount = 5,
       difficulty = 4,
+      confirmedCharacter = null,
     } = req.body || {};
 
     const { gameData: generatedGameData, generationSummary } =
@@ -71,6 +149,8 @@ app.post("/api/adventure/generate", async (req, res) => {
         adventurePrompt,
         roomCount,
         difficulty,
+        confirmedCharacter,
+        label: "runtime adventure",
       });
 
     currentGameData = generatedGameData;
@@ -91,7 +171,7 @@ app.post("/api/adventure/generate", async (req, res) => {
     res.status(422).json({
       error: "generation_failed",
       message: "冒險生成失敗，已保留預設 Demo。",
-      details: error.message,
+      details: getPublicErrorDetails(error),
       state: getPublicGameState(gameState),
       gameData: currentGameData,
     });
@@ -132,6 +212,14 @@ app.post("/api/reset", (req, res) => {
   gameState = createInitialGameState(currentGameData);
   res.json(getPublicGameState(gameState));
 });
+
+function getPublicErrorDetails(error) {
+  if (error?.code === "GENERATED_JSON_PARSE_FAILED") {
+    return formatGeneratedJsonError(error);
+  }
+
+  return error?.message || "Unknown error.";
+}
 
 // 啟動伺服器
 app.listen(PORT, () => {

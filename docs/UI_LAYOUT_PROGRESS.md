@@ -154,6 +154,13 @@
 - `BattleView` 的補給按鈕改為讀取 runtime consumable，不再只支援 `small_potion`。
 - 後端 `use equipment` 已可裝備道具；戰鬥傷害與怪物反擊會使用 effective attack / defense。
 
+## 近期新增：Setup Preview Flow
+- `AdventureSetup` 從單步生成改為三步：Adventure Inputs、Character Preview、Adventure Preview。
+- Character Preview 顯示角色摘要、背景、attributes、三個技能、appearance 與 imagePrompt。
+- Adventure Preview 顯示房間列表、kind、敵人、道具 / challenge、Boss、勝利條件與資源摘要。
+- Preview API 不會修改 server runtime session；只有按「開始冒險」才 finalize。
+- Boss encounter 判斷已支援 generated adventure 的 `room.kind = "boss"`，撤退會依後端 previousRoomId 回到上一個房間。
+
 ## 8. 重要檔案
 
 ```txt

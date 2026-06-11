@@ -4,9 +4,57 @@
 
 讓玩家可以在瀏覽器輸入 Gemini API key、選擇模型、設定角色與冒險 prompt，並在 runtime 生成一份可直接遊玩的 `gameData`。預設 Demo 仍保留，不覆蓋 `data/gameData.js`。
 
-## Runtime API
+## Runtime APIs
+
+`POST /api/character/preview`
+
+產生角色預覽，不會修改 server runtime session。
+
+Request body:
+
+```json
+{
+  "apiKey": "...",
+  "model": "gemini-2.5-flash-lite",
+  "genre": "奇幻遺跡",
+  "characterPrompt": "角色設定",
+  "difficulty": 4
+}
+```
+
+Response body:
+
+```json
+{
+  "character": {
+    "id": "character_id",
+    "name": "...",
+    "summary": "...",
+    "background": "...",
+    "attributes": { "maxHp": 30, "maxMp": 12, "attack": 6, "defense": 2 },
+    "skills": [],
+    "equipment": [],
+    "traits": [],
+    "appearance": "...",
+    "imagePrompt": "..."
+  }
+}
+```
+
+`POST /api/adventure/preview`
+
+使用 confirmed character 與 adventure prompt 產生冒險預覽，不會修改 server runtime session。
+
+Response 會包含：
+
+- `state`
+- `gameData`
+- `generationSummary`
+- `preview`
 
 `POST /api/adventure/generate`
+
+最後開始遊戲時呼叫，會把 generated `gameData` 寫入目前 server runtime session。
 
 Request body:
 
@@ -18,7 +66,8 @@ Request body:
   "characterPrompt": "角色設定",
   "adventurePrompt": "冒險設定",
   "roomCount": 5,
-  "difficulty": 4
+  "difficulty": 4,
+  "confirmedCharacter": "optional character preview object"
 }
 ```
 
@@ -175,10 +224,22 @@ Runtime 支援：
 ## UI 流程
 
 1. 進入 `AdventureSetup`。
-2. 玩家選擇「使用預設 Demo」或「生成新冒險」。
-3. Demo 模式會呼叫 `/api/reset` 並指定 `mode: "default"`。
-4. Generated 模式會呼叫 `/api/adventure/generate`。
-5. 成功後前端用 response 的 `state` / `gameData` 直接進入主遊戲畫面。
+2. Step 1：輸入 API key、模型、風格、房間數、難度、角色 prompt、冒險 prompt。
+3. Step 2：呼叫 `/api/character/preview`，顯示角色名稱、背景、attributes、skills、equipment、appearance、imagePrompt。
+4. Step 3：呼叫 `/api/adventure/preview`，顯示 room list、kind、monster、items、challenge、Boss、win condition、equipment、consumables。
+5. 按「開始冒險」才呼叫 `/api/adventure/generate` finalize runtime gameData。
+6. Demo 模式仍會呼叫 `/api/reset` 並指定 `mode: "default"`。
+
+## Boss Retreat
+
+Boss 判斷不再只依賴 `boss_room` / `ruin_guardian`：
+
+- `room.kind === "boss"`
+- `monster.isBoss === true`
+- `monster.role === "boss"`
+- fallback：預設 Demo 的 `boss_room`
+
+`retreat` 會優先退回 `gameState.player.previousRoomId`，沒有 previous room 時才使用 Boss room 任一可用 exit，最後 fallback 到 `initialRoomId`。Retreat 不會標記 Boss defeated，也不會移除 Boss。
 
 ## 目前限制
 

@@ -139,6 +139,10 @@ function ensureWinConditionPlacement(gameData) {
   if (!bossRoom.monster) {
     bossRoom.monster = ensureBossMonster(gameData);
   }
+  if (gameData.monsters[bossRoom.monster]) {
+    gameData.monsters[bossRoom.monster].role = "boss";
+    gameData.monsters[bossRoom.monster].isBoss = true;
+  }
   gameData.winCondition.requiredBossDefeated = true;
   gameData.winCondition.returnRoomId = gameData.winCondition.returnRoomId || gameData.initialRoomId;
 }

@@ -6,6 +6,7 @@ function buildRuntimeAdventurePrompt(input = {}) {
   const adventurePrompt = input.adventurePrompt || "設計一段短篇地下城冒險。";
   const roomCount = Number(input.roomCount) || 5;
   const difficulty = Number(input.difficulty) || 4;
+  const confirmedCharacter = input.confirmedCharacter;
 
   return [
     "你是 RPG 文字冒險 Content Designer。請只輸出一個可直接執行的 JSON object。",
@@ -13,6 +14,17 @@ function buildRuntimeAdventurePrompt(input = {}) {
     "",
     "玩家設定：",
     characterPrompt,
+    confirmedCharacter
+      ? [
+          "",
+          "Confirmed character, adventure MUST use this character:",
+          `name: ${confirmedCharacter.name}`,
+          `summary: ${confirmedCharacter.summary}`,
+          `attributes: ${JSON.stringify(confirmedCharacter.attributes || {})}`,
+          `skills: ${JSON.stringify(confirmedCharacter.skills || [])}`,
+          `starter equipment: ${JSON.stringify(confirmedCharacter.equipment || [])}`,
+        ].join("\n")
+      : "",
     "",
     "冒險需求：",
     `類型：${modelGenre}`,
@@ -92,8 +104,14 @@ function buildRuntimeAdventurePrompt(input = {}) {
     "- 每個房間 description 要能支持 Map / Story UI 直接顯示。",
     "",
     "輸出格式：",
+    "- Return valid JSON only.",
     "- 第一個字元必須是 {，最後一個字元必須是 }。",
     "- 不要 markdown code block、不要說明、不要註解。",
+    "- Do not use markdown.",
+    "- Do not manually escape underscores, parentheses, Chinese characters, or punctuation.",
+    "- Only use valid JSON escapes.",
+    "- Avoid backslashes in descriptions unless necessary.",
+    "- Use plain text strings.",
   ].join("\n");
 }
 

@@ -9,6 +9,7 @@
     "client:preview": "npm --prefix client run preview",
     "validate:area": "node tools/validateArea.js outputs/generatedArea.json",
     "generate:area": "node AI/contentDesigner.js --write --validate",
+    "test:parse-json": "node AI/utils/testParseGeneratedJson.js",
     "test:validator": "node tools/validateArea.js tools/sampleGeneratedArea.json && node tools/validateArea.js outputs/generatedArea.json && node tools/validateArea.js tools/validator-test-cases/validArea.json",
     "test": "npm run test:validator"
   },

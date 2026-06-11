@@ -584,13 +584,13 @@ export default function App() {
   }, [isVictory]);
 
   useEffect(() => {
-    if (gameState?.currentRoom?.id !== "boss_room") {
+    if (gameState?.currentRoom?.kind !== "boss" && gameState?.currentRoom?.id !== "boss_room") {
       setDismissedBossEncounterId(null);
       setLastEncounterMonsterId((monsterId) =>
         monsterId === "ruin_guardian" ? null : monsterId
       );
     }
-  }, [gameState?.currentRoom?.id]);
+  }, [gameState?.currentRoom?.id, gameState?.currentRoom?.kind]);
 
   useEffect(() => {
     function handleKeyDown(event) {

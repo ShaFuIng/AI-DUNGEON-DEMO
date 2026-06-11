@@ -73,6 +73,7 @@ function createInitialGameState(nextGameData = gameData) {
       },
       skills: startingSkills,
       currentRoom: initialRoomId,
+      previousRoomId: null,
       visitedRooms: [initialRoomId],
       isDefending: false,
     },
@@ -195,6 +196,7 @@ function getPublicGameState(gameState) {
       ),
       currentRoom: currentRoom.name,
       currentRoomId: currentRoom.id,
+      previousRoomId: gameState.player.previousRoomId,
       visitedRooms: gameState.player.visitedRooms,
       equipment: gameState.player.equipment || {},
       equipmentItems: getEquippedItemIds(gameState)
@@ -624,15 +626,15 @@ function isBossThreat(gameState) {
   const room = getCurrentRoom(gameState);
   const monsterInfo = getRoomMonsterInfo(gameState, room);
 
-  return room?.id === "boss_room" && monsterInfo?.id === "ruin_guardian";
+  return isBossRoom(room) && Boolean(monsterInfo);
 }
 
 function handleBossRetreat(gameState) {
   const room = getCurrentRoom(gameState);
   const monsterInfo = getRoomMonsterInfo(gameState, room);
-  const retreatRoomId = room?.exits?.west;
+  const retreatRoomId = findRetreatRoomId(gameState, room);
 
-  if (room?.id !== "boss_room" || monsterInfo?.id !== "ruin_guardian") {
+  if (!isBossRoom(room) || !monsterInfo) {
     return createEventResult(
       "retreat_unavailable",
       "這裡沒有需要立刻撤退的 Boss 威脅。"
@@ -646,18 +648,58 @@ function handleBossRetreat(gameState) {
     );
   }
 
+  const fromRoomId = room.id;
   gameState.player.currentRoom = retreatRoomId;
+  gameState.player.previousRoomId = fromRoomId;
+  gameState.mode = "explore";
+  gameState.activeMonsterId = null;
+  gameState.battle = createInitialBattleState();
 
   if (!gameState.player.visitedRooms.includes(retreatRoomId)) {
     gameState.player.visitedRooms.push(retreatRoomId);
   }
 
-  addLog(gameState, "你暫時撤離了核心密室");
+  addLog(gameState, `你暫時撤離了 ${room.name}`);
 
   return createEventResult(
     "boss_retreat",
-    "你壓低腳步，趁遺跡守護者完全甦醒前退回祭壇大廳。"
+    `你壓低腳步，趁 ${monsterInfo.name} 完全壓制出口前退回 ${gameData.rooms[retreatRoomId].name}。`
   );
+}
+
+function isBossRoom(room) {
+  if (!room) return false;
+  const monster = gameData.monsters?.[room.monster];
+
+  return (
+    room.kind === "boss" ||
+    room.id === "boss_room" ||
+    monster?.isBoss === true ||
+    monster?.role === "boss" ||
+    room.id === findBossRoomId()
+  );
+}
+
+function findBossRoomId() {
+  const requiredItemId = gameData.winCondition?.requiredItemId;
+  const bossRoom = Object.values(gameData.rooms || {}).find((room) => room.kind === "boss") ||
+    Object.values(gameData.rooms || {}).find((room) => room.monster && room.items?.includes(requiredItemId)) ||
+    gameData.rooms?.boss_room;
+
+  return bossRoom?.id || null;
+}
+
+function findRetreatRoomId(gameState, room) {
+  if (gameState.player.previousRoomId && gameData.rooms[gameState.player.previousRoomId]) {
+    return gameState.player.previousRoomId;
+  }
+
+  const exitRoomId = Object.values(room?.exits || {}).find((roomId) => gameData.rooms[roomId]);
+  if (exitRoomId) {
+    return exitRoomId;
+  }
+
+  return gameData.initialRoomId || getInitialRoomId();
 }
 
 function awardExperience(gameState, monsterData) {
@@ -958,6 +1000,7 @@ function handleMove(gameState, direction) {
     );
   }
 
+  gameState.player.previousRoomId = room.id;
   gameState.player.currentRoom = nextRoomId;
 
   if (!gameState.player.visitedRooms.includes(nextRoomId)) {

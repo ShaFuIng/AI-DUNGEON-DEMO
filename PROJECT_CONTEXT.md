@@ -68,6 +68,15 @@
 - 戰鬥公式改用 effective attack / defense；怪物攻擊會扣玩家防禦，技能傷害會吃武器攻擊加成。
 - `EquipmentWindowContent` 改為顯示 runtime equipment，不再硬編碼 Rusty Blade / Empty。
 
+## 近期新增：Adventure Setup 三步流程與 Boss Retreat 泛化
+- `AdventureSetup` 改為 Step 1 Adventure Inputs、Step 2 Character Preview、Step 3 Adventure Preview。
+- 新增 `POST /api/character/preview`，只生成角色預覽，不修改 runtime session。
+- 新增 `POST /api/adventure/preview`，只生成冒險預覽，不修改 runtime session。
+- `/api/adventure/generate` 保留為最後 finalize，會寫入目前 server runtime gameData。
+- `confirmedCharacter` 會被傳入 adventure generation，角色 attributes、skills、starter equipment 會套用到 runtime gameData。
+- 新增 `AI/prompts/buildCharacterPreviewPrompt.js` 與 `AI/characterPreviewGenerator.js`。
+- Boss retreat 不再硬綁 `boss_room` / `ruin_guardian` / `west`；改由 `room.kind === "boss"`、monster boss metadata 與 `previousRoomId` 決定。
+
 ## 近期修正：門鎖與 Recent Log 動畫
 - `gameEngine` 已新增 `flags.unlockedDoors`，用來保存已解鎖的門。
 - `boss_room` 不再因玩家背包擁有 `rusty_key` 就直接開放；玩家必須在 `altar`，也就是 east exit 指向 `boss_room` 的位置，主動使用 `rusty_key`。

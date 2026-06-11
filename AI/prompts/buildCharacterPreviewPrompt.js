@@ -1,0 +1,50 @@
+const { buildCharacterSkillsPrompt } = require("./buildCharacterSkillsPrompt");
+
+function buildCharacterPreviewPrompt(input = {}) {
+  return [
+    "You are an RPG character designer. Output one JSON object only.",
+    "Use Traditional Chinese for text fields. Use safe snake_case English ids.",
+    "",
+    "Input:",
+    `genre: ${input.genre || "奇幻遺跡"}`,
+    `difficulty: ${Number(input.difficulty) || 4}`,
+    `characterPrompt: ${input.characterPrompt || "一位謹慎但勇敢的冒險者。"}`,
+    "",
+    "Schema:",
+    "{",
+    "  \"id\": \"character_id\",",
+    "  \"name\": \"...\",",
+    "  \"summary\": \"...\",",
+    "  \"background\": \"...\",",
+    "  \"attributes\": { \"maxHp\": 30, \"maxMp\": 10, \"attack\": 6, \"defense\": 2 },",
+    "  \"skills\": [",
+    "    { \"id\": \"basic_skill_id\", \"name\": \"...\", \"role\": \"damage\", \"mpCost\": 0, \"damage\": 7, \"description\": \"...\" }",
+    "  ],",
+    "  \"equipment\": [",
+    "    { \"id\": \"starter_weapon\", \"name\": \"...\", \"type\": \"equipment\", \"slot\": \"weapon\", \"stats\": { \"attack\": 1 }, \"description\": \"...\", \"usageHint\": \"...\" }",
+    "  ],",
+    "  \"traits\": [],",
+    "  \"appearance\": \"...\",",
+    "  \"imagePrompt\": \"...\"",
+    "}",
+    "",
+    buildCharacterSkillsPrompt(),
+    "",
+    "Rules:",
+    "- skills array must contain exactly 3 skills.",
+    "- equipment array should contain 1 starter weapon or armor.",
+    "- Do not use generic slash/fireball/guard unless the user prompt asks for them.",
+    "- imagePrompt is only a text prompt for a future image tool; do not call any image API.",
+    "- First character must be { and last character must be }.",
+    "- Return valid JSON only.",
+    "- Do not use markdown.",
+    "- Do not manually escape underscores, parentheses, Chinese characters, or punctuation.",
+    "- Only use valid JSON escapes.",
+    "- Avoid backslashes in descriptions unless necessary.",
+    "- Use plain text strings.",
+  ].join("\n");
+}
+
+module.exports = {
+  buildCharacterPreviewPrompt,
+};
