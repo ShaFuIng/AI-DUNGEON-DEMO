@@ -202,7 +202,7 @@ function VictoryModal({ open, player, flags, onReset, onStay }) {
       <section className="w-full max-w-lg overflow-hidden rounded-lg border border-amber-200/30 bg-[radial-gradient(circle_at_20%_0%,rgba(245,158,11,0.16),transparent_34%),linear-gradient(145deg,rgba(28,24,18,0.98),rgba(13,18,16,0.98))] shadow-[0_0_0_1px_rgba(255,255,255,0.045),0_24px_70px_rgba(0,0,0,0.68)]">
         <header className="border-b border-white/10 px-5 py-4">
           <p className="font-mono text-xs uppercase tracking-wide text-amber-200">
-            Victory
+            探索完成
           </p>
           <h2 className="mt-1 text-2xl font-semibold text-white">探索完成</h2>
         </header>

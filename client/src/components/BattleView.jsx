@@ -40,7 +40,7 @@ function CombatantCard({ title, name, level, hp, maxHp, mp, maxMp, description, 
             </h3>
           </div>
           <span className="shrink-0 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 font-mono text-xs text-stone-300">
-            Lv {level || 1}
+            Lv. {level || 1}
           </span>
         </div>
         {description ? (
@@ -50,7 +50,7 @@ function CombatantCard({ title, name, level, hp, maxHp, mp, maxMp, description, 
         ) : null}
         {intent ? (
           <p className="mt-3 rounded border border-red-200/15 bg-red-400/10 px-2 py-1 text-xs text-red-100">
-            Intent: {intent}
+            意圖：{intent}
           </p>
         ) : null}
       </div>
@@ -90,25 +90,25 @@ export default function BattleView({
     (item) => item?.type === "consumable"
   );
   const statusText = gameOver
-    ? "無法行動"
+    ? "戰敗"
     : battleStatus === "victory"
       ? "勝利"
       : battleStatus === "escaped"
         ? "已撤退"
         : battleStatus === "defeat"
-          ? "敗北"
-      : !activeEnemy
-        ? "沒有敵人"
-        : playerHp <= Math.ceil(playerMaxHp * 0.25)
-          ? "瀕死"
-          : "戰鬥中";
+          ? "戰敗"
+          : !activeEnemy
+            ? "沒有敵人"
+            : playerHp <= Math.ceil(playerMaxHp * 0.25)
+              ? "危急"
+              : "交戰中";
   const statusTone = gameOver
     ? "border-red-200/35 bg-red-500/15 text-red-50"
     : battleStatus === "victory"
       ? "border-emerald-200/35 bg-emerald-400/15 text-emerald-50"
       : battleStatus === "escaped"
         ? "border-teal-200/35 bg-teal-400/15 text-teal-50"
-      : "border-amber-200/25 bg-amber-300/10 text-amber-50";
+        : "border-amber-200/25 bg-amber-300/10 text-amber-50";
 
   const skillActions = skills.map((skill) => ({
     id: skill.id,
@@ -118,14 +118,14 @@ export default function BattleView({
     detail: formatSkillNumbers(skill),
   }));
   const actions = [
-    { id: "attack", label: "Attack", command: "attack", disabled: !activeEnemy },
+    { id: "attack", label: "攻擊", command: "attack", disabled: !activeEnemy },
     ...skillActions,
     ...consumables.map((item) => ({
       id: item.id,
       label: item.name || item.id,
       command: `use ${item.id}`,
       disabled: playerHp >= playerMaxHp,
-      detail: "Item",
+      detail: "道具",
     })),
   ];
   const controlsDisabled = loading || mode === "gameOver" || gameOver;
@@ -143,10 +143,10 @@ export default function BattleView({
           <p className="font-mono text-xs uppercase tracking-wide text-red-200">
             Battle
           </p>
-          <h2 className="mt-1 text-2xl font-semibold text-white">戰鬥資料缺失</h2>
+          <h2 className="mt-1 text-2xl font-semibold text-white">沒有可戰鬥的敵人</h2>
         </header>
         <div className="py-8 text-sm leading-7 text-stone-300">
-          <p>目前沒有可戰鬥的敵人資料。你可以先回到地圖，重新觀察房間狀態。</p>
+          <p>目前房間沒有未擊敗的敵人。可以重新觀察房間或返回探索。</p>
         </div>
         <button
           type="button"
@@ -166,11 +166,11 @@ export default function BattleView({
           <p className="font-mono text-xs uppercase tracking-wide text-red-200">
             Battle
           </p>
-          <h2 className="mt-1 text-2xl font-semibold text-white">遭遇戰</h2>
+          <h2 className="mt-1 text-2xl font-semibold text-white">戰鬥</h2>
         </div>
         <div className="flex flex-wrap gap-2 text-xs font-medium text-stone-300">
           <span className="rounded-full border border-red-200/25 bg-red-400/10 px-3 py-1">
-            Turn {turn}
+            第 {turn} 回合
           </span>
           <span className={`rounded-full border px-3 py-1 ${statusTone}`}>
             {statusText}
@@ -180,14 +180,14 @@ export default function BattleView({
 
       <div className="grid gap-4 py-4 md:grid-cols-[minmax(0,1fr)_88px_minmax(0,1fr)] md:items-center">
         <CombatantCard
-          title="Player"
-          name={player?.name || "冒險者"}
+          title="玩家"
+          name={player?.name || "探索者"}
           level={player?.level || 1}
           hp={playerHp}
           maxHp={playerMaxHp}
           mp={playerMp}
           maxMp={playerMaxMp}
-          description="你握緊武器，觀察敵人的動作。"
+          description="你握緊武器，準備迎擊眼前的威脅。"
           tone="amber"
         />
 
@@ -198,7 +198,7 @@ export default function BattleView({
         </div>
 
         <CombatantCard
-          title="Enemy"
+          title="敵人"
           name={activeEnemy.name}
           level={activeEnemy.level}
           hp={activeEnemy.hp}
@@ -212,13 +212,13 @@ export default function BattleView({
       <div className="grid gap-4 border-t border-white/10 pt-4 lg:grid-cols-[minmax(0,1fr)_auto]">
         <div className="rounded-lg border border-white/10 bg-black/20 p-3">
           <p className="mb-2 font-mono text-[11px] uppercase tracking-wide text-stone-400">
-            Battle Log
+            戰鬥紀錄
           </p>
           <div
             ref={logRef}
             className="h-32 space-y-2 overflow-y-auto pr-2 text-sm leading-6 text-stone-200"
           >
-            {(battleLog.length ? battleLog : ["戰鬥開始，請選擇你的行動。"]).map(
+            {(battleLog.length ? battleLog : ["戰鬥開始，選擇你的行動。"]).map(
               (line, index) => (
                 <p key={`${line}-${index}`} className="break-words">
                   {line}
@@ -251,7 +251,7 @@ export default function BattleView({
             onClick={() => onAction?.("escape")}
             className="rounded-lg border border-red-200/30 bg-red-400/10 px-3 py-2 text-sm font-semibold text-red-100 transition hover:bg-red-400/20 disabled:cursor-wait disabled:opacity-60"
           >
-            Escape
+            撤退
           </button>
         </div>
       </div>

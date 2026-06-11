@@ -52,24 +52,25 @@ function formatEffectiveStat(value, baseValue) {
 
 function StatUpgradeCard({ label, value, stat, canUpgrade, loading, onAllocateStat }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-black/20 p-3 text-center">
+    <div className="relative min-h-[74px] rounded-lg border border-white/10 bg-black/20 p-3 text-center">
+      {stat && canUpgrade ? (
+        <button
+          type="button"
+          disabled={loading}
+          onClick={() => onAllocateStat?.(stat)}
+          className="absolute -right-2 -top-2 h-7 w-7 rounded-full border border-amber-200/50 bg-amber-300/20 text-sm font-bold text-amber-50 shadow-[0_8px_18px_rgba(0,0,0,0.35)] transition hover:bg-amber-300/30 disabled:cursor-wait disabled:opacity-60"
+          title={`提升 ${label}`}
+          aria-label={`提升 ${label}`}
+        >
+          +
+        </button>
+      ) : null}
       <p className="font-mono text-[11px] uppercase tracking-wide text-stone-500">
         {label}
       </p>
       <p className="mt-2 text-xl font-semibold text-white">
         {value}
       </p>
-      {stat ? (
-        <button
-          type="button"
-          disabled={!canUpgrade || loading}
-          onClick={() => onAllocateStat?.(stat)}
-          className="mt-2 h-7 w-7 rounded border border-amber-200/30 bg-amber-300/10 text-sm font-bold text-amber-50 transition hover:bg-amber-300/20 disabled:cursor-not-allowed disabled:opacity-35"
-          aria-label={`Increase ${label}`}
-        >
-          +
-        </button>
-      ) : null}
     </div>
   );
 }
@@ -79,10 +80,10 @@ export default function CharacterPanel({ player, flags, loading = false, onAlloc
   const defense = player?.defense ?? 2;
   const exp = player?.exp ?? 0;
   const nextExp = player?.nextExp ?? 100;
-  const name = player?.name || "Adventurer";
-  const title = player?.title || "Dungeon Delver";
-  const species = player?.species || player?.race || "Unknown";
-  const classLabel = player?.className || player?.role || "Hero";
+  const name = player?.name || "探索者";
+  const title = player?.title || "遺跡冒險者";
+  const species = player?.species || player?.race || "人類";
+  const classLabel = player?.className || player?.role || "冒險者";
   const portraitUrl = player?.portraitUrl || player?.portrait?.imageUrl || "";
   const statPoints = Number(player?.statPoints) || 0;
   const canUpgrade = statPoints > 0;
@@ -115,7 +116,7 @@ export default function CharacterPanel({ player, flags, loading = false, onAlloc
       </div>
 
       <div className="mt-4 flex min-h-0 flex-1 items-start justify-center">
-        <div className="relative aspect-[3/5] max-h-[520px] w-full overflow-hidden rounded-xl border border-amber-200/25 bg-[radial-gradient(circle_at_50%_18%,rgba(245,158,11,0.28),transparent_34%),linear-gradient(160deg,rgba(245,158,11,0.14),rgba(20,184,166,0.18))] p-4">
+        <div className="relative aspect-[2/3] max-h-[520px] w-full overflow-hidden rounded-xl border border-amber-200/25 bg-[radial-gradient(circle_at_50%_18%,rgba(245,158,11,0.28),transparent_34%),linear-gradient(160deg,rgba(245,158,11,0.14),rgba(20,184,166,0.18))] p-4">
           {showPortrait ? (
             <img
               src={portraitUrl}
@@ -130,8 +131,8 @@ export default function CharacterPanel({ player, flags, loading = false, onAlloc
 
               <div className="relative z-10 flex h-full flex-col items-center justify-center text-center">
                 <span className="text-8xl font-black tracking-tight text-white/90">AD</span>
-                <span className="mt-4 font-mono text-[11px] uppercase tracking-[0.24em] text-amber-100/70">
-                  Adventurer
+                <span className="mt-4 text-sm font-semibold text-amber-100/70">
+                  冒險者
                 </span>
               </div>
             </>
@@ -155,7 +156,16 @@ export default function CharacterPanel({ player, flags, loading = false, onAlloc
         <ResourceBar label="EXP" value={exp} max={nextExp} tone="exp" slim />
       </div>
 
-      <div className="mt-5 grid grid-cols-4 gap-3">
+      <div className="mt-5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
+        <p className={`text-xs font-semibold ${canUpgrade ? "text-amber-100" : "text-stone-400"}`}>
+          可分配屬性點：{statPoints}
+        </p>
+        <p className="mt-1 text-[11px] leading-4 text-stone-500">
+          升級後可分配 HP / MP / ATK / DEF。
+        </p>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-3">
         <StatUpgradeCard
           label="ATK"
           stat="attack"
@@ -191,24 +201,21 @@ export default function CharacterPanel({ player, flags, loading = false, onAlloc
           onAllocateStat={onAllocateStat}
         />
       </div>
-      <p className="mt-3 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-stone-300">
-        可分配屬性點：{statPoints}
-      </p>
 
       <div className="mt-5 flex flex-wrap gap-2">
         {flags?.gameWon ? (
           <span className="rounded-full bg-emerald-300/15 px-3 py-1 text-xs font-semibold text-emerald-100">
-            Victory
+            探索完成
           </span>
         ) : null}
         {flags?.gameOver ? (
           <span className="rounded-full bg-red-300/15 px-3 py-1 text-xs font-semibold text-red-100">
-            Game Over
+            失敗
           </span>
         ) : null}
         {flags?.hasAncientCore ? (
           <span className="rounded-full bg-amber-300/15 px-3 py-1 text-xs font-semibold text-amber-100">
-            Ancient Core
+            古代核心
           </span>
         ) : null}
       </div>

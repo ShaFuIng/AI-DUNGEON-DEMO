@@ -241,3 +241,6 @@ schemas/generatedArea.schema.json
 - CharacterPanel uses generated character metadata and portrait URLs when present, with the AD fallback if image loading fails.
 - CharacterPanel now displays unspent stat points and HP / MP / ATK / DEF `+` controls that call `POST /api/player/allocate-stat`.
 - BattleView and SkillsWindowContent now reuse the same skill number formatter so battle buttons and skill windows show consistent numeric data.
+- CharacterPanel stat `+` controls now render as floating badges on the stat cards, keeping card height stable when points appear or disappear.
+- CharacterPanel fallback name/title/species/class and status badges are localized to Traditional Chinese.
+- Skill numeric summaries now use compact Traditional Chinese labels for damage, healing, defense, shield, hit count, and turns.

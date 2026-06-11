@@ -7,16 +7,24 @@ export function formatSkillNumbers(skill = {}) {
   const shield = Number(skill.shield) || 0;
   const duration = Number(skill.duration) || 0;
 
-  if (damage > 0) parts.push(`DMG ${damage}`);
-  if (hitCount > 1) parts.push(`${hitCount} hits`);
-  if (heal > 0) parts.push(`HEAL ${heal}`);
-  if (defenseBonus > 0) parts.push(`DEF +${defenseBonus}`);
-  if (shield > 0) parts.push(`SHIELD ${shield}`);
-  if (duration > 0) parts.push(`${duration} turns`);
+  if (damage > 0) parts.push(`傷害 ${damage}`);
+  if (hitCount > 1) parts.push(`${hitCount} 段`);
+  if (heal > 0) parts.push(`治療 ${heal}`);
+  if (defenseBonus > 0) parts.push(`防禦 +${defenseBonus}`);
+  if (shield > 0) parts.push(`護盾 ${shield}`);
+  if (duration > 0) parts.push(`${duration} 回合`);
 
   return parts.join(" / ");
 }
 
 export function getSkillRoleLabel(skill = {}) {
-  return skill.role || (Number(skill.heal) > 0 ? "heal" : "damage");
+  const role = skill.role || (Number(skill.heal) > 0 ? "heal" : "damage");
+  return {
+    basic: "基礎",
+    signature: "招牌",
+    damage: "攻擊",
+    defense: "防禦",
+    heal: "治療",
+    utility: "輔助",
+  }[role] || role;
 }

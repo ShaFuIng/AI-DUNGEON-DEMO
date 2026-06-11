@@ -148,3 +148,6 @@
 - Level up grants 2 unspent `statPoints`; stats are no longer raised automatically.
 - `POST /api/player/allocate-stat` allocates one point to `maxHp`, `maxMp`, `attack`, or `defense` and returns the updated public state.
 - CharacterPanel shows unspent stat points and HP / MP / ATK / DEF allocation buttons.
+- CharacterPanel stat allocation buttons are now floating `+` badges, so stat cards keep a stable height when `statPoints` changes.
+- CharacterPanel fallback labels and status badges are localized to Traditional Chinese.
+- Skill number summaries are localized for compact Traditional Chinese display: 傷害、治療、防禦、護盾、段、回合.

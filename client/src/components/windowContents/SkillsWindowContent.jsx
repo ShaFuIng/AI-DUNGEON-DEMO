@@ -2,9 +2,9 @@ import { useState } from "react";
 import { formatSkillNumbers, getSkillRoleLabel } from "../../utils/formatSkillNumbers.js";
 
 const SKILL_TREE = [
-  { title: "Slash Mastery", branch: "近戰強化", status: "Locked" },
-  { title: "Flame Control", branch: "火焰專精", status: "Locked" },
-  { title: "Iron Guard", branch: "防禦姿態", status: "Locked" },
+  { title: "斬擊精通", branch: "近戰分支", status: "未解鎖" },
+  { title: "火焰控制", branch: "元素分支", status: "未解鎖" },
+  { title: "鐵壁防禦", branch: "守護分支", status: "未解鎖" },
 ];
 
 const SKILL_TABS = [
@@ -20,7 +20,7 @@ function SkillButton({ skill, loading, onAction }) {
       onClick={() => onAction(skill.command)}
       className="group flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.05] px-3 py-2.5 text-left transition hover:border-amber-200/40 hover:bg-amber-200/10 disabled:cursor-wait disabled:opacity-60"
     >
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-black/30 text-lg">
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-black/30 font-mono text-sm font-bold text-amber-100">
         {skill.icon}
       </span>
       <span className="min-w-0 flex-1">
@@ -34,7 +34,7 @@ function SkillButton({ skill, loading, onAction }) {
           {skill.description}
         </span>
       </span>
-      <span className="text-lg text-stone-500 transition group-hover:text-amber-100">›</span>
+      <span className="text-lg text-stone-500 transition group-hover:text-amber-100">{">"}</span>
     </button>
   );
 }
@@ -43,10 +43,10 @@ function SkillTree() {
   return (
     <div className="space-y-3">
       <div className="rounded-lg border border-amber-200/20 bg-amber-300/10 p-4">
-        <p className="font-mono text-xs uppercase text-amber-200">Skill Tree</p>
+        <p className="font-mono text-xs uppercase text-amber-200">技能樹</p>
         <h3 className="mt-2 text-lg font-semibold text-white">技能樹預覽</h3>
         <p className="mt-2 text-sm leading-6 text-stone-400">
-          這裡先作為未來職業與技能成長系統的預留 UI，目前不影響遊戲規則。
+          目前先顯示技能分支預覽，後續階段再接技能解鎖與成長系統。
         </p>
       </div>
       <div className="grid gap-2">
@@ -70,9 +70,10 @@ function SkillTree() {
 }
 
 function getSkillIcon(role) {
-  if (role === "defense") return "盾";
-  if (role === "utility") return "技";
-  return "斬";
+  if (role === "defense") return "防";
+  if (role === "heal") return "治";
+  if (role === "utility") return "輔";
+  return "攻";
 }
 
 function normalizeSkills(skills) {
@@ -86,18 +87,18 @@ function normalizeSkills(skills) {
 
   return [
     {
-      label: "Look",
+      label: "觀察",
       command: "look",
       icon: "看",
-      type: "常駐",
-      description: "觀察目前房間、道具、怪物與可用行動。",
+      type: "探索",
+      description: "重新觀察目前房間與可用行動。",
     },
     {
-      label: "Attack",
+      label: "普通攻擊",
       command: "attack",
       icon: "攻",
       type: "基礎",
-      description: "不消耗 MP 的普通攻擊。",
+      description: "不消耗 MP 的基本攻擊。",
     },
     ...runtimeSkills,
   ];

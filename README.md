@@ -237,6 +237,9 @@ COMFYUI_BASE_URL=http://127.0.0.1:8188
 - Level up 現在給 `statPoints +2`，不再自動增加 HP / MP / ATK / DEF。
 - 新增 `POST /api/player/allocate-stat`，body 使用 `{ "stat": "maxHp" | "maxMp" | "attack" | "defense" }`；成功後回傳最新 public state。
 - CharacterPanel 會顯示可分配屬性點，並提供 HP / MP / ATK / DEF 的 `+` 按鈕。
+- CharacterPanel 的屬性加點 `+` 已改為浮動提示標，不再佔用卡片內容空間或撐高屬性卡片。
+- CharacterPanel fallback 名稱、稱號、種族、職業與狀態 badge 已整理為繁體中文。
+- 技能數值摘要已做繁中整理，例如傷害、治療、防禦、護盾、段數與回合。
 
 ## Content Designer Agent 安全邊界
 - Development-time only。
