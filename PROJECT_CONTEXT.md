@@ -52,6 +52,13 @@
 - API key 只由前端存入 localStorage 並在單次 request 使用；後端不記錄、不回傳、不寫入檔案。
 - 規格文件：`docs/GENERATED_ADVENTURE_PLAN.md`
 
+## 近期修正：Runtime Adventure Normalizer
+- 新增 `AI/normalizers/normalizeRuntimeGameData.js`，將 Gemini 常見的 array 輸出轉為 engine 需要的 object map。
+- `AI/runtimeAdventureGenerator.js` 流程改為 `parse -> normalizeRuntimeGameData -> validateRuntimeGameData`。
+- normalizer 會修正 `items` / `monsters` / `skills` array、缺漏 id、player skill reference、room item / monster reference、consumable effect 與 winCondition required item。
+- `validateRuntimeGameData` 仍是最後守門；如果收到未正規化 array，錯誤會明確顯示 `items must be object map, but got array`。
+- 新增 samples：`AI/samples/runtimeAdventure.valid.json` 與 `AI/samples/runtimeAdventure.arrayInput.json`。
+
 ## 近期修正：門鎖與 Recent Log 動畫
 - `gameEngine` 已新增 `flags.unlockedDoors`，用來保存已解鎖的門。
 - `boss_room` 不再因玩家背包擁有 `rusty_key` 就直接開放；玩家必須在 `altar`，也就是 east exit 指向 `boss_room` 的位置，主動使用 `rusty_key`。

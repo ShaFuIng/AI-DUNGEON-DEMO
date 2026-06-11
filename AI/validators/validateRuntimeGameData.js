@@ -13,6 +13,15 @@ function validateRuntimeGameData(gameData) {
     return { ok: false, errors: ["gameData must be an object."] };
   }
 
+  assertObjectMap(gameData.rooms, "rooms", errors);
+  assertObjectMap(gameData.items, "items", errors);
+  assertObjectMap(gameData.monsters, "monsters", errors);
+  assertObjectMap(gameData.skills, "skills", errors);
+
+  if (errors.length > 0) {
+    return { ok: false, errors };
+  }
+
   const rooms = gameData.rooms || {};
   const items = gameData.items || {};
   const monsters = gameData.monsters || {};
@@ -126,6 +135,17 @@ function validateRuntimeGameData(gameData) {
     ok: errors.length === 0,
     errors,
   };
+}
+
+function assertObjectMap(value, fieldName, errors) {
+  if (Array.isArray(value)) {
+    errors.push(`${fieldName} must be object map, but got array.`);
+    return;
+  }
+
+  if (!value || typeof value !== "object") {
+    errors.push(`${fieldName} must be object map.`);
+  }
 }
 
 function hasReachableRooms(rooms, initialRoomId, expectedCount) {

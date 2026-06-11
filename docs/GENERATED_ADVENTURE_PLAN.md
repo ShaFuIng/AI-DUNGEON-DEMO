@@ -39,6 +39,7 @@ Response body:
 - 後端不記錄、不回傳、不寫入 API key。
 - 生成失敗或 validator 失敗時，server 會回到預設 Demo。
 - `data/gameData.js` 不會被 runtime 生成流程修改。
+- 422 response 會保留 `details`；server terminal 會列出 raw / normalized summary 與 validation errors，但不會輸出 API key。
 
 ## GameData Schema
 
@@ -73,6 +74,27 @@ Runtime generated `gameData` 使用與 engine 相容的 object map 格式：
 - 至少要有補血 consumable、quest item、monster encounter。
 - 若勝利條件要求 Boss defeat，任務物品所在房間必須有 monster 守護。
 
+## Normalizer
+
+Gemini 有時會把 `items`、`monsters`、`skills` 輸出成 array。Runtime 流程會先執行：
+
+```txt
+raw Gemini JSON -> parse -> normalizeRuntimeGameData -> validateRuntimeGameData
+```
+
+`normalizeRuntimeGameData` 會處理常見偏差：
+
+- `items` / `monsters` / `skills` array 轉成 object map。
+- object map 的 key 會對齊 inner `id`。
+- 缺少 `id` 時，從 `name` 產生 safe snake_case id。
+- `player.skills` 會轉成既有 skill id array。
+- `room.items` 與 `room.monster` 會從 name/object reference 轉成 id reference。
+- consumable 缺少 `effect.hp` 時會補上 healing effect。
+- `winCondition.requiredItemId` 會對齊既有 quest item。
+- 若勝利條件要求 Boss defeated，quest item 所在房間必須有 monster 守護。
+
+validator 不會因此被放鬆；normalizer 修正後仍必須完整通過 validator。
+
 ## UI 流程
 
 1. 進入 `AdventureSetup`。
@@ -86,3 +108,8 @@ Runtime generated `gameData` 使用與 engine 相容的 object map 格式：
 - Runtime gameData 目前仍是單一 server session scope，不是多玩家 session。
 - Gemini 生成品質仍仰賴 prompt 與 validator；失敗時應調整 prompt 或回到 Demo。
 - 鎖門規則仍主要服務預設 Demo，generated adventure 先用房間怪物與勝利條件控制流程。
+
+## Samples
+
+- `AI/samples/runtimeAdventure.valid.json`
+- `AI/samples/runtimeAdventure.arrayInput.json`

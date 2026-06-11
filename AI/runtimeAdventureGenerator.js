@@ -1,4 +1,5 @@
 const { buildRuntimeAdventurePrompt } = require("./prompts/buildRuntimeAdventurePrompt");
+const { normalizeRuntimeGameData } = require("./normalizers/normalizeRuntimeGameData");
 const { generateRuntimeJson } = require("./runtimeProviders/geminiRuntimeProvider");
 const { validateRuntimeGameData } = require("./validators/validateRuntimeGameData");
 
@@ -9,10 +10,14 @@ async function generateRuntimeAdventure(input = {}) {
     model: input.model,
     prompt,
   });
-  const gameData = parseJsonObject(rawText);
+  const parsedGameData = parseJsonObject(rawText);
+  console.log("Runtime adventure raw summary:", summarizeGameDataShape(parsedGameData));
+  const gameData = normalizeRuntimeGameData(parsedGameData);
+  console.log("Runtime adventure normalized summary:", summarizeGameDataShape(gameData));
   const validation = validateRuntimeGameData(gameData);
 
   if (!validation.ok) {
+    console.error("Runtime adventure validation errors:", validation.errors.join("; "));
     throw new Error(`Generated adventure failed validation: ${validation.errors.join("; ")}`);
   }
 
@@ -20,6 +25,32 @@ async function generateRuntimeAdventure(input = {}) {
     gameData,
     generationSummary: buildGenerationSummary(gameData, input),
   };
+}
+
+function summarizeGameDataShape(gameData) {
+  return {
+    rooms: summarizeCollection(gameData?.rooms),
+    items: summarizeCollection(gameData?.items),
+    monsters: summarizeCollection(gameData?.monsters),
+    skills: summarizeCollection(gameData?.skills),
+    playerSkills: Array.isArray(gameData?.player?.skills)
+      ? gameData.player.skills.length
+      : typeof gameData?.player?.skills,
+    initialRoomId: gameData?.initialRoomId,
+    requiredItemId: gameData?.winCondition?.requiredItemId,
+  };
+}
+
+function summarizeCollection(value) {
+  if (Array.isArray(value)) {
+    return { type: "array", count: value.length };
+  }
+
+  if (value && typeof value === "object") {
+    return { type: "object", count: Object.keys(value).length };
+  }
+
+  return { type: typeof value, count: 0 };
 }
 
 function parseJsonObject(text) {

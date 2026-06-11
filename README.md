@@ -57,6 +57,14 @@ POST /api/adventure/generate
 
 生成失敗時會保留預設 Demo，不會覆蓋 `data/gameData.js`。
 
+Runtime 流程會先 normalize Gemini 輸出，再交給 validator：
+
+```txt
+raw Gemini JSON -> parse -> normalizeRuntimeGameData -> validateRuntimeGameData
+```
+
+因此即使 Gemini 把 `items` / `monsters` / `skills` 產成 array，也會先轉成 engine 需要的 object map；若仍無法修正，才會回傳 422 與 validation details。
+
 ## Content Designer 常用指令
 ```bash
 npm run validate:area
