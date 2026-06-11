@@ -1,5 +1,5 @@
 ﻿const { loadGameData } = require("../data/loadGameData");
-const gameData = loadGameData();
+let gameData = loadGameData();
 
 const LOCKED_EXITS = [
   {
@@ -14,6 +14,14 @@ const LOCKED_EXITS = [
     alreadyUnlockedMessage: "這道門已經打開，不需要再使用鑰匙。",
   },
 ];
+
+function setRuntimeGameData(nextGameData) {
+  gameData = nextGameData;
+}
+
+function getRuntimeGameData() {
+  return gameData;
+}
 
 function getInitialRoomId() {
   if (gameData.initialRoomId && gameData.rooms[gameData.initialRoomId]) {
@@ -37,22 +45,28 @@ function getExpToNextLevel(level) {
 }
 
 
-function createInitialGameState() {
+function createInitialGameState(nextGameData = gameData) {
+  gameData = nextGameData;
   const initialRoomId = getInitialRoomId();
   const initialRoom = gameData.rooms[initialRoomId];
+  const playerData = gameData.player || {};
+  const startingSkills = Array.isArray(playerData.skills)
+    ? playerData.skills.filter((skillId) => gameData.skills?.[skillId])
+    : Object.keys(gameData.skills || {}).slice(0, 3);
 
   return {
     player: {
-      hp: 30,
-      maxHp: 30,
-      mp: 10,
-      maxMp: 10,
-      attack: 6,
-      defense: 2,
-      level: 1,
+      hp: playerData.hp ?? 30,
+      maxHp: playerData.maxHp ?? playerData.hp ?? 30,
+      mp: playerData.mp ?? 10,
+      maxMp: playerData.maxMp ?? playerData.mp ?? 10,
+      attack: playerData.attack ?? 6,
+      defense: playerData.defense ?? 2,
+      level: playerData.level ?? 1,
       exp: 0,
       nextExp: getExpToNextLevel(1),
       inventory: [],
+      skills: startingSkills,
       currentRoom: initialRoomId,
       visitedRooms: [initialRoomId],
       isDefending: false,
@@ -171,6 +185,8 @@ function getPublicGameState(gameState) {
       currentRoom: currentRoom.name,
       currentRoomId: currentRoom.id,
       visitedRooms: gameState.player.visitedRooms,
+      skills: getPlayerSkillIds(gameState).map((skillId) => getPublicSkillInfo(skillId)).filter(Boolean),
+      skillIds: getPlayerSkillIds(gameState),
     },
 
     flags: gameState.flags,
@@ -193,8 +209,23 @@ function getPublicGameState(gameState) {
       ])
     ),
 
+    skillDetails: Object.fromEntries(
+      Object.keys(gameData.skills || {}).map((skillId) => [
+        skillId,
+        getPublicSkillInfo(skillId),
+      ])
+    ),
+
     log: gameState.log,
   };
+}
+
+function getPlayerSkillIds(gameState) {
+  if (Array.isArray(gameState.player.skills) && gameState.player.skills.length > 0) {
+    return gameState.player.skills.filter((skillId) => gameData.skills?.[skillId]);
+  }
+
+  return Object.keys(gameData.skills || {}).slice(0, 3);
 }
 
 function getPublicItemInfo(itemId) {
@@ -215,6 +246,31 @@ function getPublicItemInfo(itemId) {
     slot: item.slot || null,
     stats: item.stats || null,
   };
+}
+
+function getPublicSkillInfo(skillId) {
+  const skill = gameData.skills?.[skillId];
+
+  if (!skill) {
+    return null;
+  }
+
+  return {
+    id: skill.id,
+    name: skill.name,
+    mpCost: skill.mpCost ?? 0,
+    damage: skill.damage ?? 0,
+    role: skill.role || inferSkillRole(skill),
+    description: skill.description || "這個技能還沒有詳細說明。",
+  };
+}
+
+function inferSkillRole(skill) {
+  if ((skill.damage ?? 0) <= 0) {
+    return "defense";
+  }
+
+  return "damage";
 }
 
 function getRoomMonsterInfo(gameState, room) {
@@ -625,9 +681,10 @@ function buildAvailableCommandDetails(gameState) {
   if (gameState.mode === "battle") {
     const commands = [
       { command: "attack", description: "普通攻擊" },
-      { command: "skill slash", description: "施放斬擊" },
-      { command: "skill fireball", description: "施放火球術" },
-      { command: "skill guard", description: "進入防禦姿態" },
+      ...getPlayerSkillIds(gameState).map((skillId) => ({
+        command: `skill ${skillId}`,
+        description: `施放${gameData.skills[skillId].name}`,
+      })),
     ];
 
     if (gameState.player.inventory.includes("small_potion")) {
@@ -868,7 +925,8 @@ function handleTake(gameState, targetName) {
   gameState.player.inventory.push(itemId);
   markRoomItemCollected(gameState, room.id, itemId);
 
-  if (itemId === "ancient_core") {
+  const requiredItemId = gameData.winCondition?.requiredItemId || "ancient_core";
+  if (itemId === requiredItemId) {
     gameState.flags.hasAncientCore = true;
     checkWinCondition(gameState);
   }
@@ -894,7 +952,7 @@ function handleExploreSkill(gameState, skillName) {
   if (!skillName) {
     return createEventResult(
       "skill_missing",
-      "請指定技能名稱，例如 skill slash、skill fireball、skill guard。"
+      `請指定技能名稱，例如 ${formatSkillExamples(gameState)}。`
     );
   }
 
@@ -902,6 +960,10 @@ function handleExploreSkill(gameState, skillName) {
 
   if (!skillId) {
     return createEventResult("skill_not_found", `找不到技能：${skillName}`);
+  }
+
+  if (!getPlayerSkillIds(gameState).includes(skillId)) {
+    return createEventResult("skill_not_learned", `你尚未學會 ${gameData.skills[skillId].name}。`);
   }
 
   const skill = gameData.skills[skillId];
@@ -924,7 +986,7 @@ function handleSkill(gameState, skillName) {
   if (!skillName) {
     return createEventResult(
       "skill_missing",
-      "請指定技能名稱，例如 skill slash、skill fireball、skill guard。"
+      `請指定技能名稱，例如 ${formatSkillExamples(gameState)}。`
     );
   }
 
@@ -932,6 +994,10 @@ function handleSkill(gameState, skillName) {
 
   if (!skillId) {
     return createEventResult("skill_not_found", `找不到技能：${skillName}`);
+  }
+
+  if (!getPlayerSkillIds(gameState).includes(skillId)) {
+    return createEventResult("skill_not_learned", `你尚未學會 ${gameData.skills[skillId].name}。`);
   }
 
   const skill = gameData.skills[skillId];
@@ -950,7 +1016,7 @@ function handleSkill(gameState, skillName) {
 
   gameState.player.mp -= skill.mpCost;
 
-  if (skillId === "guard") {
+  if (isDefensiveSkill(skill)) {
     gameState.player.isDefending = true;
     addLog(gameState, "你進入防禦姿態。");
     gameState.battle.turn += 1;
@@ -1034,9 +1100,9 @@ function performPlayerAttack(gameState, attackInfo) {
     monsterState.hp = 0;
     monsterState.defeated = true;
 
-    if (monsterId === "ruin_guardian") {
+    if (isWinConditionBoss(gameState, monsterId)) {
       gameState.flags.bossDefeated = true;
-      messageLines.push("遺跡守護者倒下了。古代核心周圍的能量屏障隨之消散。");
+      messageLines.push(`${monsterData.name} 倒下了，關鍵物品周圍的威脅隨之消散。`);
     } else {
       messageLines.push(`${monsterData.name} 被你擊敗了。`);
     }
@@ -1261,15 +1327,56 @@ function checkGameOver(gameState) {
 }
 
 function checkWinCondition(gameState) {
-  if (
-    !gameState.flags.gameWon &&
-    gameState.flags.hasAncientCore &&
-    gameState.flags.bossDefeated &&
-    gameState.player.currentRoom === "entrance"
-  ) {
+  const winCondition = gameData.winCondition || {
+    type: "return_with_item",
+    requiredItemId: "ancient_core",
+    returnRoomId: "entrance",
+    requiredBossDefeated: true,
+  };
+  const hasRequiredItem =
+    !winCondition.requiredItemId ||
+    gameState.player.inventory.includes(winCondition.requiredItemId);
+  const returnedToTarget =
+    !winCondition.returnRoomId ||
+    gameState.player.currentRoom === winCondition.returnRoomId;
+  const bossRequirementMet =
+    !winCondition.requiredBossDefeated || gameState.flags.bossDefeated;
+
+  if (!gameState.flags.gameWon && hasRequiredItem && returnedToTarget && bossRequirementMet) {
     gameState.flags.gameWon = true;
-    addLog(gameState, "你帶著古代核心回到了遺跡入口，探索完成。");
+    addLog(gameState, "你帶著關鍵物品回到了目標地點，探索完成。");
   }
+}
+
+function isWinConditionBoss(gameState, monsterId) {
+  if (monsterId === "ruin_guardian") {
+    return true;
+  }
+
+  const winCondition = gameData.winCondition;
+
+  if (!winCondition?.requiredBossDefeated) {
+    return false;
+  }
+
+  const currentRoom = getCurrentRoom(gameState);
+  const requiredItemId = winCondition.requiredItemId;
+
+  return currentRoom?.monster === monsterId && currentRoom?.items?.includes(requiredItemId);
+}
+
+function isDefensiveSkill(skill) {
+  return (skill.role || inferSkillRole(skill)) === "defense" || (skill.damage ?? 0) <= 0;
+}
+
+function formatSkillExamples(gameState) {
+  const skillIds = getPlayerSkillIds(gameState);
+
+  if (skillIds.length === 0) {
+    return "skill <skill_id>";
+  }
+
+  return skillIds.slice(0, 3).map((skillId) => `skill ${skillId}`).join("、");
 }
 
 function findItemIdByNameOrId(input) {
@@ -1302,6 +1409,8 @@ function handleLog(gameState) {
 
 module.exports = {
   getInitialRoomId,
+  getRuntimeGameData,
+  setRuntimeGameData,
   createInitialGameState,
   getPublicGameState,
   handleCommand,

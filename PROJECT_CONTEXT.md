@@ -8,9 +8,11 @@
   4. `GAME_DATA_SOURCE=experimental` runtime 測試
 - Step 35 pipeline test 文件已建立：`docs/CONTENT_DESIGNER_PIPELINE_TEST.md`
 - default `data/gameData.js` 仍未被覆蓋
+- Runtime Generated Adventure Mode 已新增：前端 Start Screen 可輸入 Gemini API key、模型、風格、角色與冒險 prompt，呼叫 `/api/adventure/generate` 產生短篇可遊玩 `gameData`
 - React UI 目前已完成一輪大型版面重構，並新增進度紀錄：`docs/UI_LAYOUT_PROGRESS.md`
 - `BattleView` 與 `EncounterModal` 已接入 React UI，戰鬥流程已有基礎版。
 - battle state 已由後端 `gameEngine` 正式管理。
+- `gameEngine` 已改為可透過 `setRuntimeGameData()` 注入目前 runtime gameData，預設 Demo 與 generated adventure 共用同一套 command/state 流程。
 
 ## UI 目前階段
 - 右側 `CharacterPanel` 目前作為角色主卡使用，保留大型 AD 圖、HP / MP / EXP、ATK / DEF / SPD / LCK。
@@ -40,6 +42,15 @@
 5. UI 下一輪：修正 `FloatingGameWindow` 拖曳、調整字體大小、強化容器邊框與可讀性
 6. Battle 下一輪：完善完整回合制、敵人 AI、狀態效果、技能冷卻、戰鬥動畫與更細緻的逃跑規則
 7. Content Designer 下一輪：讓 experimental runtime merge 更完整接入 generated items / monsters / equipment
+
+## 近期新增：Generated Adventure Mode
+- 新增 `client/src/components/AdventureSetup.jsx`，啟動時先選擇 Default Demo 或 Generated Adventure。
+- 新增 `POST /api/adventure/generate`，成功後回傳 `state`、`gameData`、`generationSummary`。
+- 新增 `AI/runtimeAdventureGenerator.js`、`AI/runtimeProviders/geminiRuntimeProvider.js`、`AI/prompts/buildRuntimeAdventurePrompt.js`、`AI/validators/validateRuntimeGameData.js`。
+- Runtime validator 會檢查房間連通、exits 雙向一致、items / monsters / skills reference、勝利條件、補血道具與 quest item。
+- 玩家技能改為由 `gameData.player.skills` 與 `gameData.skills` 決定；`BattleView` 與技能視窗不再硬編碼 `slash/fireball/guard`。
+- API key 只由前端存入 localStorage 並在單次 request 使用；後端不記錄、不回傳、不寫入檔案。
+- 規格文件：`docs/GENERATED_ADVENTURE_PLAN.md`
 
 ## 近期修正：門鎖與 Recent Log 動畫
 - `gameEngine` 已新增 `flags.unlockedDoors`，用來保存已解鎖的門。

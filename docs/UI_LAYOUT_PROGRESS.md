@@ -139,6 +139,14 @@
 - 技能視窗目前仍保留技能預覽與 shortcut，但正式戰鬥操作以 `BattleView` 為主。
 - generated items / monsters / equipment 尚未完整接入 experimental runtime merge。
 
+## 近期新增：Adventure Setup 與動態技能
+- `App.jsx` 啟動時先顯示 `AdventureSetup`，玩家可選 Default Demo 或 Generated Adventure。
+- Default Demo 會呼叫 `/api/reset` 並使用預設 `data/gameData.js`。
+- Generated Adventure 會呼叫 `/api/adventure/generate`，成功後用 response 的 `state` / `gameData` 直接進入主遊戲畫面。
+- `BattleView` 的技能按鈕改由 `gameState.player.skills` 產生，不再硬編碼 `skill slash` / `skill fireball` / `skill guard`。
+- `SkillsWindowContent` 會顯示 runtime skill name、role、MP cost 與 description，並送出 `skill <skill.id>`。
+- Start Screen 的 API key 欄位只會存到瀏覽器 localStorage；後端只在該次生成 request 使用。
+
 ## 8. 重要檔案
 
 ```txt

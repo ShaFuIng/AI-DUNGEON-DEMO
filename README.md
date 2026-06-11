@@ -4,6 +4,7 @@
 - `Game Engine`（規則與 state）
 - `Narrator Agent`（Runtime 敘事）
 - `Content Designer Agent`（Development-time 內容草案流程）
+- `Generated Adventure Mode`（Runtime 生成短篇冒險）
 - `React UI`（Map / Character / StoryCommand / Floating Window 前端介面）
 
 ## 啟動遊戲
@@ -29,6 +30,32 @@ npm run client:dev
 Vite proxy：`/api -> http://localhost:3000`
 
 如果看到 `http proxy error: /api/state ECONNREFUSED`，代表後端沒有啟動，或 Vite proxy target 的 port 與 `server.js` 實際 port 不一致。
+
+## 遊戲模式
+
+### Default Demo Mode
+
+前端 Start Screen 點選「使用預設 Demo」會載入 `data/gameData.js`，並呼叫 `/api/reset` 建立預設遊戲狀態。
+
+### Generated Adventure Mode
+
+前端 Start Screen 可輸入 Gemini API key、模型、風格、角色設定與冒險 prompt，呼叫：
+
+```http
+POST /api/adventure/generate
+```
+
+後端會在該次 request 使用 API key 呼叫 Gemini，驗證生成出的 runtime `gameData`，成功後回傳：
+
+```json
+{
+  "state": "publicGameState",
+  "gameData": "publicGameData",
+  "generationSummary": "..."
+}
+```
+
+生成失敗時會保留預設 Demo，不會覆蓋 `data/gameData.js`。
 
 ## Content Designer 常用指令
 ```bash
@@ -146,6 +173,7 @@ GEMINI_MODEL=gemini-2.5-flash-lite
 注意：
 - 不要把 `.env` commit 到 repo。
 - 不要把 API key 寫進文件或輸出。
+- Runtime Generated Adventure 的 API key 只存在使用者瀏覽器 localStorage 與單次 request body；後端不記錄、不回傳、不寫入檔案。
 
 ## Content Designer Agent 安全邊界
 - Development-time only。
@@ -164,4 +192,5 @@ GEMINI_MODEL=gemini-2.5-flash-lite
 - `docs/CONTENT_DESIGNER_PATCH_SUGGESTION.md`
 - `docs/CONTENT_DESIGNER_RUNTIME_MERGE_STRATEGY.md`
 - `docs/UI_LAYOUT_PROGRESS.md`
+- `docs/GENERATED_ADVENTURE_PLAN.md`
 - `outputs/generatedArea.humanReview.md`

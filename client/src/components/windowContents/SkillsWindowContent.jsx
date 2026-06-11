@@ -1,43 +1,5 @@
 import { useState } from "react";
 
-const SKILLS = [
-  {
-    label: "Look",
-    command: "look",
-    icon: "👁",
-    type: "常駐",
-    description: "觀察目前房間、道具、怪物與可用行動。",
-  },
-  {
-    label: "Attack",
-    command: "attack",
-    icon: "⚔",
-    type: "基礎",
-    description: "不消耗 MP 的普通攻擊。",
-  },
-  {
-    label: "Fireball",
-    command: "skill fireball",
-    icon: "🔥",
-    type: "魔法",
-    description: "消耗 MP 施放火球，造成較高傷害。",
-  },
-  {
-    label: "Slash",
-    command: "skill slash",
-    icon: "🗡",
-    type: "近戰",
-    description: "穩定的斬擊技能，適合一般戰鬥。",
-  },
-  {
-    label: "Guard",
-    command: "skill guard",
-    icon: "🛡",
-    type: "防禦",
-    description: "進入防禦姿態，降低下一次受到的傷害。",
-  },
-];
-
 const SKILL_TREE = [
   { title: "Slash Mastery", branch: "近戰強化", status: "Locked" },
   { title: "Flame Control", branch: "火焰專精", status: "Locked" },
@@ -106,15 +68,46 @@ function SkillTree() {
   );
 }
 
-export default function SkillsWindowContent({ loading, onAction }) {
+function getSkillIcon(role) {
+  if (role === "defense") return "盾";
+  if (role === "utility") return "技";
+  return "斬";
+}
+
+function normalizeSkills(skills) {
+  const runtimeSkills = (skills || []).map((skill) => ({
+    label: skill.name || skill.id,
+    command: `skill ${skill.id}`,
+    icon: getSkillIcon(skill.role),
+    type: `${skill.role || "damage"} · ${skill.mpCost ?? 0} MP`,
+    description: skill.description || "這個技能還沒有詳細說明。",
+  }));
+
+  return [
+    {
+      label: "Look",
+      command: "look",
+      icon: "看",
+      type: "常駐",
+      description: "觀察目前房間、道具、怪物與可用行動。",
+    },
+    {
+      label: "Attack",
+      command: "attack",
+      icon: "攻",
+      type: "基礎",
+      description: "不消耗 MP 的普通攻擊。",
+    },
+    ...runtimeSkills,
+  ];
+}
+
+export default function SkillsWindowContent({ skills = [], loading, onAction }) {
   const [activeTab, setActiveTab] = useState("list");
+  const visibleSkills = normalizeSkills(skills);
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-teal-200/20 bg-teal-300/10 p-3 text-sm leading-6 text-teal-50/90">
-        目前此視窗作為技能配置與技能預覽；正式戰鬥技能之後會移到 BattleView。
-      </div>
-
       <div className="grid grid-cols-2 gap-2">
         {SKILL_TABS.map((tab) => (
           <button
@@ -134,7 +127,7 @@ export default function SkillsWindowContent({ loading, onAction }) {
 
       {activeTab === "list" ? (
         <div className="grid gap-2">
-          {SKILLS.map((skill) => (
+          {visibleSkills.map((skill) => (
             <SkillButton
               key={skill.command}
               skill={skill}

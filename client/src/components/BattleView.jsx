@@ -70,6 +70,7 @@ export default function BattleView({
   player,
   enemy,
   battle,
+  skills = [],
   mode = "explore",
   loading,
   gameOver = false,
@@ -109,21 +110,16 @@ export default function BattleView({
         ? "border-teal-200/35 bg-teal-400/15 text-teal-50"
       : "border-amber-200/25 bg-amber-300/10 text-amber-50";
 
+  const skillActions = skills.map((skill) => ({
+    id: skill.id,
+    label: skill.name || skill.id,
+    command: `skill ${skill.id}`,
+    disabled: !activeEnemy || playerMp < (skill.mpCost ?? 0),
+    detail: `${skill.mpCost ?? 0} MP`,
+  }));
   const actions = [
     { id: "attack", label: "Attack", command: "attack", disabled: !activeEnemy },
-    { id: "slash", label: "Slash", command: "skill slash", disabled: !activeEnemy },
-    {
-      id: "fireball",
-      label: "Fireball",
-      command: "skill fireball",
-      disabled: !activeEnemy || playerMp < 4,
-    },
-    {
-      id: "guard",
-      label: "Guard",
-      command: "skill guard",
-      disabled: !activeEnemy || playerMp < 2,
-    },
+    ...skillActions,
     {
       id: "potion",
       label: "Potion",
@@ -231,7 +227,7 @@ export default function BattleView({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 lg:w-[440px]">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:w-[440px]">
           {actions.map((action) => (
             <button
               key={action.id}
@@ -240,7 +236,12 @@ export default function BattleView({
               onClick={() => onAction?.(action.command)}
               className="rounded-lg border border-amber-200/25 bg-amber-300/10 px-3 py-2 text-sm font-semibold text-amber-50 transition hover:bg-amber-300/20 disabled:cursor-wait disabled:opacity-60"
             >
-              {action.label}
+              <span className="block truncate">{action.label}</span>
+              {action.detail ? (
+                <span className="block font-mono text-[10px] font-normal text-amber-100/70">
+                  {action.detail}
+                </span>
+              ) : null}
             </button>
           ))}
           <button

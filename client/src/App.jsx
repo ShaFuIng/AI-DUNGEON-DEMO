@@ -1,5 +1,6 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import BattleView from "./components/BattleView.jsx";
+import AdventureSetup from "./components/AdventureSetup.jsx";
 import CharacterPanel from "./components/CharacterPanel.jsx";
 import CharacterSideTabs from "./components/CharacterSideTabs.jsx";
 import EncounterModal from "./components/EncounterModal.jsx";
@@ -12,6 +13,7 @@ import InventoryWindowContent from "./components/windowContents/InventoryWindowC
 import SkillsWindowContent from "./components/windowContents/SkillsWindowContent.jsx";
 
 const COMMAND_API = "/api/game/command";
+const GENERATE_API = "/api/adventure/generate";
 
 function createStoryLine(type, text) {
   return {
@@ -81,11 +83,15 @@ function buildAvailableCommands(gameState) {
   }
 
   if (gameState.mode === "battle") {
+    const skillCommands = (gameState.player?.skills || gameState.player?.skillIds || [])
+      .map((skill) => {
+        const skillId = typeof skill === "string" ? skill : skill?.id;
+        return skillId ? `skill ${skillId}` : null;
+      })
+      .filter(Boolean);
     const commands = [
       "attack",
-      "skill slash",
-      "skill fireball",
-      "skill guard",
+      ...skillCommands,
       "escape",
       "status",
       "help",
@@ -165,7 +171,7 @@ function VictoryModal({ open, player, flags, onReset, onStay }) {
 
         <div className="space-y-4 px-5 py-5 text-sm leading-7 text-stone-200">
           <p>
-            你擊敗了遺跡守護者，取回古代核心，並成功回到遺跡入口。古老遺跡的能量逐漸平息，這次探索宣告完成。
+            你完成了這次冒險的勝利條件，帶著關鍵收穫回到目標地點。周遭的危險逐漸平息，這段探索宣告完成。
           </p>
           <div className="grid grid-cols-2 gap-2 rounded-lg border border-amber-100/15 bg-amber-300/10 p-3 text-amber-50">
             <span>等級：Lv. {player?.level ?? 1}</span>
@@ -200,6 +206,7 @@ function VictoryModal({ open, player, flags, onReset, onStay }) {
 }
 
 export default function App() {
+  const [setupComplete, setSetupComplete] = useState(false);
   const [gameState, setGameState] = useState(null);
   const [gameData, setGameData] = useState(null);
   const [storyLines, setStoryLines] = useState([]);
@@ -268,6 +275,75 @@ export default function App() {
       setLoading(false);
     }
   }, []);
+
+  async function startDefaultDemo() {
+    setLoading(true);
+    setError("");
+
+    try {
+      const resetResponse = await fetch("/api/reset", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ mode: "default" }),
+      });
+      const dataResponse = await fetch("/api/game-data");
+
+      if (!resetResponse.ok || !dataResponse.ok) {
+        throw new Error("demo_start_failed");
+      }
+
+      const [state, data] = await Promise.all([
+        resetResponse.json(),
+        dataResponse.json(),
+      ]);
+
+      setGameState(state);
+      setGameData(data);
+      setSetupComplete(true);
+      setStoryLines([
+        createStoryLine("system", "已載入預設 Demo。"),
+        createStoryLine("story", state.currentRoom?.description || "你醒來，四周一片寂靜。"),
+      ]);
+    } catch (startError) {
+      setError("無法啟動預設 Demo，請稍後再試。");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function generateAdventure(payload) {
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(GENERATE_API, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.message || "generation_failed");
+      }
+
+      setGameState(data.state);
+      setGameData(data.gameData);
+      setSetupComplete(true);
+      setStoryLines([
+        createStoryLine("system", data.generationSummary || "新冒險已生成。"),
+        createStoryLine("story", data.state?.currentRoom?.description || "新的冒險開始了。"),
+      ]);
+    } catch (generateError) {
+      setError("冒險生成失敗，請調整 prompt 或使用預設 Demo。");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   function openEncounterForEnemy(enemy, state = gameState, { force = false } = {}) {
     if (!enemy) {
@@ -492,8 +568,10 @@ export default function App() {
   }
 
   useEffect(() => {
-    loadGameState();
-  }, [loadGameState]);
+    if (setupComplete && !gameState) {
+      loadGameState();
+    }
+  }, [gameState, loadGameState, setupComplete]);
 
   useEffect(() => {
     if (!isVictory) {
@@ -553,6 +631,17 @@ export default function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [openWindows]);
 
+  if (!setupComplete) {
+    return (
+      <AdventureSetup
+        loading={loading}
+        error={error}
+        onStartDemo={startDefaultDemo}
+        onGenerate={generateAdventure}
+      />
+    );
+  }
+
   return (
     <main className="min-h-screen bg-[#15120f] text-stone-100">
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_20%_10%,rgba(245,158,11,0.22),transparent_32%),radial-gradient(circle_at_84%_20%,rgba(20,184,166,0.18),transparent_30%),linear-gradient(135deg,#18130f_0%,#202129_46%,#0e1512_100%)]" />
@@ -590,6 +679,7 @@ export default function App() {
                 player={gameState?.player}
                 enemy={battleEnemy}
                 battle={gameState?.battle}
+                skills={gameState?.player?.skills || []}
                 mode={gameState?.mode}
                 loading={loading}
                 gameOver={isGameOver}
@@ -673,7 +763,11 @@ export default function App() {
           defaultPosition={{ x: 940, y: 160 }}
           defaultSize={{ width: 480, height: 560 }}
         >
-          <SkillsWindowContent loading={loading} onAction={sendCommand} />
+          <SkillsWindowContent
+            skills={gameState?.player?.skills || []}
+            loading={loading}
+            onAction={sendCommand}
+          />
         </FloatingGameWindow>
       ) : null}
 
