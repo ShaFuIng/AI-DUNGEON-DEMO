@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+
 function StatBar({ label, value, max, tone = "amber" }) {
   const safeMax = Math.max(Number(max) || 1, 1);
   const safeValue = Math.max(0, Math.min(Number(value) || 0, safeMax));
@@ -67,15 +69,17 @@ function CombatantCard({ title, name, level, hp, maxHp, mp, maxMp, description, 
 export default function BattleView({
   player,
   enemy,
-  battleLog = [],
+  battle,
+  mode = "explore",
   loading,
-  turn = 1,
-  battleEnding = false,
   gameOver = false,
   onAction,
-  onExitBattle,
 }) {
+  const logRef = useRef(null);
   const activeEnemy = enemy || null;
+  const battleLog = battle?.log || [];
+  const battleStatus = battle?.status || "idle";
+  const turn = battle?.turn || 0;
   const playerHp = player?.hp ?? player?.stats?.hp ?? 24;
   const playerMaxHp = player?.maxHp ?? player?.stats?.maxHp ?? playerHp;
   const playerMp = player?.mp ?? player?.stats?.mp ?? 0;
@@ -86,8 +90,12 @@ export default function BattleView({
   });
   const statusText = gameOver
     ? "無法行動"
-    : battleEnding
+    : battleStatus === "victory"
       ? "勝利"
+      : battleStatus === "escaped"
+        ? "已撤退"
+        : battleStatus === "defeat"
+          ? "敗北"
       : !activeEnemy
         ? "沒有敵人"
         : playerHp <= Math.ceil(playerMaxHp * 0.25)
@@ -95,8 +103,10 @@ export default function BattleView({
           : "戰鬥中";
   const statusTone = gameOver
     ? "border-red-200/35 bg-red-500/15 text-red-50"
-    : battleEnding
+    : battleStatus === "victory"
       ? "border-emerald-200/35 bg-emerald-400/15 text-emerald-50"
+      : battleStatus === "escaped"
+        ? "border-teal-200/35 bg-teal-400/15 text-teal-50"
       : "border-amber-200/25 bg-amber-300/10 text-amber-50";
 
   const actions = [
@@ -121,7 +131,13 @@ export default function BattleView({
       disabled: !hasPotion || playerHp >= playerMaxHp,
     },
   ];
-  const controlsDisabled = loading || battleEnding || gameOver;
+  const controlsDisabled = loading || mode === "gameOver" || gameOver;
+
+  useEffect(() => {
+    if (logRef.current) {
+      logRef.current.scrollTop = logRef.current.scrollHeight;
+    }
+  }, [battleLog]);
 
   if (!activeEnemy) {
     return (
@@ -137,10 +153,10 @@ export default function BattleView({
         </div>
         <button
           type="button"
-          onClick={onExitBattle}
+          onClick={() => onAction?.("look")}
           className="rounded-lg border border-amber-200/35 bg-amber-300/15 px-4 py-2 text-sm font-semibold text-amber-50 transition hover:bg-amber-300/25"
         >
-          返回地圖
+          重新觀察
         </button>
       </section>
     );
@@ -197,14 +213,17 @@ export default function BattleView({
       </div>
 
       <div className="grid gap-4 border-t border-white/10 pt-4 lg:grid-cols-[minmax(0,1fr)_auto]">
-        <div className="min-h-[86px] rounded-lg border border-white/10 bg-black/20 p-3">
+        <div className="rounded-lg border border-white/10 bg-black/20 p-3">
           <p className="mb-2 font-mono text-[11px] uppercase tracking-wide text-stone-400">
             Battle Log
           </p>
-          <div className="space-y-1 text-sm text-stone-200">
-            {(battleLog.length ? battleLog.slice(-6) : ["戰鬥開始，請選擇你的行動。"]).map(
+          <div
+            ref={logRef}
+            className="h-32 space-y-2 overflow-y-auto pr-2 text-sm leading-6 text-stone-200"
+          >
+            {(battleLog.length ? battleLog : ["戰鬥開始，請選擇你的行動。"]).map(
               (line, index) => (
-                <p key={`${line}-${index}`} className="line-clamp-2">
+                <p key={`${line}-${index}`} className="break-words">
                   {line}
                 </p>
               ),

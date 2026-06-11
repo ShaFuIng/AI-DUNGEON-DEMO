@@ -18,6 +18,10 @@ function getInitialRoomId() {
   return roomIds[0];
 }
 
+function getExpToNextLevel(level) {
+  return Math.max(1, level) * 20;
+}
+
 
 function createInitialGameState() {
   const initialRoomId = getInitialRoomId();
@@ -33,7 +37,7 @@ function createInitialGameState() {
       defense: 2,
       level: 1,
       exp: 0,
-      nextExp: 100,
+      nextExp: getExpToNextLevel(1),
       inventory: [],
       currentRoom: initialRoomId,
       visitedRooms: [initialRoomId],
@@ -49,7 +53,20 @@ function createInitialGameState() {
 
     monsters: createMonsterState(),
 
+    mode: "explore",
+    activeMonsterId: null,
+    battle: createInitialBattleState(),
+
     log: [`遊戲開始。你站在${initialRoom.name}。`],
+  };
+}
+
+function createInitialBattleState() {
+  return {
+    turn: 0,
+    log: [],
+    status: "idle",
+    lastEvent: null,
   };
 }
 
@@ -74,8 +91,20 @@ function getCurrentRoom(gameState) {
 
 function getPublicGameState(gameState) {
   const currentRoom = getCurrentRoom(gameState);
+  const activeMonster = getActiveBattleMonsterInfo(gameState);
 
   return {
+    mode: gameState.mode,
+    activeMonsterId: gameState.activeMonsterId,
+    activeMonster,
+    battle: {
+      turn: gameState.battle.turn,
+      log: gameState.battle.log,
+      status: gameState.battle.status,
+      lastEvent: gameState.battle.lastEvent,
+    },
+    gameOver: gameState.flags.gameOver,
+
     player: {
       hp: gameState.player.hp,
       maxHp: gameState.player.maxHp,
@@ -85,10 +114,13 @@ function getPublicGameState(gameState) {
       defense: gameState.player.defense,
       level: gameState.player.level,
       exp: gameState.player.exp,
-      nextExp: gameState.player.nextExp,
+      nextExp: getExpToNextLevel(gameState.player.level),
       inventory: gameState.player.inventory.map((itemId) => {
         return gameData.items[itemId].name;
       }),
+      inventoryItems: gameState.player.inventory.map((itemId) =>
+        getPublicItemInfo(itemId)
+      ),
       currentRoom: currentRoom.name,
       currentRoomId: currentRoom.id,
       visitedRooms: gameState.player.visitedRooms,
@@ -108,7 +140,34 @@ function getPublicGameState(gameState) {
       monster: getRoomMonsterInfo(gameState, currentRoom),
     },
 
+    itemDetails: Object.fromEntries(
+      Object.keys(gameData.items || {}).map((itemId) => [
+        itemId,
+        getPublicItemInfo(itemId),
+      ])
+    ),
+
     log: gameState.log,
+  };
+}
+
+function getPublicItemInfo(itemId) {
+  const item = gameData.items[itemId];
+
+  if (!item) {
+    return null;
+  }
+
+  return {
+    id: item.id,
+    name: item.name,
+    type: item.type || "material",
+    description: item.description || "這個道具還沒有詳細說明。",
+    usageHint: item.usageHint || "",
+    effect: item.effect || null,
+    unlocks: item.unlocks || [],
+    slot: item.slot || null,
+    stats: item.stats || null,
   };
 }
 
@@ -131,12 +190,42 @@ function getRoomMonsterInfo(gameState, room) {
     hp: monsterState.hp,
     maxHp: monsterData.maxHp,
     attack: monsterData.attack,
+    defense: monsterData.defense || 0,
+    expReward: monsterData.expReward || 0,
     description: monsterData.description,
   };
 }
 
 function getActiveRoomMonsterInfo(gameState) {
   return getRoomMonsterInfo(gameState, getCurrentRoom(gameState));
+}
+
+function getMonsterInfoById(gameState, monsterId) {
+  if (!monsterId) {
+    return null;
+  }
+
+  const monsterData = gameData.monsters[monsterId];
+  const monsterState = gameState.monsters[monsterId];
+
+  if (!monsterData || !monsterState || monsterState.defeated) {
+    return null;
+  }
+
+  return {
+    id: monsterId,
+    name: monsterData.name,
+    hp: monsterState.hp,
+    maxHp: monsterData.maxHp,
+    attack: monsterData.attack,
+    defense: monsterData.defense || 0,
+    expReward: monsterData.expReward || 0,
+    description: monsterData.description,
+  };
+}
+
+function getActiveBattleMonsterInfo(gameState) {
+  return getMonsterInfoById(gameState, gameState.activeMonsterId);
 }
 
 function handleCommand(gameState, rawCommand) {
@@ -149,12 +238,39 @@ function handleCommand(gameState, rawCommand) {
     return createEventResult("empty", "請輸入指令。");
   }
 
-  if (gameState.flags.gameOver || gameState.flags.gameWon) {
+  if (action === "reset" || action === "restart") {
+    return createEventResult("reset", "遊戲即將重置。");
+  }
+
+  if (gameState.mode === "gameOver" || gameState.flags.gameOver || gameState.flags.gameWon) {
     if (action === "reset") {
       return createEventResult("reset", "遊戲即將重置。");
     }
 
     return createEventResult("game_ended", "遊戲已結束，請輸入 reset 重新開始。");
+  }
+
+  if (
+    (action === "battle" && target === "start") ||
+    (action === "start" && target === "battle")
+  ) {
+    return handleBattleStart(gameState);
+  }
+
+  if (gameState.mode === "battle") {
+    return handleBattleModeCommand(gameState, action, target);
+  }
+
+  if (action === "attack") {
+    return createEventResult("not_in_battle", "請先進入戰鬥，再揮出你的攻擊。");
+  }
+
+  if (action === "skill") {
+    return handleExploreSkill(gameState, target);
+  }
+
+  if (action === "escape") {
+    return createEventResult("no_battle_to_escape", "現在沒有需要逃跑的戰鬥。");
   }
 
   const isExplorationAction = action === "move" || action === "take";
@@ -183,15 +299,6 @@ function handleCommand(gameState, rawCommand) {
     case "take":
       return handleTake(gameState, target);
 
-    case "attack":
-      return handleAttack(gameState);
-
-    case "skill":
-      return handleSkill(gameState, target);
-
-    case "escape":
-      return handleEscape(gameState);
-
     case "use":
       return handleUseItem(gameState, target);
 
@@ -203,6 +310,37 @@ function handleCommand(gameState, rawCommand) {
 
     default:
       return createEventResult("unknown_command", "未知指令。請輸入 help 查看可用指令。");
+  }
+}
+
+function handleBattleModeCommand(gameState, action, target) {
+  switch (action) {
+    case "attack":
+      return handleAttack(gameState);
+
+    case "skill":
+      return handleSkill(gameState, target);
+
+    case "use":
+      return handleUseItem(gameState, target);
+
+    case "escape":
+      return handleEscape(gameState);
+
+    case "status":
+      return handleStatus(gameState);
+
+    case "look":
+      return handleBattleLook(gameState);
+
+    case "log":
+      return handleLog(gameState);
+
+    default:
+      return createEventResult(
+        "battle_command_blocked",
+        "戰鬥尚未結束，現在只能 attack、skill、use small_potion、escape、status 或 look。"
+      );
   }
 }
 
@@ -222,6 +360,140 @@ function addLog(gameState, text) {
   }
 }
 
+function addBattleLog(gameState, text) {
+  if (!text) {
+    return;
+  }
+
+  const lines = String(text).split("\n").filter(Boolean);
+  gameState.battle.log.push(...lines);
+
+  if (gameState.battle.log.length > 30) {
+    gameState.battle.log = gameState.battle.log.slice(-30);
+  }
+}
+
+function setBattleEvent(gameState, status, lastEvent) {
+  gameState.battle.status = status;
+  gameState.battle.lastEvent = lastEvent;
+}
+
+function clearActiveBattle(gameState, status, lastEvent) {
+  gameState.mode = "explore";
+  gameState.activeMonsterId = null;
+  gameState.player.isDefending = false;
+  setBattleEvent(gameState, status, lastEvent);
+}
+
+function handleBattleStart(gameState) {
+  if (gameState.mode === "battle") {
+    const activeMonster = getActiveBattleMonsterInfo(gameState);
+
+    return createEventResult(
+      "battle_already_started",
+      activeMonster
+        ? `你已經正在與 ${activeMonster.name} 戰鬥。`
+        : "戰鬥已經開始。"
+    );
+  }
+
+  const monsterInfo = getActiveRoomMonsterInfo(gameState);
+
+  if (!monsterInfo) {
+    return createEventResult("no_battle_target", "這裡沒有需要戰鬥的敵人。");
+  }
+
+  gameState.mode = "battle";
+  gameState.activeMonsterId = monsterInfo.id;
+  gameState.battle = {
+    turn: 1,
+    log: [
+      `${monsterInfo.name} 擋住了你的去路。`,
+      "戰鬥開始，請選擇你的行動。",
+    ],
+    status: "fighting",
+    lastEvent: "battle_started",
+  };
+
+  addLog(gameState, `你與 ${monsterInfo.name} 進入戰鬥。`);
+
+  return createEventResult(
+    "battle_started",
+    `你面對 ${monsterInfo.name} 擺開架勢。戰鬥開始。`
+  );
+}
+
+function awardExperience(gameState, monsterData) {
+  const expReward = monsterData.expReward || 0;
+  const messages = [];
+
+  if (expReward <= 0) {
+    return messages;
+  }
+
+  gameState.player.exp += expReward;
+  messages.push(`你獲得 ${expReward} 點經驗值。`);
+  addLog(gameState, `你獲得 ${expReward} 點經驗值`);
+
+  while (gameState.player.exp >= getExpToNextLevel(gameState.player.level)) {
+    const requiredExp = getExpToNextLevel(gameState.player.level);
+    gameState.player.exp -= requiredExp;
+
+    const before = {
+      level: gameState.player.level,
+      maxHp: gameState.player.maxHp,
+      maxMp: gameState.player.maxMp,
+      attack: gameState.player.attack,
+      defense: gameState.player.defense,
+    };
+
+    gameState.player.level += 1;
+    gameState.player.maxHp += 6;
+    gameState.player.maxMp += 3;
+    gameState.player.attack += 2;
+    gameState.player.defense += 1;
+    gameState.player.nextExp = getExpToNextLevel(gameState.player.level);
+
+    // MVP rule: level up fully restores HP/MP so the player can continue exploring.
+    gameState.player.hp = gameState.player.maxHp;
+    gameState.player.mp = gameState.player.maxMp;
+
+    messages.push(
+      [
+        `你升到了 Lv. ${gameState.player.level}！`,
+        `HP 上限 ${before.maxHp}→${gameState.player.maxHp}`,
+        `MP 上限 ${before.maxMp}→${gameState.player.maxMp}`,
+        `攻擊 ${before.attack}→${gameState.player.attack}`,
+        `防禦 ${before.defense}→${gameState.player.defense}`,
+        "HP / MP 已回滿。",
+      ].join("，")
+    );
+    addLog(gameState, `你升到了 Lv. ${gameState.player.level}`);
+  }
+
+  gameState.player.nextExp = getExpToNextLevel(gameState.player.level);
+
+  return messages;
+}
+
+function applyMonsterDrops(gameState, monsterData) {
+  const drops = Array.isArray(monsterData.drops) ? monsterData.drops : [];
+  const messages = [];
+
+  for (const drop of drops) {
+    const itemId = typeof drop === "string" ? drop : drop?.id;
+    if (!itemId || !gameData.items[itemId]) {
+      continue;
+    }
+
+    gameState.player.inventory.push(itemId);
+    messages.push(`${monsterData.name} 掉落了 ${gameData.items[itemId].name}。`);
+    addLog(gameState, `你獲得掉落物 ${gameData.items[itemId].name}`);
+  }
+
+  return messages;
+}
+
 function handleHelp() {
   return createEventResult(
     "help",
@@ -232,6 +504,7 @@ function handleHelp() {
       "- status：查看角色狀態",
       "- move north / south / east / west：移動",
       "- take item：撿起道具（例：take torch）",
+      "- battle start：遭遇敵人時進入戰鬥",
       "- attack：普通攻擊",
       "- skill slash：施放斬擊",
       "- skill fireball：施放火球術",
@@ -271,11 +544,7 @@ function handleLook(gameState) {
   }
 
   if (monsterInfo) {
-    actionHints.push("attack");
-    actionHints.push("skill slash");
-    actionHints.push("skill fireball");
-    actionHints.push("skill guard");
-    actionHints.push("escape");
+    actionHints.push("battle start");
   }
 
   if (gameState.player.inventory.includes("small_potion")) {
@@ -301,6 +570,24 @@ function handleStatus(gameState) {
   return createEventResult(
     "status",
     `角色狀態：Lv. ${gameState.player.level}，EXP ${gameState.player.exp}/${gameState.player.nextExp}，HP ${gameState.player.hp}/${gameState.player.maxHp}，MP ${gameState.player.mp}/${gameState.player.maxMp}，攻擊力 ${gameState.player.attack}，防禦力 ${gameState.player.defense}，目前位置：${room.name}，背包：${inventoryNames}`
+  );
+}
+
+function handleBattleLook(gameState) {
+  const monsterInfo = getActiveBattleMonsterInfo(gameState);
+
+  if (!monsterInfo) {
+    return createEventResult("battle_look_missing_enemy", "戰鬥資料已經消散，請重新觀察四周。");
+  }
+
+  return createEventResult(
+    "battle_look",
+    [
+      `你正在與 ${monsterInfo.name} 戰鬥。`,
+      `${monsterInfo.name} HP：${monsterInfo.hp}/${monsterInfo.maxHp}`,
+      `你的 HP：${gameState.player.hp}/${gameState.player.maxHp}，MP：${gameState.player.mp}/${gameState.player.maxMp}`,
+      `目前回合：${gameState.battle.turn}`,
+    ].join("\n")
   );
 }
 
@@ -409,7 +696,7 @@ function handleAttack(gameState) {
   });
 }
 
-function handleSkill(gameState, skillName) {
+function handleExploreSkill(gameState, skillName) {
   if (!skillName) {
     return createEventResult(
       "skill_missing",
@@ -425,6 +712,36 @@ function handleSkill(gameState, skillName) {
 
   const skill = gameData.skills[skillId];
   const monsterInfo = getActiveRoomMonsterInfo(gameState);
+
+  if (monsterInfo) {
+    return createEventResult(
+      "not_in_battle",
+      `${monsterInfo.name} 正在逼近。請先輸入 battle start，再使用 ${skill.name}。`
+    );
+  }
+
+  return createEventResult(
+    "no_monster_for_skill",
+    `四周暫時沒有敵人，${skill.name} 沒有施放的目標。`
+  );
+}
+
+function handleSkill(gameState, skillName) {
+  if (!skillName) {
+    return createEventResult(
+      "skill_missing",
+      "請指定技能名稱，例如 skill slash、skill fireball、skill guard。"
+    );
+  }
+
+  const skillId = findSkillIdByNameOrId(skillName);
+
+  if (!skillId) {
+    return createEventResult("skill_not_found", `找不到技能：${skillName}`);
+  }
+
+  const skill = gameData.skills[skillId];
+  const monsterInfo = getActiveBattleMonsterInfo(gameState);
 
   if (!monsterInfo) {
     return createEventResult(
@@ -442,11 +759,12 @@ function handleSkill(gameState, skillName) {
   if (skillId === "guard") {
     gameState.player.isDefending = true;
     addLog(gameState, "你進入防禦姿態。");
+    gameState.battle.turn += 1;
+    const message = `你施放了 ${skill.name}，消耗 ${skill.mpCost} MP。下一次受到的傷害會減半。`;
+    addBattleLog(gameState, message);
+    setBattleEvent(gameState, "fighting", "guard");
 
-    return createEventResult(
-      "guard",
-      `你施放了 ${skill.name}，消耗 ${skill.mpCost} MP。下一次受到的傷害會減半。`
-    );
+    return createEventResult("guard", message);
   }
 
   return performPlayerAttack(gameState, {
@@ -458,10 +776,10 @@ function handleSkill(gameState, skillName) {
 }
 
 function handleEscape(gameState) {
-  const monsterInfo = getActiveRoomMonsterInfo(gameState);
+  const monsterInfo = getActiveBattleMonsterInfo(gameState);
 
   if (!monsterInfo) {
-    return createEventResult("no_monster_to_escape", "四周沒有敵人，你不需要逃跑。");
+    return createEventResult("no_battle_to_escape", "現在沒有需要逃跑的戰鬥。");
   }
 
   const room = getCurrentRoom(gameState);
@@ -470,11 +788,11 @@ function handleEscape(gameState) {
 
   if (escapeSucceeded) {
     addLog(gameState, `你從 ${monsterData.name} 面前撤退。`);
+    const message = `你抓住 ${monsterData.name} 動作的空隙，退回 ${room.name} 的陰影裡。戰鬥暫時中止。`;
+    addBattleLog(gameState, message);
+    clearActiveBattle(gameState, "escaped", "escape_success");
 
-    return createEventResult(
-      "escape_success",
-      `你抓住 ${monsterData.name} 動作的空隙，退回 ${room.name} 的陰影裡。戰鬥暫時中止。`
-    );
+    return createEventResult("escape_success", message);
   }
 
   const counterText = performMonsterCounterAttack(gameState, monsterData);
@@ -490,16 +808,22 @@ function handleEscape(gameState) {
   }
 
   addLog(gameState, `你逃離 ${monsterData.name} 失敗。`);
+  gameState.battle.turn += 1;
+  addBattleLog(gameState, messageLines.join("\n"));
+  setBattleEvent(
+    gameState,
+    gameState.mode === "gameOver" ? "defeat" : "fighting",
+    "escape_failed"
+  );
 
   return createEventResult("escape_failed", messageLines.join("\n"));
 }
 
 function performPlayerAttack(gameState, attackInfo) {
-  const room = getCurrentRoom(gameState);
-  const monsterInfo = getRoomMonsterInfo(gameState, room);
+  const monsterInfo = getActiveBattleMonsterInfo(gameState);
 
   if (!monsterInfo) {
-    return createEventResult("no_monster", "這裡沒有怪物可以攻擊。");
+    return createEventResult("no_monster", "目前沒有正在交戰的敵人。");
   }
 
   const monsterId = monsterInfo.id;
@@ -525,7 +849,11 @@ function performPlayerAttack(gameState, attackInfo) {
 
     addLog(gameState, `你擊敗了 ${monsterData.name}`);
 
+    messageLines.push(...awardExperience(gameState, monsterData));
+    messageLines.push(...applyMonsterDrops(gameState, monsterData));
     messageLines.push("你現在可以輸入 look 重新觀察房間。");
+    addBattleLog(gameState, messageLines.join("\n"));
+    clearActiveBattle(gameState, "victory", "monster_defeated");
 
     return createEventResult("monster_defeated", messageLines.join("\n"));
   }
@@ -542,6 +870,13 @@ function performPlayerAttack(gameState, attackInfo) {
   }
 
   addLog(gameState, `你攻擊了 ${monsterData.name}`);
+  gameState.battle.turn += 1;
+  addBattleLog(gameState, messageLines.join("\n"));
+  setBattleEvent(
+    gameState,
+    gameState.mode === "gameOver" ? "defeat" : "fighting",
+    attackInfo.type
+  );
 
   return createEventResult("attack", messageLines.join("\n"));
 }
@@ -596,11 +931,15 @@ function handleUseItem(gameState, targetName) {
 
     removeItemFromInventory(gameState, itemId);
     addLog(gameState, `你使用了 ${item.name}`);
+    const message = `你使用了 ${item.name}，恢復 ${healed} 點 HP。現在 HP：${gameState.player.hp}/${gameState.player.maxHp}`;
 
-    return createEventResult(
-      "use_item",
-      `你使用了 ${item.name}，恢復 ${healed} 點 HP。現在 HP：${gameState.player.hp}/${gameState.player.maxHp}`
-    );
+    if (gameState.mode === "battle") {
+      gameState.battle.turn += 1;
+      addBattleLog(gameState, message);
+      setBattleEvent(gameState, "fighting", "use_item");
+    }
+
+    return createEventResult("use_item", message);
   }
 
   return createEventResult("use_no_effect", `${item.name} 沒有可用效果。`);
@@ -617,6 +956,9 @@ function removeItemFromInventory(gameState, itemId) {
 function checkGameOver(gameState) {
   if (gameState.player.hp <= 0) {
     gameState.flags.gameOver = true;
+    gameState.mode = "gameOver";
+    gameState.battle.status = "defeat";
+    gameState.battle.lastEvent = "player_defeated";
   }
 }
 

@@ -27,12 +27,34 @@ const ALLOWED_ROOT_KEYS = [
 const REQUIRED_ROOT_KEYS = ["id", "name", "theme", "narrativeHook", "difficulty", "rooms"];
 const REQUIRED_ROOM_KEYS = ["id", "name", "description", "exits", "items", "monster"];
 const ALLOWED_ROOM_KEYS = ["id", "name", "description", "exits", "items", "monster", "traps"];
-const ALLOWED_ITEM_KEYS = ["id", "name", "description", "type", "effect"];
-const ALLOWED_MONSTER_KEYS = ["id", "name", "description", "maxHp", "attack", "tags"];
+const ALLOWED_ITEM_KEYS = [
+  "id",
+  "name",
+  "description",
+  "type",
+  "usageHint",
+  "effect",
+  "unlocks",
+  "slot",
+  "stats",
+];
+const ALLOWED_MONSTER_KEYS = [
+  "id",
+  "name",
+  "description",
+  "hp",
+  "maxHp",
+  "attack",
+  "defense",
+  "expReward",
+  "drops",
+  "tags",
+];
 const ALLOWED_SKILL_KEYS = ["id", "name", "description", "mpCost", "damage", "effect"];
 const ALLOWED_TRAP_KEYS = ["id", "name", "description", "damage", "trigger"];
 
-const ITEM_TYPES = ["tool", "key", "quest", "consumable", "material"];
+const ITEM_TYPES = ["key", "quest", "consumable", "equipment", "material"];
+const EQUIPMENT_SLOTS = ["weapon", "armor", "accessory"];
 const TRAP_TRIGGERS = ["enter_room", "take_item", "open_exit", "inspect"];
 
 function readJson(filePath) {
@@ -104,7 +126,7 @@ function validateRootItems(area, errors) {
     }
 
     hasOnlyAllowedKeys(item, ALLOWED_ITEM_KEYS, label, errors);
-    validateRequiredFields(item, ["id", "name", "description", "type"], label, errors);
+    validateRequiredFields(item, ["id", "name", "description", "type", "usageHint"], label, errors);
 
     if (!isSnakeCase(item.id)) {
       errors.push(`${label}.id must be snake_case.`);
@@ -122,6 +144,10 @@ function validateRootItems(area, errors) {
       errors.push(`${label}.description must be a non-empty string.`);
     }
 
+    if (!isNonEmptyString(item.usageHint)) {
+      errors.push(`${label}.usageHint must be a non-empty string.`);
+    }
+
     if (!ITEM_TYPES.includes(item.type)) {
       errors.push(`${label}.type must be one of: ${ITEM_TYPES.join(", ")}.`);
     }
@@ -130,7 +156,7 @@ function validateRootItems(area, errors) {
       if (!isPlainObject(item.effect)) {
         errors.push(`${label}.effect must be an object.`);
       } else {
-        hasOnlyAllowedKeys(item.effect, ["hp", "mp", "attack", "defense"], `${label}.effect`, errors);
+        hasOnlyAllowedKeys(item.effect, ["hp", "mp", "attack", "defense", "maxHp", "maxMp"], `${label}.effect`, errors);
 
         if ("hp" in item.effect && (!Number.isInteger(item.effect.hp) || item.effect.hp < 0)) {
           errors.push(`${label}.effect.hp must be an integer >= 0.`);
@@ -147,6 +173,38 @@ function validateRootItems(area, errors) {
         if ("defense" in item.effect && !Number.isInteger(item.effect.defense)) {
           errors.push(`${label}.effect.defense must be an integer.`);
         }
+
+        if ("maxHp" in item.effect && !Number.isInteger(item.effect.maxHp)) {
+          errors.push(`${label}.effect.maxHp must be an integer.`);
+        }
+
+        if ("maxMp" in item.effect && !Number.isInteger(item.effect.maxMp)) {
+          errors.push(`${label}.effect.maxMp must be an integer.`);
+        }
+      }
+    }
+
+    if ("unlocks" in item) {
+      if (!Array.isArray(item.unlocks)) {
+        errors.push(`${label}.unlocks must be an array.`);
+      } else {
+        item.unlocks.forEach((unlockId, unlockIdx) => {
+          if (!isSnakeCase(unlockId)) {
+            errors.push(`${label}.unlocks[${unlockIdx}] must be a snake_case string.`);
+          }
+        });
+      }
+    }
+
+    if (item.type === "equipment") {
+      if (!EQUIPMENT_SLOTS.includes(item.slot)) {
+        errors.push(`${label}.slot must be one of: ${EQUIPMENT_SLOTS.join(", ")}.`);
+      }
+
+      if (!isPlainObject(item.stats)) {
+        errors.push(`${label}.stats must be an object for equipment.`);
+      } else {
+        hasOnlyAllowedKeys(item.stats, ["attack", "defense", "maxHp", "maxMp"], `${label}.stats`, errors);
       }
     }
 
@@ -182,7 +240,12 @@ function validateRootMonsters(area, errors) {
     }
 
     hasOnlyAllowedKeys(monster, ALLOWED_MONSTER_KEYS, label, errors);
-    validateRequiredFields(monster, ["id", "name", "description", "maxHp", "attack"], label, errors);
+    validateRequiredFields(
+      monster,
+      ["id", "name", "description", "hp", "maxHp", "attack", "defense", "expReward", "drops"],
+      label,
+      errors
+    );
 
     if (!isSnakeCase(monster.id)) {
       errors.push(`${label}.id must be snake_case.`);
@@ -206,6 +269,28 @@ function validateRootMonsters(area, errors) {
 
     if (!Number.isInteger(monster.attack) || monster.attack < 0) {
       errors.push(`${label}.attack must be an integer >= 0.`);
+    }
+
+    if (!Number.isInteger(monster.hp) || monster.hp < 1) {
+      errors.push(`${label}.hp must be an integer >= 1.`);
+    }
+
+    if (!Number.isInteger(monster.defense) || monster.defense < 0) {
+      errors.push(`${label}.defense must be an integer >= 0.`);
+    }
+
+    if (!Number.isInteger(monster.expReward) || monster.expReward < 0) {
+      errors.push(`${label}.expReward must be an integer >= 0.`);
+    }
+
+    if (!Array.isArray(monster.drops)) {
+      errors.push(`${label}.drops must be an array.`);
+    } else {
+      monster.drops.forEach((dropId, dropIdx) => {
+        if (!isSnakeCase(dropId)) {
+          errors.push(`${label}.drops[${dropIdx}] must be a snake_case string.`);
+        }
+      });
     }
 
     if ("tags" in monster) {

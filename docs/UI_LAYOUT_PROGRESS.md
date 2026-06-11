@@ -31,7 +31,8 @@
 
 - 原 `StoryLog` 與 `CommandBar` 已整合為 `StoryCommandPanel`。
 - 顯示 story / command / system 訊息。
-- 戰鬥中目前會禁用一般輸入，避免 `move` / `take` 等探索指令混入戰鬥流程。
+- 戰鬥中目前會禁用一般輸入，避免 `move` / `take` 等探索指令混入戰鬥流程；戰鬥操作改由 `BattleView` 按鈕送到後端。
+- Map 左上 Recent Log 已改為固定最近 5 筆列表，最新一筆在最上方，不再輪播、不顯示 indicator。
 
 ### MapView
 
@@ -45,14 +46,17 @@
 
 - `EncounterModal` 已存在。
 - 當目前房間有未擊敗怪物時，前端會提示遭遇敵人。
-- 玩家確認後進入 `BattleView`。
+- 玩家確認後會送出 `battle start` 指令，由後端 `gameEngine` 切換到 `mode = "battle"`。
 - 若目前房間沒有未擊敗怪物，不應進入戰鬥。
 
 ### BattleView
 
 - `BattleView` 已存在並接入 `App.jsx`。
+- `BattleView` 由後端 `gameState.mode` 控制顯示；戰鬥中顯示 BattleView，敗北的 `gameOver` 狀態也保留 BattleView 並停用按鈕，不再依賴前端本地 `battleMode` 作為主要真相來源。
+- `BattleView` 的 player / enemy / battle log / turn / status 都來自後端公開 gameState。
 - 可顯示玩家與敵人資訊。
 - 可顯示玩家 HP / MP、敵人 HP、HP bar、battle log、回合數與目前狀態。
+- Battle Log 已改為固定高度可滾動區塊，訊息增加時不會撐高整個 BattleView。
 - 目前按鈕包含：
   - `attack`
   - `skill slash`
@@ -65,26 +69,64 @@
 
 ## 4. 戰鬥機制目前狀態
 
+- battle state 已由後端 `gameEngine` 管理，公開欄位包含：
+  - `mode`
+  - `activeMonsterId`
+  - `activeMonster`
+  - `battle.turn`
+  - `battle.log`
+  - `battle.status`
+  - `battle.lastEvent`
+- 平常 `mode = "explore"`。
+- `battle start` 會在目前房間有未擊敗怪物時進入 `mode = "battle"`。
+- 怪物死亡後會標記 defeated，`mode` 回到 `explore`，`battle.status = "victory"`。
+- escape 成功後 `mode` 回到 `explore`，`battle.status = "escaped"`。
+- 玩家死亡後 `mode = "gameOver"`，`battle.status = "defeat"`。
 - 後端已有基礎戰鬥指令：`attack`、`skill slash`、`skill fireball`、`skill guard`、`use small_potion`。
 - `escape` 已加入簡化版機制：
-  - 成功時離開前端 battleMode 並回到探索狀態。
+  - 成功時由後端離開 battle mode 並回到探索狀態。
   - 失敗時怪物會反擊。
   - 目前成功率固定為 60%。
 - `skill slash`、`skill fireball`、`skill guard` 統一要求目前房間必須有未擊敗怪物。
 - `guard` 在沒有敵人時不會消耗 MP。
 - 當目前房間有未擊敗怪物時，後端會阻擋 `move` / `take`，避免探索流程破壞戰鬥狀態。
-- 戰鬥勝利後，怪物會標記 defeated，前端回到 MapView。
+- 戰鬥勝利後，怪物會標記 defeated，後端回到 `mode = "explore"`，前端回到 MapView。
 - 玩家死亡後維持 `gameOver`，前端 BattleView 會停用一般戰鬥按鈕。
+- 怪物可設定 `expReward` 與 `drops`；擊敗怪物後會顯示獲得 EXP、掉落物與升級訊息。
+- 基礎 Level Up 規則已加入：`expToNextLevel = level * 20`，升級後 level / maxHp / maxMp / attack / defense 增加，HP / MP 回滿。
 
-## 5. 仍需整理的設計問題
+## 5. 背包與物品提示
 
-- 目前 `battleMode` 主要是前端 UI state，尚未成為後端正式 `gameState.mode`。
+- `InventoryWindowContent` 已支援 hover / click 顯示道具 detail panel。
+- Detail panel 會顯示：
+  - 道具名稱
+  - 類型
+  - 描述
+  - 效果
+  - 用途提示
+- 資料來源優先使用後端 `player.inventoryItems` 與 `itemDetails`。
+- 若 item 缺少 description，會顯示 fallback：「這個道具還沒有詳細說明。」
+- 空格子不顯示錯誤資訊。
+
+## 6. 生成資料規則
+
+- Content Designer Gemini prompt 已要求：
+  - item 必須有 `id`、`name`、`type`、`description`、`usageHint`。
+  - equipment 使用 `type = "equipment"`，並包含 `slot` 與 `stats`。
+  - monster 必須有 `hp`、`maxHp`、`attack`、`defense`、`expReward`、`drops`、`description`。
+  - 重要門、寶箱、機關需要對應 key item 或 quest item。
+- `tools/validateArea.js` 與 `schemas/generatedArea.schema.json` 已更新以接受上述欄位。
+
+## 7. 仍需整理的設計問題
+
 - Encounter / Battle 的敘事訊息仍可再統一，例如勝利、逃跑、死亡後的 log 呈現。
 - `escape` 目前是固定 60% 成功率，未來可改成依角色速度、敵人等級或狀態計算。
+- 完整回合制、敵人 AI、狀態效果、技能冷卻、戰鬥動畫仍待設計。
 - `FloatingGameWindow` 拖曳與 resize 體驗仍需後續修正。
 - 技能視窗目前仍保留技能預覽與 shortcut，但正式戰鬥操作以 `BattleView` 為主。
+- generated items / monsters / equipment 尚未完整接入 experimental runtime merge。
 
-## 6. 重要檔案
+## 8. 重要檔案
 
 ```txt
 client/src/App.jsx
@@ -94,9 +136,14 @@ client/src/components/MapView.jsx
 client/src/components/CharacterPanel.jsx
 client/src/components/StoryCommandPanel.jsx
 client/src/components/FloatingGameWindow.jsx
+client/src/components/MissionLogOverlay.jsx
 client/src/components/CharacterSideTabs.jsx
 client/src/components/QuickActionsModal.jsx
+client/src/components/windowContents/InventoryWindowContent.jsx
 engine/gameEngine.js
 server.js
 data/gameData.js
+AI/contentDesignerProviders/geminiProvider.js
+tools/validateArea.js
+schemas/generatedArea.schema.json
 ```

@@ -104,7 +104,8 @@
       id: "torch",
       name: "火把",
       description: "一支可照明的火把，能在黑暗中提供基本視野。",
-      type: "tool",
+      type: "material",
+      usageHint: "可作為探索黑暗房間時的基礎照明工具。",
     },
 
     rusty_key: {
@@ -112,6 +113,8 @@
       name: "生鏽鑰匙",
       description: "一把佈滿鏽斑的舊鑰匙，看起來可以打開遺跡深處的門。",
       type: "key",
+      usageHint: "可以開啟通往核心密室的沉重石門。",
+      unlocks: ["boss_room"],
     },
 
     ancient_core: {
@@ -119,6 +122,7 @@
       name: "古代核心",
       description: "遺跡能量的來源，帶回入口或許能完成這次探索。",
       type: "quest",
+      usageHint: "帶回遺跡入口即可完成這次探索。",
     },
 
     small_potion: {
@@ -126,6 +130,7 @@
       name: "小型藥水",
       description: "可恢復少量 HP 的藥水。",
       type: "consumable",
+      usageHint: "在受傷時使用，可恢復 10 點 HP。",
       effect: {
         hp: 10,
       },
@@ -139,6 +144,9 @@
       maxHp: 16,
       hp: 16,
       attack: 4,
+      defense: 1,
+      expReward: 12,
+      drops: ["small_potion"],
       description: "手持殘刃的骷髏守衛，動作僵硬卻致命。",
     },
 
@@ -148,6 +156,9 @@
       maxHp: 35,
       hp: 35,
       attack: 7,
+      defense: 2,
+      expReward: 30,
+      drops: [],
       description: "沉睡已久的巨型守護者，誓死守護古代核心。",
     },
   },

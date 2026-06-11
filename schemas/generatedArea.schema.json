@@ -135,7 +135,8 @@
         "id",
         "name",
         "description",
-        "type"
+        "type",
+        "usageHint"
       ],
       "properties": {
         "id": {
@@ -150,12 +151,15 @@
         "type": {
           "type": "string",
           "enum": [
-            "tool",
             "key",
             "quest",
             "consumable",
+            "equipment",
             "material"
           ]
+        },
+        "usageHint": {
+          "$ref": "#/$defs/localizedText"
         },
         "effect": {
           "type": "object",
@@ -173,6 +177,45 @@
               "type": "integer"
             },
             "defense": {
+              "type": "integer"
+            },
+            "maxHp": {
+              "type": "integer"
+            },
+            "maxMp": {
+              "type": "integer"
+            }
+          }
+        },
+        "unlocks": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/idString"
+          }
+        },
+        "slot": {
+          "type": "string",
+          "enum": [
+            "weapon",
+            "armor",
+            "accessory"
+          ]
+        },
+        "stats": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "attack": {
+              "type": "integer"
+            },
+            "defense": {
+              "type": "integer"
+            },
+            "maxHp": {
+              "type": "integer"
+            },
+            "maxMp": {
               "type": "integer"
             }
           }
@@ -195,8 +238,12 @@
         "id",
         "name",
         "description",
+        "hp",
         "maxHp",
-        "attack"
+        "attack",
+        "defense",
+        "expReward",
+        "drops"
       ],
       "properties": {
         "id": {
@@ -208,6 +255,10 @@
         "description": {
           "$ref": "#/$defs/localizedText"
         },
+        "hp": {
+          "type": "integer",
+          "minimum": 1
+        },
         "maxHp": {
           "type": "integer",
           "minimum": 1
@@ -215,6 +266,21 @@
         "attack": {
           "type": "integer",
           "minimum": 0
+        },
+        "defense": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "expReward": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "drops": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/idString"
+          }
         },
         "tags": {
           "type": "array",
