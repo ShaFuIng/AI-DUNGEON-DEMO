@@ -64,6 +64,7 @@ function createInitialGameState() {
       gameWon: false,
       gameOver: false,
       unlockedDoors: [],
+      collectedItems: [],
     },
 
     monsters: createMonsterState(),
@@ -102,6 +103,31 @@ function createMonsterState() {
 
 function getCurrentRoom(gameState) {
   return gameData.rooms[gameState.player.currentRoom];
+}
+
+function getRoomItemKey(roomId, itemId) {
+  return `${roomId}:${itemId}`;
+}
+
+function getCollectedItems(gameState) {
+  if (!Array.isArray(gameState.flags.collectedItems)) {
+    gameState.flags.collectedItems = [];
+  }
+
+  return gameState.flags.collectedItems;
+}
+
+function isRoomItemCollected(gameState, roomId, itemId) {
+  return getCollectedItems(gameState).includes(getRoomItemKey(roomId, itemId));
+}
+
+function markRoomItemCollected(gameState, roomId, itemId) {
+  const collectedItems = getCollectedItems(gameState);
+  const itemKey = getRoomItemKey(roomId, itemId);
+
+  if (!collectedItems.includes(itemKey)) {
+    collectedItems.push(itemKey);
+  }
 }
 
 function getPublicGameState(gameState) {
@@ -150,7 +176,7 @@ function getPublicGameState(gameState) {
       ascii: currentRoom.ascii,
       exits: currentRoom.exits,
       items: currentRoom.items
-        .filter((itemId) => !gameState.player.inventory.includes(itemId))
+        .filter((itemId) => !isRoomItemCollected(gameState, currentRoom.id, itemId))
         .map((itemId) => gameData.items[itemId].name),
       monster: getRoomMonsterInfo(gameState, currentRoom),
     },
@@ -616,13 +642,14 @@ function buildAvailableCommandDetails(gameState) {
 
   const room = getCurrentRoom(gameState);
   const visibleItems = room.items.filter(
-    (itemId) => !gameState.player.inventory.includes(itemId)
+    (itemId) => !isRoomItemCollected(gameState, room.id, itemId)
   );
   const commands = [
     { command: "look", description: "查看目前房間" },
     { command: "status", description: "查看角色狀態" },
     { command: "help", description: "查看可用指令" },
     { command: "/help", description: "查看可用指令" },
+    { command: "reset", description: "重新開始" },
   ];
 
   for (const [direction, roomId] of Object.entries(room.exits || {})) {
@@ -662,7 +689,7 @@ function buildAvailableCommandDetails(gameState) {
 function handleLook(gameState) {
   const room = getCurrentRoom(gameState);
   const visibleItems = room.items.filter(
-    (itemId) => !gameState.player.inventory.includes(itemId)
+    (itemId) => !isRoomItemCollected(gameState, room.id, itemId)
   );
 
   const itemText =
@@ -808,6 +835,13 @@ function handleTake(gameState, targetName) {
     return createEventResult("item_not_in_room", `${gameData.items[itemId].name} 不在這個房間。`);
   }
 
+  if (isRoomItemCollected(gameState, room.id, itemId)) {
+    return createEventResult(
+      "item_already_collected",
+      `這裡已經沒有 ${gameData.items[itemId].name} 了。`
+    );
+  }
+
   if (gameState.player.inventory.includes(itemId)) {
     return createEventResult("item_already_taken", `你已經拿過 ${gameData.items[itemId].name}。`);
   }
@@ -817,6 +851,7 @@ function handleTake(gameState, targetName) {
   }
 
   gameState.player.inventory.push(itemId);
+  markRoomItemCollected(gameState, room.id, itemId);
 
   if (itemId === "ancient_core") {
     gameState.flags.hasAncientCore = true;

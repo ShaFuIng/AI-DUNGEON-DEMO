@@ -70,3 +70,6 @@
 - Boss 危險提示的 dismissed 狀態只 suppress 當下撤退；當玩家離開 `boss_room` 時會清除，下一次重新進入會再次跳出 Boss warning。
 - 後端 `help` / `/help` 會依 explore、battle、gameOver / gameWon 狀態列出可用指令。
 - `StoryCommandPanel` 支援 Tab 自動補全、候選提示、↑/↓ 歷史指令；候選指令由 `App.jsx` 依目前 `gameState` 動態產生。
+- 房間道具拾取狀態已改由 `flags.collectedItems` 記錄，避免 consumable / key 使用後在原房間重生。
+- `status` / `help` / `/help` 會以系統資訊顯示，不再新增一般 `> command` 區塊。
+- 指令輸入列會在送出、loading 結束與 Floating Window 開關後自動取回 focus；E / B / S 可切換裝備、背包、技能視窗。

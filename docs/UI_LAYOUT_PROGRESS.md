@@ -183,3 +183,6 @@ schemas/generatedArea.schema.json
 - Boss 危險提示的 dismissed 狀態只 suppress 當下撤退；玩家離開 `boss_room` 後會清除，下一次重新進入會再次跳出警告。
 - 後端 `help` / `/help` 已改為依目前狀態列出可用指令。
 - `StoryCommandPanel` 支援 Tab 自動補全、候選清單提示，以及 ↑/↓ 瀏覽本次 session 的歷史指令。
+- 房間道具拾取狀態由 `flags.collectedItems` 保存，已拾取道具不再於使用後重新出現在 Map / look / help / autocomplete。
+- `status` / `help` / `/help` 以系統資訊呈現，不再顯示一般 `> command` 區塊。
+- 指令列送出後會自動 focus；E / B / S 可切換裝備、背包、技能視窗，Escape 優先關閉已開 Floating Window。

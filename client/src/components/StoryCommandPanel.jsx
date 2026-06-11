@@ -63,12 +63,31 @@ export default function StoryCommandPanel({
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [lastAutocompleteValue, setLastAutocompleteValue] = useState("");
   const scrollRef = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [storyLines]);
+
+  useEffect(() => {
+    if (!loading && !disabled) {
+      inputRef.current?.focus();
+    }
+  }, [loading, disabled]);
+
+  useEffect(() => {
+    function handleFocusRequest() {
+      if (!loading && !disabled) {
+        inputRef.current?.focus();
+      }
+    }
+
+    window.addEventListener("focus-command-input", handleFocusRequest);
+    return () =>
+      window.removeEventListener("focus-command-input", handleFocusRequest);
+  }, [loading, disabled]);
 
   function getMatches(value) {
     const normalizedValue = value.trimStart().toLowerCase();
@@ -107,6 +126,7 @@ export default function StoryCommandPanel({
     resetAutocomplete();
     onSubmit(normalizedCommand);
     setCommand("");
+    window.setTimeout(() => inputRef.current?.focus(), 0);
   }
 
   function handleAutocomplete() {
@@ -239,6 +259,7 @@ export default function StoryCommandPanel({
             &gt;
           </span>
           <input
+            ref={inputRef}
             value={command}
             onChange={handleChange}
             onKeyDown={handleKeyDown}

@@ -128,6 +128,28 @@ function buildAvailableCommands(gameState) {
   return [...new Set(commands)];
 }
 
+function isUtilityCommand(command) {
+  return command === "status" || command === "help" || command === "/help";
+}
+
+function isEditableTarget(target) {
+  if (!target) return false;
+
+  const tagName = target.tagName?.toLowerCase();
+
+  return (
+    tagName === "input" ||
+    tagName === "textarea" ||
+    target.isContentEditable
+  );
+}
+
+function focusCommandInput() {
+  window.setTimeout(() => {
+    window.dispatchEvent(new Event("focus-command-input"));
+  }, 0);
+}
+
 function VictoryModal({ open, player, flags, onReset, onStay }) {
   if (!open) return null;
 
@@ -295,10 +317,12 @@ export default function App() {
 
     setLoading(true);
     setError("");
-    setStoryLines((lines) => [
-      ...lines,
-      createStoryLine("command", normalizedCommand),
-    ]);
+    if (!isUtilityCommand(normalizedCommand)) {
+      setStoryLines((lines) => [
+        ...lines,
+        createStoryLine("command", normalizedCommand),
+      ]);
+    }
 
     try {
       const response = await fetch(COMMAND_API, {
@@ -320,7 +344,10 @@ export default function App() {
       setGameState(data.state);
       setStoryLines((lines) => [
         ...lines,
-        createStoryLine("story", nextStoryText),
+        createStoryLine(
+          isUtilityCommand(normalizedCommand) ? "system" : "story",
+          nextStoryText
+        ),
       ]);
 
       if (data.eventResult?.type === "reset") {
@@ -380,6 +407,7 @@ export default function App() {
       ...windows,
       [windowType]: true,
     }));
+    focusCommandInput();
   }
 
   function closeWindow(windowType) {
@@ -387,6 +415,7 @@ export default function App() {
       ...windows,
       [windowType]: false,
     }));
+    focusCommandInput();
   }
 
   function confirmEncounter() {
@@ -485,13 +514,44 @@ export default function App() {
     function handleKeyDown(event) {
       if (event.key === "Escape") {
         event.preventDefault();
+        const openWindowKey = Object.keys(openWindows).find(
+          (key) => openWindows[key]
+        );
+
+        if (openWindowKey) {
+          closeWindow(openWindowKey);
+          return;
+        }
+
         setQuickActionsOpen((open) => !open);
+        return;
+      }
+
+      if (isEditableTarget(event.target)) {
+        return;
+      }
+
+      const key = event.key.toLowerCase();
+      const hotkeys = {
+        e: "equipment",
+        b: "inventory",
+        s: "skills",
+      };
+      const windowType = hotkeys[key];
+
+      if (windowType) {
+        event.preventDefault();
+        setOpenWindows((windows) => ({
+          ...windows,
+          [windowType]: !windows[windowType],
+        }));
+        focusCommandInput();
       }
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [openWindows]);
 
   return (
     <main className="min-h-screen bg-[#15120f] text-stone-100">
