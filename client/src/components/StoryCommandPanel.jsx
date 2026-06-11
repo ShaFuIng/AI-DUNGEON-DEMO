@@ -53,6 +53,7 @@ export default function StoryCommandPanel({
   disabled = false,
   availableCommands = [],
   placeholder = "look / status / attack / skill fireball / reset",
+  focusToken = 0,
   onSubmit,
   className = "",
 }) {
@@ -72,22 +73,10 @@ export default function StoryCommandPanel({
   }, [storyLines]);
 
   useEffect(() => {
-    if (!loading && !disabled) {
+    if (focusToken > 0 && !loading && !disabled) {
       inputRef.current?.focus();
     }
-  }, [loading, disabled]);
-
-  useEffect(() => {
-    function handleFocusRequest() {
-      if (!loading && !disabled) {
-        inputRef.current?.focus();
-      }
-    }
-
-    window.addEventListener("focus-command-input", handleFocusRequest);
-    return () =>
-      window.removeEventListener("focus-command-input", handleFocusRequest);
-  }, [loading, disabled]);
+  }, [focusToken, loading, disabled]);
 
   function getMatches(value) {
     const normalizedValue = value.trimStart().toLowerCase();
@@ -126,7 +115,6 @@ export default function StoryCommandPanel({
     resetAutocomplete();
     onSubmit(normalizedCommand);
     setCommand("");
-    window.setTimeout(() => inputRef.current?.focus(), 0);
   }
 
   function handleAutocomplete() {

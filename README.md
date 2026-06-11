@@ -122,10 +122,11 @@ npm start
 - 一般遭遇戰不可取消；玩家必須先進入戰鬥，若要脫離則在戰鬥中使用 `escape`。
 - Boss 房間會顯示危險提示；按「暫時撤退」會透過 `/api/game/command` 呼叫後端 `retreat` 並退回安全房間，不會在 StoryCommandPanel 顯示成玩家輸入了 `retreat`。手動 `retreat` 仍保留作為備用指令。
 - Boss 危險提示只會 suppress 當下那一次撤退；玩家離開 `boss_room` 後會清除 dismissed 狀態，下次重新進入 `boss_room` 會再次跳出危險提示。
-- 指令列支援 `help` / `/help` 查看當前狀態可用指令，並支援 Tab 自動補全與 ↑/↓ 歷史指令。
+- 指令列支援 `help` / `/help` 查看當前狀態的重要操作指令；終端機 help 不再列出 `status`、`help`、`/help`、`reset` 這類 ESC 選單可見的輔助指令。
+- StoryCommandPanel 支援 Tab 自動補全與 ↑/↓ 歷史指令；補全候選會根據目前房間與背包動態更新。
 - 房間道具已用 `flags.collectedItems` 記錄拾取狀態；藥水或鑰匙使用後不會在原房間重新出現，`/help` 與補全也不會列出已拾取的 `take` 指令。
 - `status` / `help` / `/help` 會以系統資訊顯示，不再像一般探索指令一樣新增 `> command` 區塊。
-- 指令輸入列在送出、loading 結束、視窗開關後會自動取回 focus；E / B / S 可切換裝備、背包、技能視窗。
+- 指令輸入列只會在送出指令後自動取回 focus；開關 Floating Window 時不會搶焦點，E / B / S 可連續按第二次關閉裝備、背包、技能視窗。
 - 戰鬥機制仍屬基礎版：已有 attack、skill slash、skill fireball、skill guard、use small_potion、escape；escape 目前是 60% 成功率的簡化機率制。
 - Battle Log 已改為固定高度可滾動，不會隨訊息增加撐高 BattleView。
 - 背包視窗支援 hover tooltip 顯示道具類型、描述、效果與用途提示；點擊道具會開啟小型「使用」action menu。

@@ -144,10 +144,10 @@ function isEditableTarget(target) {
   );
 }
 
-function focusCommandInput() {
-  window.setTimeout(() => {
-    window.dispatchEvent(new Event("focus-command-input"));
-  }, 0);
+function blurActiveElement() {
+  if (isEditableTarget(document.activeElement)) {
+    document.activeElement.blur();
+  }
 }
 
 function VictoryModal({ open, player, flags, onReset, onStay }) {
@@ -217,6 +217,7 @@ export default function App() {
   const [lastEncounterMonsterId, setLastEncounterMonsterId] = useState(null);
   const [dismissedBossEncounterId, setDismissedBossEncounterId] = useState(null);
   const [victoryModalDismissed, setVictoryModalDismissed] = useState(false);
+  const [commandFocusToken, setCommandFocusToken] = useState(0);
 
   const roomsById = useMemo(() => gameData?.rooms || {}, [gameData]);
   const currentRoomEnemy = useMemo(
@@ -399,6 +400,7 @@ export default function App() {
       ]);
     } finally {
       setLoading(false);
+      setCommandFocusToken((token) => token + 1);
     }
   }
 
@@ -407,7 +409,6 @@ export default function App() {
       ...windows,
       [windowType]: true,
     }));
-    focusCommandInput();
   }
 
   function closeWindow(windowType) {
@@ -415,7 +416,6 @@ export default function App() {
       ...windows,
       [windowType]: false,
     }));
-    focusCommandInput();
   }
 
   function confirmEncounter() {
@@ -545,7 +545,7 @@ export default function App() {
           ...windows,
           [windowType]: !windows[windowType],
         }));
-        focusCommandInput();
+        blurActiveElement();
       }
     }
 
@@ -610,6 +610,7 @@ export default function App() {
               loading={loading}
               disabled={false}
               availableCommands={availableCommands}
+              focusToken={commandFocusToken}
               placeholder={
                 isBattle
                   ? "/help / attack / escape"

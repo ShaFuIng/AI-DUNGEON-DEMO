@@ -130,6 +130,12 @@ function markRoomItemCollected(gameState, roomId, itemId) {
   }
 }
 
+function getAvailableRoomItemIds(gameState, room = getCurrentRoom(gameState)) {
+  return (room.items || []).filter(
+    (itemId) => !isRoomItemCollected(gameState, room.id, itemId)
+  );
+}
+
 function getPublicGameState(gameState) {
   const currentRoom = getCurrentRoom(gameState);
   const activeMonster = getActiveBattleMonsterInfo(gameState);
@@ -175,8 +181,7 @@ function getPublicGameState(gameState) {
       description: currentRoom.description,
       ascii: currentRoom.ascii,
       exits: currentRoom.exits,
-      items: currentRoom.items
-        .filter((itemId) => !isRoomItemCollected(gameState, currentRoom.id, itemId))
+      items: getAvailableRoomItemIds(gameState, currentRoom)
         .map((itemId) => gameData.items[itemId].name),
       monster: getRoomMonsterInfo(gameState, currentRoom),
     },
@@ -602,6 +607,10 @@ function handleHelp(gameState) {
 function formatAvailableCommands(gameState) {
   const commands = buildAvailableCommandDetails(gameState);
 
+  if (typeof commands === "string") {
+    return commands;
+  }
+
   return [
     "目前可用指令：",
     ...commands.map((item) => `- ${item.command}：${item.description}`),
@@ -610,12 +619,7 @@ function formatAvailableCommands(gameState) {
 
 function buildAvailableCommandDetails(gameState) {
   if (gameState.mode === "gameOver" || gameState.flags.gameOver || gameState.flags.gameWon) {
-    return [
-      { command: "reset", description: "重新開始" },
-      { command: "status", description: "查看角色狀態" },
-      { command: "help", description: "查看可用指令" },
-      { command: "/help", description: "查看可用指令" },
-    ];
+    return "探索已結束。可從 ESC 選單重新開始。";
   }
 
   if (gameState.mode === "battle") {
@@ -631,26 +635,15 @@ function buildAvailableCommandDetails(gameState) {
     }
 
     commands.push(
-      { command: "escape", description: "嘗試脫離戰鬥" },
-      { command: "status", description: "查看角色狀態" },
-      { command: "help", description: "查看可用指令" },
-      { command: "/help", description: "查看可用指令" }
+      { command: "escape", description: "嘗試脫離戰鬥" }
     );
 
     return commands;
   }
 
   const room = getCurrentRoom(gameState);
-  const visibleItems = room.items.filter(
-    (itemId) => !isRoomItemCollected(gameState, room.id, itemId)
-  );
-  const commands = [
-    { command: "look", description: "查看目前房間" },
-    { command: "status", description: "查看角色狀態" },
-    { command: "help", description: "查看可用指令" },
-    { command: "/help", description: "查看可用指令" },
-    { command: "reset", description: "重新開始" },
-  ];
+  const visibleItems = getAvailableRoomItemIds(gameState, room);
+  const commands = [];
 
   for (const [direction, roomId] of Object.entries(room.exits || {})) {
     const targetRoom = gameData.rooms[roomId];
@@ -667,7 +660,7 @@ function buildAvailableCommandDetails(gameState) {
     });
   }
 
-  for (const itemId of gameState.player.inventory) {
+  for (const itemId of getUsefulInventoryItemIds(gameState, room)) {
     commands.push({
       command: `use ${itemId}`,
       description: `使用${gameData.items[itemId]?.name || itemId}`,
@@ -686,11 +679,33 @@ function buildAvailableCommandDetails(gameState) {
   return commands;
 }
 
+function getUsefulInventoryItemIds(gameState, room = getCurrentRoom(gameState)) {
+  return gameState.player.inventory.filter((itemId) => {
+    const item = gameData.items[itemId];
+
+    if (!item) {
+      return false;
+    }
+
+    if (item.type === "consumable") {
+      return true;
+    }
+
+    if (item.type === "key") {
+      return Boolean(findKeyUnlockTarget(gameState, room, item));
+    }
+
+    if (item.type === "quest") {
+      return Boolean(item.usageHint);
+    }
+
+    return false;
+  });
+}
+
 function handleLook(gameState) {
   const room = getCurrentRoom(gameState);
-  const visibleItems = room.items.filter(
-    (itemId) => !isRoomItemCollected(gameState, room.id, itemId)
-  );
+  const visibleItems = getAvailableRoomItemIds(gameState, room);
 
   const itemText =
     visibleItems.length > 0
