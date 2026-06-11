@@ -58,3 +58,9 @@
 - 後端 `retreat` 指令仍保留，供手動輸入或 debug 使用。
 - Map 九宮格已從靠右改為以置中為基準微幅右移，避免貼近右側。
 - Recent Log 寬度調整為約 16rem，仍保留最近 5 筆、舊到新排列與進出動畫。
+
+## 近期修正：Command API 與 Map 欄位
+- 前端 command 呼叫已統一使用 `COMMAND_API = "/api/game/command"`；Boss modal 的「暫時撤退」會打同一個 endpoint，但不新增 command line。
+- `server.js` 保留 `/api/command`，並新增 `/api/game/command` alias，兩者共用同一個 command handler。
+- Map 內容區改為左側 Recent Log 空間與右側九宮格區域，九宮格在右側區域置中，不再只用 translate 視覺位移。
+- Recent Log 寬度調整為約 18rem，仍維持最近 5 筆、舊到新排列與進出動畫。

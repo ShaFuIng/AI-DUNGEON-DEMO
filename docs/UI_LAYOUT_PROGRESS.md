@@ -171,3 +171,9 @@ schemas/generatedArea.schema.json
 - 手動 `retreat` 指令仍可作為備用流程。
 - Map 九宮格不再整個靠右，改為從置中位置微幅右移。
 - Recent Log 寬度調整到約 16rem，仍維持最近 5 筆、舊到新排列、最新在最下方與進出動畫。
+
+## 近期修正：Command API 與 Map 欄位
+- `App.jsx` 已統一使用 `COMMAND_API = "/api/game/command"`；Boss modal 暫時撤退會打這個 endpoint，但不顯示 `> retreat`。
+- `server.js` 新增 `/api/game/command` alias，與既有 `/api/command` 共用同一個後端處理流程。
+- Map 內容區已調整成左側 Recent Log 空間與右側九宮格區域，九宮格在右側區域置中，真正替左側 log 留出空間。
+- Recent Log 寬度調整為約 18rem，仍維持最近 5 筆、舊到新排列、最新在最下方與進出動畫。

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import BattleView from "./components/BattleView.jsx";
 import CharacterPanel from "./components/CharacterPanel.jsx";
 import CharacterSideTabs from "./components/CharacterSideTabs.jsx";
@@ -10,6 +10,8 @@ import StoryCommandPanel from "./components/StoryCommandPanel.jsx";
 import EquipmentWindowContent from "./components/windowContents/EquipmentWindowContent.jsx";
 import InventoryWindowContent from "./components/windowContents/InventoryWindowContent.jsx";
 import SkillsWindowContent from "./components/windowContents/SkillsWindowContent.jsx";
+
+const COMMAND_API = "/api/game/command";
 
 function createStoryLine(type, text) {
   return {
@@ -31,8 +33,8 @@ function normalizeEnemy(monster) {
     hp: monster.hp ?? monster.maxHp ?? 1,
     maxHp: monster.maxHp ?? monster.hp ?? 1,
     attack: monster.attack ?? 0,
-    intent: monster.intent || "準備攻擊",
-    description: monster.description || "敵人擋住了你的去路。",
+    intent: monster.intent || "逼近",
+    description: monster.description || "敵人正在逼近。",
   };
 }
 
@@ -149,10 +151,10 @@ export default function App() {
       setGameData(data);
       setStoryLines([
         createStoryLine("system", "遊戲狀態已載入。"),
-        createStoryLine("story", state.currentRoom?.description || "冒險開始。"),
+        createStoryLine("story", state.currentRoom?.description || "你醒來，四周一片寂靜。"),
       ]);
     } catch (loadError) {
-      setError("無法載入遊戲狀態，請確認後端伺服器已啟動。");
+      setError("無法載入遊戲狀態，請稍後再試。");
     } finally {
       setLoading(false);
     }
@@ -183,10 +185,6 @@ export default function App() {
     const normalizedCommand = command.trim();
 
     if (!normalizedCommand) {
-      setStoryLines((lines) => [
-        ...lines,
-        createStoryLine("system", "請輸入指令。"),
-      ]);
       return;
     }
 
@@ -197,7 +195,7 @@ export default function App() {
         createStoryLine(
           "system",
           currentRoomEnemy
-            ? "你感受到某種敵意正在逼近。"
+            ? "你感受到敵意逼近。"
             : "此處沒有未擊敗的敵人，無法進入戰鬥。",
         ),
       ]);
@@ -217,7 +215,7 @@ export default function App() {
     ]);
 
     try {
-      const response = await fetch("/api/command", {
+      const response = await fetch(COMMAND_API, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -231,7 +229,7 @@ export default function App() {
 
       const data = await response.json();
       const nextStoryText =
-        data.narration || data.eventResult?.message || "指令已執行。";
+        data.narration || data.eventResult?.message || "指令已處理。";
 
       setGameState(data.state);
       setStoryLines((lines) => [
@@ -284,7 +282,7 @@ export default function App() {
       setError("指令送出失敗，請稍後再試。");
       setStoryLines((lines) => [
         ...lines,
-        createStoryLine("system", "指令送出失敗。"),
+        createStoryLine("system", "指令送出失敗，請稍後再試。"),
       ]);
     } finally {
       setLoading(false);
@@ -312,10 +310,6 @@ export default function App() {
       setEncounterOpen(false);
       setPendingEncounterEnemy(null);
       setPendingEncounterType("normal");
-      setStoryLines((lines) => [
-        ...lines,
-        createStoryLine("system", "此處沒有未擊敗的敵人，無法進入戰鬥。"),
-      ]);
       return;
     }
 
@@ -330,7 +324,7 @@ export default function App() {
     setError("");
 
     try {
-      const response = await fetch("/api/command", {
+      const response = await fetch(COMMAND_API, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -370,10 +364,6 @@ export default function App() {
       setPendingEncounterType("normal");
       handleBossRetreatFromModal();
       return;
-      setStoryLines((lines) => [
-        ...lines,
-        createStoryLine("system", "你暫時退開核心密室的戰場邊緣，遺跡守護者仍在深處等待。"),
-      ]);
     }
 
     setEncounterOpen(false);
@@ -427,7 +417,7 @@ export default function App() {
               {gameState?.flags?.gameWon ? "探索完成" : "探索中"}
             </span>
             <span className="rounded-full border border-teal-300/30 bg-teal-300/10 px-3 py-1">
-              {loading ? "同步中" : "即時狀態"}
+              {loading ? "處理中" : "待命"}
             </span>
           </div>
         </header>

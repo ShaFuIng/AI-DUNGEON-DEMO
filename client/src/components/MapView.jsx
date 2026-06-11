@@ -106,7 +106,10 @@ export default function MapView({ currentRoom, player, roomsById, logs = [], loa
         </h2>
       </div>
 
-      <div className="mx-auto grid h-[360px] w-full max-w-[480px] translate-x-0 grid-cols-3 grid-rows-3 gap-3 sm:translate-x-6 lg:translate-x-12">
+      <div className="grid min-h-[360px] grid-cols-1 pt-14 lg:grid-cols-[18rem_minmax(0,1fr)] lg:pt-0">
+        <div className="hidden lg:block" aria-hidden="true" />
+        <div className="flex min-w-0 justify-center">
+          <div className="grid h-[360px] w-full max-w-[480px] grid-cols-3 grid-rows-3 gap-3">
         {DIRECTIONS.map((direction) => {
           const exitRoomId = exits[direction.id];
           return (
@@ -134,6 +137,8 @@ export default function MapView({ currentRoom, player, roomsById, logs = [], loa
           <span className="mt-3 font-mono text-xs uppercase text-teal-100/60">
             {player?.currentRoomId || currentRoom?.id || "unknown"}
           </span>
+        </div>
+          </div>
         </div>
       </div>
 

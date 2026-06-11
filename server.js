@@ -43,8 +43,7 @@ app.get("/api/state", (req, res) => {
   res.json(getPublicGameState(gameState));
 });
 
-// 執行玩家指令
-app.post("/api/command", async (req, res) => {
+async function handleCommandRequest(req, res) {
   const command = req.body.command || "";
 
   const eventResult = handleCommand(gameState, command);
@@ -61,7 +60,11 @@ app.post("/api/command", async (req, res) => {
     narration,
     state: publicState,
   });
-});
+}
+
+// 執行玩家指令
+app.post("/api/command", handleCommandRequest);
+app.post("/api/game/command", handleCommandRequest);
 
 // 重置遊戲狀態
 app.post("/api/reset", (req, res) => {
