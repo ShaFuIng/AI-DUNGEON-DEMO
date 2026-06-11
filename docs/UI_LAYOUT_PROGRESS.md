@@ -178,3 +178,8 @@ schemas/generatedArea.schema.json
 - 開發環境後端固定使用 `http://localhost:3000`，Vite proxy 為 `/api -> http://localhost:3000`。
 - Map 內容區已調整成左側 Recent Log 空間與右側九宮格區域，九宮格在右側區域置中，真正替左側 log 留出空間。
 - Recent Log 寬度調整為約 18rem，仍維持最近 5 筆、舊到新排列、最新在最下方與進出動畫。
+
+## 近期修正：Boss warning 與指令列
+- Boss 危險提示的 dismissed 狀態只 suppress 當下撤退；玩家離開 `boss_room` 後會清除，下一次重新進入會再次跳出警告。
+- 後端 `help` / `/help` 已改為依目前狀態列出可用指令。
+- `StoryCommandPanel` 支援 Tab 自動補全、候選清單提示，以及 ↑/↓ 瀏覽本次 session 的歷史指令。

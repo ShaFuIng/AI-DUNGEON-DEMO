@@ -46,6 +46,88 @@ function getEncounterType(enemy, currentRoom) {
   return isBossEncounter(enemy, currentRoom) ? "boss" : "normal";
 }
 
+function getInventoryItemIds(player) {
+  const inventoryItems = player?.inventoryItems || [];
+
+  if (inventoryItems.length > 0 && typeof inventoryItems[0] === "object") {
+    return inventoryItems.map((item) => item.id).filter(Boolean);
+  }
+
+  return (player?.inventory || []).filter((item) => typeof item === "string");
+}
+
+function getVisibleRoomItemIds(gameState) {
+  const visibleItems = gameState?.currentRoom?.items || [];
+  const itemDetails = gameState?.itemDetails || {};
+
+  return visibleItems
+    .map((item) => {
+      if (typeof item !== "string") return null;
+      if (itemDetails[item]) return item;
+
+      const matched = Object.values(itemDetails).find((detail) => detail?.name === item);
+      return matched?.id || null;
+    })
+    .filter(Boolean);
+}
+
+function buildAvailableCommands(gameState) {
+  if (!gameState) {
+    return ["look", "status", "help", "/help", "reset"];
+  }
+
+  if (gameState.mode === "gameOver" || gameState.gameOver || gameState.flags?.gameWon) {
+    return ["reset", "status", "help", "/help"];
+  }
+
+  if (gameState.mode === "battle") {
+    const commands = [
+      "attack",
+      "skill slash",
+      "skill fireball",
+      "skill guard",
+      "escape",
+      "status",
+      "help",
+      "/help",
+    ];
+
+    if (getInventoryItemIds(gameState.player).includes("small_potion")) {
+      commands.splice(4, 0, "use small_potion");
+    }
+
+    return commands;
+  }
+
+  const commands = ["look", "status", "help", "/help", "reset"];
+  const exits = gameState.currentRoom?.exits || {};
+
+  for (const direction of Object.keys(exits)) {
+    commands.push(`move ${direction}`);
+  }
+
+  for (const itemId of getVisibleRoomItemIds(gameState)) {
+    commands.push(`take ${itemId}`);
+  }
+
+  for (const itemId of getInventoryItemIds(gameState.player)) {
+    commands.push(`use ${itemId}`);
+  }
+
+  if (gameState.currentRoom?.monster) {
+    commands.push("battle start");
+  }
+
+  if (
+    gameState.currentRoom?.id === "boss_room" &&
+    gameState.currentRoom?.monster?.id === "ruin_guardian"
+  ) {
+    commands.push("retreat");
+  }
+
+  return [...new Set(commands)];
+}
+
 function VictoryModal({ open, player, flags, onReset, onStay }) {
   if (!open) return null;
 
@@ -127,6 +209,10 @@ export default function App() {
   const isGameOver = gameState?.mode === "gameOver" || gameState?.gameOver;
   const isVictory = Boolean(gameState?.flags?.gameWon);
   const showBattleView = isBattle || (isGameOver && gameState?.battle?.status === "defeat");
+  const availableCommands = useMemo(
+    () => buildAvailableCommands(gameState),
+    [gameState],
+  );
 
   const loadGameState = useCallback(async () => {
     setLoading(true);
@@ -387,6 +473,15 @@ export default function App() {
   }, [isVictory]);
 
   useEffect(() => {
+    if (gameState?.currentRoom?.id !== "boss_room") {
+      setDismissedBossEncounterId(null);
+      setLastEncounterMonsterId((monsterId) =>
+        monsterId === "ruin_guardian" ? null : monsterId
+      );
+    }
+  }, [gameState?.currentRoom?.id]);
+
+  useEffect(() => {
     function handleKeyDown(event) {
       if (event.key === "Escape") {
         event.preventDefault();
@@ -453,13 +548,14 @@ export default function App() {
             <StoryCommandPanel
               storyLines={storyLines}
               loading={loading}
-              disabled={isBattle}
+              disabled={false}
+              availableCommands={availableCommands}
               placeholder={
                 isBattle
-                  ? "戰鬥中請使用上方戰鬥按鈕"
+                  ? "/help / attack / escape"
                   : isGameOver
                     ? "reset"
-                    : "look / status / battle start / reset"
+                    : "/help / look / status / Tab 補全"
               }
               onSubmit={sendCommand}
               className="h-[420px]"

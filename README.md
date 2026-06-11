@@ -121,6 +121,8 @@ npm start
 - EncounterModal 確認後會送出 `battle start` 指令進入 battle mode；前端 `BattleView` 依後端 `gameState.mode` 顯示，敗北的 `gameOver` 狀態也會保留戰鬥畫面並停用按鈕。
 - 一般遭遇戰不可取消；玩家必須先進入戰鬥，若要脫離則在戰鬥中使用 `escape`。
 - Boss 房間會顯示危險提示；按「暫時撤退」會透過 `/api/game/command` 呼叫後端 `retreat` 並退回安全房間，不會在 StoryCommandPanel 顯示成玩家輸入了 `retreat`。手動 `retreat` 仍保留作為備用指令。
+- Boss 危險提示只會 suppress 當下那一次撤退；玩家離開 `boss_room` 後會清除 dismissed 狀態，下次重新進入 `boss_room` 會再次跳出危險提示。
+- 指令列支援 `help` / `/help` 查看當前狀態可用指令，並支援 Tab 自動補全與 ↑/↓ 歷史指令。
 - 戰鬥機制仍屬基礎版：已有 attack、skill slash、skill fireball、skill guard、use small_potion、escape；escape 目前是 60% 成功率的簡化機率制。
 - Battle Log 已改為固定高度可滾動，不會隨訊息增加撐高 BattleView。
 - 背包視窗支援 hover tooltip 顯示道具類型、描述、效果與用途提示；點擊道具會開啟小型「使用」action menu。

@@ -65,3 +65,8 @@
 - 開發環境後端固定使用 `http://localhost:3000`，Vite proxy 為 `/api -> http://localhost:3000`。
 - Map 內容區改為左側 Recent Log 空間與右側九宮格區域，九宮格在右側區域置中，不再只用 translate 視覺位移。
 - Recent Log 寬度調整為約 18rem，仍維持最近 5 筆、舊到新排列與進出動畫。
+
+## 近期修正：Boss warning 與指令列
+- Boss 危險提示的 dismissed 狀態只 suppress 當下撤退；當玩家離開 `boss_room` 時會清除，下一次重新進入會再次跳出 Boss warning。
+- 後端 `help` / `/help` 會依 explore、battle、gameOver / gameWon 狀態列出可用指令。
+- `StoryCommandPanel` 支援 Tab 自動補全、候選提示、↑/↓ 歷史指令；候選指令由 `App.jsx` 依目前 `gameState` 動態產生。

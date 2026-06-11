@@ -257,9 +257,17 @@ function handleCommand(gameState, rawCommand) {
     return createEventResult("reset", "遊戲即將重置。");
   }
 
+  if (action === "help" || action === "/help") {
+    return handleHelp(gameState);
+  }
+
   if (gameState.mode === "gameOver" || gameState.flags.gameOver || gameState.flags.gameWon) {
     if (action === "reset") {
       return createEventResult("reset", "遊戲即將重置。");
+    }
+
+    if (action === "status") {
+      return handleStatus(gameState);
     }
 
     return createEventResult("game_ended", "遊戲已結束，請輸入 reset 重新開始。");
@@ -310,9 +318,6 @@ function handleCommand(gameState, rawCommand) {
   }
 
   switch (action) {
-    case "help":
-      return handleHelp();
-
     case "look":
       return handleLook(gameState);
 
@@ -341,6 +346,10 @@ function handleCommand(gameState, rawCommand) {
 
 function handleBattleModeCommand(gameState, action, target) {
   switch (action) {
+    case "help":
+    case "/help":
+      return handleHelp(gameState);
+
     case "attack":
       return handleAttack(gameState);
 
@@ -560,27 +569,94 @@ function applyMonsterDrops(gameState, monsterData) {
   return messages;
 }
 
-function handleHelp() {
-  return createEventResult(
-    "help",
-    [
-      "可用指令：",
-      "- help：顯示指令列表",
-      "- look：觀察目前房間",
-      "- status：查看角色狀態",
-      "- move north / south / east / west：移動",
-      "- take item：撿起道具（例：take torch）",
-      "- battle start：遭遇敵人時進入戰鬥",
-      "- attack：普通攻擊",
-      "- skill slash：施放斬擊",
-      "- skill fireball：施放火球術",
-      "- skill guard：施放防禦姿態",
-      "- escape：嘗試脫離目前戰鬥",
-      "- use small_potion：使用藥水",
-      "- log：查看最近行動紀錄",
-      "- reset：重新開始",
-    ].join("\n")
+function handleHelp(gameState) {
+  return createEventResult("help", formatAvailableCommands(gameState));
+}
+
+function formatAvailableCommands(gameState) {
+  const commands = buildAvailableCommandDetails(gameState);
+
+  return [
+    "目前可用指令：",
+    ...commands.map((item) => `- ${item.command}：${item.description}`),
+  ].join("\n");
+}
+
+function buildAvailableCommandDetails(gameState) {
+  if (gameState.mode === "gameOver" || gameState.flags.gameOver || gameState.flags.gameWon) {
+    return [
+      { command: "reset", description: "重新開始" },
+      { command: "status", description: "查看角色狀態" },
+      { command: "help", description: "查看可用指令" },
+      { command: "/help", description: "查看可用指令" },
+    ];
+  }
+
+  if (gameState.mode === "battle") {
+    const commands = [
+      { command: "attack", description: "普通攻擊" },
+      { command: "skill slash", description: "施放斬擊" },
+      { command: "skill fireball", description: "施放火球術" },
+      { command: "skill guard", description: "進入防禦姿態" },
+    ];
+
+    if (gameState.player.inventory.includes("small_potion")) {
+      commands.push({ command: "use small_potion", description: "使用小型藥水" });
+    }
+
+    commands.push(
+      { command: "escape", description: "嘗試脫離戰鬥" },
+      { command: "status", description: "查看角色狀態" },
+      { command: "help", description: "查看可用指令" },
+      { command: "/help", description: "查看可用指令" }
+    );
+
+    return commands;
+  }
+
+  const room = getCurrentRoom(gameState);
+  const visibleItems = room.items.filter(
+    (itemId) => !gameState.player.inventory.includes(itemId)
   );
+  const commands = [
+    { command: "look", description: "查看目前房間" },
+    { command: "status", description: "查看角色狀態" },
+    { command: "help", description: "查看可用指令" },
+    { command: "/help", description: "查看可用指令" },
+  ];
+
+  for (const [direction, roomId] of Object.entries(room.exits || {})) {
+    const targetRoom = gameData.rooms[roomId];
+    commands.push({
+      command: `move ${direction}`,
+      description: `移動到${targetRoom?.name || roomId}`,
+    });
+  }
+
+  for (const itemId of visibleItems) {
+    commands.push({
+      command: `take ${itemId}`,
+      description: `取得${gameData.items[itemId]?.name || itemId}`,
+    });
+  }
+
+  for (const itemId of gameState.player.inventory) {
+    commands.push({
+      command: `use ${itemId}`,
+      description: `使用${gameData.items[itemId]?.name || itemId}`,
+    });
+  }
+
+  const monsterInfo = getActiveRoomMonsterInfo(gameState);
+  if (monsterInfo) {
+    commands.push({ command: "battle start", description: "開始戰鬥" });
+  }
+
+  if (isBossThreat(gameState)) {
+    commands.push({ command: "retreat", description: "暫時撤回祭壇大廳" });
+  }
+
+  return commands;
 }
 
 function handleLook(gameState) {
