@@ -14,6 +14,7 @@ const {
 const { narrate } = require("./AI/narrator");
 const { generateCharacterPreview } = require("./AI/characterPreviewGenerator");
 const { buildAdventurePreview, generateRuntimeAdventure } = require("./AI/runtimeAdventureGenerator");
+const { checkComfyStatus } = require("./AI/image/comfyClient");
 const { formatGeneratedJsonError } = require("./AI/utils/parseGeneratedJson");
 
 const app = express();
@@ -40,6 +41,12 @@ app.get("/api/health", (req, res) => {
     gameDataSource: getGameDataSource(),
     runtimeGameData: currentGameData === defaultGameData ? "default" : "generated",
   });
+});
+
+// Optional ComfyUI integration health check. This never blocks text RPG flow.
+app.get("/api/comfy/status", async (req, res) => {
+  const status = await checkComfyStatus();
+  res.json(status);
 });
 
 // 取得遊戲資料 API

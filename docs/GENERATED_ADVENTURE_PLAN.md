@@ -284,3 +284,16 @@ Runtime behavior:
 `buildAdventurePreview(gameData)` returns `itemChains` so Step 3 can show how an item source leads to a challenge and optional reward.
 
 The runtime JSON parser is centralized in `AI/utils/parseGeneratedJson.js`; invalid Gemini escapes are sanitized only after the first `JSON.parse` fails.
+
+## ComfyUI Integration Phase 4
+
+第四階段開始接 ComfyUI integration。目前範圍只包含健康檢查，不會生成圖片、不會新增 workflow JSON，也不會呼叫 ComfyUI `/prompt`。
+
+- `COMFYUI_BASE_URL` 可在 `.env` 設定。
+- 未設定時預設 `http://127.0.0.1:8188`。
+- 後端新增 `GET /api/comfy/status`。
+- API 會檢查 `${COMFYUI_BASE_URL}/system_stats`。
+- ComfyUI 已啟動時回 `ok: true`、`message: "ComfyUI connected"`、`baseUrl` 與 `system`。
+- ComfyUI 未啟動時仍回 HTTP 200 + `ok: false`、`message: "ComfyUI is not reachable"`。
+- ComfyUI 未啟動不會影響角色預覽、冒險預覽、開始冒險或文字 RPG command flow。
+- 下一階段才會加入角色立繪生成。

@@ -90,10 +90,20 @@ export default function AdventureSetup({
   const [previewError, setPreviewError] = useState("");
   const [isGeneratingCharacter, setIsGeneratingCharacter] = useState(false);
   const [isGeneratingAdventure, setIsGeneratingAdventure] = useState(false);
+  const [comfyStatus, setComfyStatus] = useState({
+    loading: false,
+    data: null,
+  });
 
   useEffect(() => {
     setApiKey(localStorage.getItem("aiDungeonGeminiApiKey") || "");
   }, []);
+
+  useEffect(() => {
+    if (step === "character" && characterPreview) {
+      checkComfyStatus();
+    }
+  }, [step, characterPreview]);
 
   function handleApiKeyChange(event) {
     const nextApiKey = event.target.value;
@@ -111,6 +121,30 @@ export default function AdventureSetup({
       roomCount: Number(roomCount),
       difficulty: Number(difficulty),
     };
+  }
+
+  async function checkComfyStatus() {
+    setComfyStatus((current) => ({
+      ...current,
+      loading: true,
+    }));
+
+    try {
+      const response = await fetch("/api/comfy/status");
+      const data = await response.json();
+      setComfyStatus({
+        loading: false,
+        data,
+      });
+    } catch {
+      setComfyStatus({
+        loading: false,
+        data: {
+          ok: false,
+          message: "ComfyUI is not reachable",
+        },
+      });
+    }
   }
 
   async function previewCharacter() {
@@ -302,6 +336,30 @@ export default function AdventureSetup({
                   <p className="font-semibold text-white">Portrait Prompt</p>
                   <p className="mt-2 text-xs leading-5 text-stone-300">{characterPreview.portraitPrompt?.positive || characterPreview.imagePrompt}</p>
                   <p className="mt-3 font-mono text-xs text-red-200/80">{characterPreview.portraitPrompt?.negative}</p>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+                  <p className="font-semibold text-white">ComfyUI</p>
+                  <p className={`mt-2 text-sm leading-6 ${
+                    comfyStatus.loading
+                      ? "text-amber-100"
+                      : comfyStatus.data?.ok
+                        ? "text-teal-100"
+                        : "text-stone-300"
+                  }`}>
+                    {comfyStatus.loading
+                      ? "ComfyUI 檢查中..."
+                      : comfyStatus.data?.ok
+                        ? `ComfyUI 已連線：${comfyStatus.data.baseUrl}`
+                        : "ComfyUI 未連線，仍可使用文字 prompt 繼續冒險"}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button type="button" onClick={checkComfyStatus} disabled={comfyStatus.loading} className="rounded-lg border border-teal-200/30 bg-teal-300/10 px-3 py-2 text-xs font-semibold text-teal-50 transition hover:bg-teal-300/20 disabled:cursor-wait disabled:opacity-60">
+                      {comfyStatus.loading ? "檢查中" : "重新檢查 ComfyUI"}
+                    </button>
+                    <button type="button" disabled className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-semibold text-stone-500">
+                      生成角色立繪（下一階段）
+                    </button>
+                  </div>
                 </div>
               </aside>
             </div>

@@ -121,3 +121,13 @@
 - Step 2 character preview now carries `starterEquipment`, trait objects, structured appearance, and portrait prompt text.
 - Step 3 adventure preview now includes required/reward item names and `itemChains`.
 - Starting Step 3 still uses the `/api/adventure/preview` state/gameData directly; it does not call `/api/adventure/generate`.
+
+## ComfyUI Integration Phase 4
+
+- 第四階段已開始接 ComfyUI integration。
+- 目前只完成健康檢查，不會生成圖片，不會接 workflow，也不會呼叫 `/prompt`。
+- 後端透過 `COMFYUI_BASE_URL` 讀取 ComfyUI URL，未設定時預設 `http://127.0.0.1:8188`。
+- 新增 `GET /api/comfy/status`，內部檢查 `${COMFYUI_BASE_URL}/system_stats`。
+- ComfyUI 未啟動時仍回 HTTP 200 + `ok: false`，不會影響文字 RPG 生成流程。
+- Adventure Setup Step 2 角色預覽區會顯示 ComfyUI 已連線 / 未連線，並提供重新檢查按鈕。
+- 下一階段才會加入角色立繪生成。

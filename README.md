@@ -202,12 +202,25 @@ npm start
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
 GEMINI_MODEL=gemini-2.5-flash-lite
+COMFYUI_BASE_URL=http://127.0.0.1:8188
 ```
 
 注意：
 - 不要把 `.env` commit 到 repo。
 - 不要把 API key 寫進文件或輸出。
 - Runtime Generated Adventure 的 API key 只存在使用者瀏覽器 localStorage 與單次 request body；後端不記錄、不回傳、不寫入檔案。
+
+## ComfyUI Integration Phase 4
+
+第四階段已開始接 ComfyUI integration；目前只完成健康檢查，不會生成圖片，也不會呼叫 ComfyUI `/prompt`。
+
+- 預設 ComfyUI URL：`http://127.0.0.1:8188`
+- 可用 `.env` 的 `COMFYUI_BASE_URL` 覆蓋，例如 `COMFYUI_BASE_URL=http://127.0.0.1:8188`
+- 新增 `GET /api/comfy/status`
+- 後端會檢查 `${COMFYUI_BASE_URL}/system_stats`
+- ComfyUI 未啟動時仍回 HTTP 200，body 會是 `ok: false`
+- ComfyUI 未啟動不會影響文字 RPG 生成流程、Default Demo Mode 或 Generated Adventure Mode
+- 下一階段才會加入角色立繪生成
 
 ## Content Designer Agent 安全邊界
 - Development-time only。

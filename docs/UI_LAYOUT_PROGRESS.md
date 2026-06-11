@@ -215,3 +215,13 @@ schemas/generatedArea.schema.json
 - Step 3 adventure preview now shows richer room rows: monster, items, challenge type, required item, reward items, exits, and summary.
 - Step 3 sidebar includes player summary, content counts, and `itemChains` that connect required item source -> challenge room -> reward.
 - The start button still enters the adventure with the preview response `state` / `gameData`; it does not call `/api/adventure/generate`.
+
+## ComfyUI Status in Adventure Setup
+
+- 第四階段開始接 ComfyUI integration，目前只做健康檢查。
+- Adventure Setup Step 2 的角色預覽區塊，在 Portrait Prompt 附近顯示 ComfyUI 狀態。
+- 狀態包含：檢查中、ComfyUI 已連線、ComfyUI 未連線。
+- 前端呼叫 `GET /api/comfy/status`，並提供「重新檢查 ComfyUI」按鈕。
+- ComfyUI 預設 URL 是 `http://127.0.0.1:8188`，可用 `COMFYUI_BASE_URL` 覆蓋。
+- ComfyUI 未啟動時不顯示全頁錯誤，不阻擋角色生成、冒險生成或開始冒險。
+- 目前不生成圖片；角色立繪生成會在下一階段加入。
