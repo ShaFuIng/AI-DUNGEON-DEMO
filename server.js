@@ -63,7 +63,6 @@ async function handleCommandRequest(req, res) {
 }
 
 // 執行玩家指令
-app.post("/api/command", handleCommandRequest);
 app.post("/api/game/command", handleCommandRequest);
 
 // 重置遊戲狀態

@@ -12,6 +12,24 @@ npm install
 npm start
 ```
 
+開發時建議使用兩個終端：
+
+Terminal 1：
+```bash
+npm start
+```
+後端預設：`http://localhost:3000`
+
+Terminal 2：
+```bash
+npm run client:dev
+```
+前端預設：`http://localhost:5173`
+
+Vite proxy：`/api -> http://localhost:3000`
+
+如果看到 `http proxy error: /api/state ECONNREFUSED`，代表後端沒有啟動，或 Vite proxy target 的 port 與 `server.js` 實際 port 不一致。
+
 ## Content Designer 常用指令
 ```bash
 npm run validate:area
@@ -99,7 +117,7 @@ npm start
 - 目前 UI 主版面維持 Map / Character / StoryCommand / Floating Window 架構。
 - `BattleView` 已存在，EncounterModal 已存在，遇到未擊敗怪物時可從遭遇提示進入戰鬥畫面。
 - 戰鬥 UI 目前可顯示玩家 / 敵人資訊、HP / MP、battle log、行動按鈕與戰鬥狀態。
-- 戰鬥狀態已由後端 `gameEngine` 管理：`mode`、`activeMonsterId`、`activeMonster`、`battle.turn`、`battle.log`、`battle.status` 會隨 `/api/command` 回傳。
+- 戰鬥狀態已由後端 `gameEngine` 管理：`mode`、`activeMonsterId`、`activeMonster`、`battle.turn`、`battle.log`、`battle.status` 會隨 `/api/game/command` 回傳。
 - EncounterModal 確認後會送出 `battle start` 指令進入 battle mode；前端 `BattleView` 依後端 `gameState.mode` 顯示，敗北的 `gameOver` 狀態也會保留戰鬥畫面並停用按鈕。
 - 一般遭遇戰不可取消；玩家必須先進入戰鬥，若要脫離則在戰鬥中使用 `escape`。
 - Boss 房間會顯示危險提示；按「暫時撤退」會透過 `/api/game/command` 呼叫後端 `retreat` 並退回安全房間，不會在 StoryCommandPanel 顯示成玩家輸入了 `retreat`。手動 `retreat` 仍保留作為備用指令。

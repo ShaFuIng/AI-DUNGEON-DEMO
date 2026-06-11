@@ -58,7 +58,7 @@ async function loadGameState() {
 
 async function sendCommand(command) {
   try {
-    const response = await fetch("/api/command", {
+    const response = await fetch("/api/game/command", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

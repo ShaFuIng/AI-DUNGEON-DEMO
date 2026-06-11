@@ -174,6 +174,7 @@ schemas/generatedArea.schema.json
 
 ## 近期修正：Command API 與 Map 欄位
 - `App.jsx` 已統一使用 `COMMAND_API = "/api/game/command"`；Boss modal 暫時撤退會打這個 endpoint，但不顯示 `> retreat`。
-- `server.js` 新增 `/api/game/command` alias，與既有 `/api/command` 共用同一個後端處理流程。
+- `server.js` 正式 command endpoint 為 `/api/game/command`；前端一般指令與 Boss modal 暫時撤退都使用同一個 endpoint。
+- 開發環境後端固定使用 `http://localhost:3000`，Vite proxy 為 `/api -> http://localhost:3000`。
 - Map 內容區已調整成左側 Recent Log 空間與右側九宮格區域，九宮格在右側區域置中，真正替左側 log 留出空間。
 - Recent Log 寬度調整為約 18rem，仍維持最近 5 筆、舊到新排列、最新在最下方與進出動畫。

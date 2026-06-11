@@ -54,13 +54,14 @@
 - Map 九宮格已由置中改為略向右靠齊，Recent Log 可使用較舒適寬度但仍不遮住主要操作區。
 - Recent Log 維持最多 5 筆、舊到新排列、最新在最下方，並保留最舊離開與新訊息從底部進入的動畫。
 ## 近期精修：Boss modal 靜默撤退與 Map 微偏移
-- Boss 危險提示按「暫時撤退」時，前端會直接呼叫 `/api/command` 送出 `retreat`，但不會把 `retreat` 顯示成玩家輸入的 command line。
+- Boss 危險提示按「暫時撤退」時，前端會直接呼叫 `/api/game/command` 送出 `retreat`，但不會把 `retreat` 顯示成玩家輸入的 command line。
 - 後端 `retreat` 指令仍保留，供手動輸入或 debug 使用。
 - Map 九宮格已從靠右改為以置中為基準微幅右移，避免貼近右側。
 - Recent Log 寬度調整為約 16rem，仍保留最近 5 筆、舊到新排列與進出動畫。
 
 ## 近期修正：Command API 與 Map 欄位
 - 前端 command 呼叫已統一使用 `COMMAND_API = "/api/game/command"`；Boss modal 的「暫時撤退」會打同一個 endpoint，但不新增 command line。
-- `server.js` 保留 `/api/command`，並新增 `/api/game/command` alias，兩者共用同一個 command handler。
+- `server.js` 正式 command endpoint 為 `/api/game/command`；前端一般指令與 Boss modal 暫時撤退都使用同一個 endpoint。
+- 開發環境後端固定使用 `http://localhost:3000`，Vite proxy 為 `/api -> http://localhost:3000`。
 - Map 內容區改為左側 Recent Log 空間與右側九宮格區域，九宮格在右側區域置中，不再只用 translate 視覺位移。
 - Recent Log 寬度調整為約 18rem，仍維持最近 5 筆、舊到新排列與進出動畫。
