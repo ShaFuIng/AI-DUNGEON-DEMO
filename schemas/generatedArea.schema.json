@@ -219,6 +219,10 @@
               "type": "integer"
             }
           }
+        },
+        "command": {
+          "type": "string",
+          "minLength": 1
         }
       }
     },

@@ -915,11 +915,7 @@ function handleUseItem(gameState, targetName) {
 
   const item = gameData.items[itemId];
 
-  if (item.type !== "consumable") {
-    return createEventResult("use_not_consumable", `${item.name} 不是可直接使用的消耗品。`);
-  }
-
-  if (item.effect && item.effect.hp) {
+  if (item.type === "consumable" && item.effect && item.effect.hp) {
     const oldHp = gameState.player.hp;
     gameState.player.hp += item.effect.hp;
 
@@ -942,7 +938,58 @@ function handleUseItem(gameState, targetName) {
     return createEventResult("use_item", message);
   }
 
+  if (item.type === "key") {
+    return handleUseKeyItem(gameState, item);
+  }
+
+  if (item.type === "quest") {
+    const message = item.usageHint
+      ? `${item.name} 暫時不能直接使用。${item.usageHint}`
+      : `${item.name} 是重要物品，但現在還不是直接使用它的時候。`;
+    addLog(gameState, `你查看了 ${item.name}`);
+    return createEventResult("use_quest_item", message);
+  }
+
+  if (item.type === "equipment") {
+    const message = `裝備系統尚未開放，暫時無法使用 ${item.name}。`;
+    addLog(gameState, `你嘗試使用 ${item.name}`);
+    return createEventResult("use_equipment_unavailable", message);
+  }
+
+  if (item.type === "material") {
+    const message = `目前環境中沒有適合使用 ${item.name} 的地方。`;
+    addLog(gameState, `你嘗試使用 ${item.name}`);
+    return createEventResult("use_material_no_target", message);
+  }
+
   return createEventResult("use_no_effect", `${item.name} 沒有可用效果。`);
+}
+
+function handleUseKeyItem(gameState, item) {
+  const room = getCurrentRoom(gameState);
+  const exits = room.exits || {};
+  const unlocks = Array.isArray(item.unlocks) ? item.unlocks : [];
+  const matchedEntry = Object.entries(exits).find(([, roomId]) =>
+    unlocks.includes(roomId)
+  );
+
+  if (!matchedEntry) {
+    const message = `你拿出 ${item.name}，但附近沒有能使用它的機關或門鎖。`;
+    addLog(gameState, `你嘗試使用 ${item.name}`);
+    return createEventResult("use_key_no_target", message);
+  }
+
+  const [, unlockedRoomId] = matchedEntry;
+  const unlockedRoom = gameData.rooms[unlockedRoomId];
+  const targetName = unlockedRoom?.name || unlockedRoomId;
+  const message =
+    item.id === "rusty_key" && unlockedRoomId === "boss_room"
+      ? "你將生鏽鑰匙插入石門鎖孔，沉重石門發出低鳴，通往核心密室的道路已經可以前進。"
+      : `你使用 ${item.name}，確認通往 ${targetName} 的道路已經可以前進。`;
+
+  addLog(gameState, `你使用 ${item.name} 開啟了通往 ${targetName} 的道路`);
+
+  return createEventResult("use_key", message);
 }
 
 function removeItemFromInventory(gameState, itemId) {

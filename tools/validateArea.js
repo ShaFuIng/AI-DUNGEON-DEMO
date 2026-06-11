@@ -37,6 +37,7 @@ const ALLOWED_ITEM_KEYS = [
   "unlocks",
   "slot",
   "stats",
+  "command",
 ];
 const ALLOWED_MONSTER_KEYS = [
   "id",

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const ITEM_META = {
   火把: {
@@ -60,11 +60,7 @@ function normalizeItem(item, itemDetails = {}) {
       description: normalized.description || "這個道具還沒有詳細說明。",
       usageHint: normalized.usageHint || "",
       icon: normalized.icon || getItemIcon(normalized.type),
-      command:
-        normalized.command ||
-        (normalized.type === "consumable" && normalized.id
-          ? `use ${normalized.id}`
-          : null),
+      command: normalized.command || (normalized.id ? `use ${normalized.id}` : null),
     };
   }
 
@@ -80,9 +76,7 @@ function normalizeItem(item, itemDetails = {}) {
       description: meta.description || "這個道具還沒有詳細說明。",
       usageHint: meta.usageHint || "",
       icon: meta.icon || getItemIcon(meta.type),
-      command:
-        meta.command ||
-        (meta.type === "consumable" && meta.id ? `use ${meta.id}` : null),
+      command: meta.command || (meta.id ? `use ${meta.id}` : null),
     };
   }
 
@@ -116,10 +110,9 @@ function InventorySlot({ item, selected, onClick, onHover, onLeave }) {
     <button
       type="button"
       disabled={!item}
-      onClick={onClick}
-      onMouseEnter={onHover}
+      onClick={(event) => onClick?.(event)}
+      onMouseEnter={(event) => onHover?.(event)}
       onMouseLeave={onLeave}
-      title={meta ? `${meta.name}｜${meta.description}` : ""}
       className={`aspect-square rounded-md border text-xl transition ${
         selected
           ? "border-amber-200/70 bg-amber-300/15"
@@ -133,7 +126,13 @@ function InventorySlot({ item, selected, onClick, onHover, onLeave }) {
   );
 }
 
-function ItemGrid({ inventory, selectedItem, setSelectedItem, setHoveredItem }) {
+function ItemGrid({
+  inventory,
+  selectedItem,
+  onSelectItem,
+  onHoverItem,
+  onLeaveItem,
+}) {
   const slots = useMemo(() => {
     const slotCount = 25;
     return Array.from({ length: slotCount }, (_, index) => inventory[index] || null);
@@ -146,60 +145,74 @@ function ItemGrid({ inventory, selectedItem, setSelectedItem, setHoveredItem }) 
           key={`${item || "empty"}-${index}`}
           item={item}
           selected={item && selectedItem?.id === item.id}
-          onClick={() => item && setSelectedItem(item)}
-          onHover={() => item && setHoveredItem(item)}
-          onLeave={() => setHoveredItem(null)}
+          onClick={(event) => item && onSelectItem(item, event)}
+          onHover={(event) => item && onHoverItem(item, event)}
+          onLeave={onLeaveItem}
         />
       ))}
     </div>
   );
 }
 
-function ItemDetail({ selectedItem, loading, onAction }) {
-  if (!selectedItem) {
-    return (
-      <div className="rounded-lg border border-dashed border-white/15 bg-white/[0.03] p-4 text-sm leading-6 text-stone-500">
-        點擊道具格子後，這裡會顯示名稱、類型與效果說明。
-      </div>
-    );
-  }
-
-  const meta = selectedItem;
-
+function ItemTooltip({ item, position }) {
+  if (!item || !position) return null;
   return (
-    <div className="rounded-lg border border-amber-200/20 bg-amber-300/10 p-4">
+    <div
+      className="pointer-events-none absolute z-30 w-64 rounded-lg border border-amber-200/25 bg-[#11100e]/95 p-3 text-left text-xs leading-5 text-stone-200 shadow-2xl shadow-black/50 backdrop-blur"
+      style={{ left: position.x, top: position.y }}
+    >
       <div className="flex items-start gap-3">
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-black/30 text-xl">
-          {meta.icon}
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-black/35 text-lg">
+          {item.icon}
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="text-base font-semibold text-white">{meta.name}</h3>
-          <p className="mt-1 font-mono text-[11px] uppercase text-amber-100/70">
-            {meta.type}
+          <h3 className="text-sm font-semibold text-white">{item.name}</h3>
+          <p className="mt-1 font-mono text-[10px] uppercase text-amber-100/70">
+            {item.type}
           </p>
         </div>
       </div>
-      <p className="mt-3 text-sm leading-6 text-stone-300">{meta.description}</p>
+      <p className="mt-3 text-stone-300">{item.description}</p>
       <div className="mt-3 rounded-md border border-white/10 bg-black/20 px-3 py-2 text-xs leading-5 text-stone-300">
         <p>
           <span className="font-semibold text-stone-100">效果：</span>
-          {formatEffect(meta.effect || meta.stats)}
+          {formatEffect(item.effect || item.stats)}
         </p>
         <p className="mt-1">
           <span className="font-semibold text-stone-100">用途：</span>
-          {meta.usageHint || "目前沒有額外用途提示。"}
+          {item.usageHint || "目前沒有額外用途提示。"}
         </p>
       </div>
-      {meta.command ? (
+    </div>
+  );
+}
+
+function ItemActionMenu({ item, position, loading, onUse, onClose }) {
+  if (!item || !position) return null;
+
+  return (
+    <div
+      className="absolute z-40 w-36 rounded-lg border border-white/15 bg-[#11100e]/95 p-2 shadow-2xl shadow-black/50 backdrop-blur"
+      style={{ left: position.x, top: position.y }}
+    >
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="min-w-0 truncate text-xs font-semibold text-white">{item.name}</p>
         <button
           type="button"
-          disabled={loading}
-          onClick={() => onAction(meta.command)}
-          className="mt-3 w-full rounded-lg border border-amber-200/40 bg-amber-300/15 px-3 py-2 text-sm font-semibold text-amber-50 transition hover:bg-amber-300/25 disabled:cursor-wait disabled:opacity-60"
+          onClick={onClose}
+          className="rounded border border-white/10 px-1.5 py-0.5 text-[10px] font-bold text-stone-400 transition hover:border-red-200/40 hover:text-red-100"
         >
-          使用道具
+          X
         </button>
-      ) : null}
+      </div>
+      <button
+        type="button"
+        disabled={loading || !item.command}
+        onClick={() => onUse(item)}
+        className="w-full rounded-md border border-amber-200/35 bg-amber-300/15 px-3 py-2 text-sm font-semibold text-amber-50 transition hover:bg-amber-300/25 disabled:cursor-not-allowed disabled:opacity-55"
+      >
+        使用
+      </button>
     </div>
   );
 }
@@ -210,23 +223,116 @@ export default function InventoryWindowContent({
   loading,
   onAction,
 }) {
+  const containerRef = useRef(null);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [menuPosition, setMenuPosition] = useState(null);
   const [hoveredItem, setHoveredItem] = useState(null);
+  const [tooltipPosition, setTooltipPosition] = useState(null);
   const normalizedInventory = useMemo(
     () => inventory.map((item) => normalizeItem(item, itemDetails)),
     [inventory, itemDetails],
   );
-  const displayedItem = hoveredItem || selectedItem;
+
+  useEffect(() => {
+    function handlePointerDown(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        closeActionMenu();
+      }
+    }
+
+    function handleKeyDown(event) {
+      if (event.key === "Escape" && selectedItem) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        closeActionMenu();
+      }
+    }
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("keydown", handleKeyDown, true);
+
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown, true);
+    };
+  }, [selectedItem]);
+
+  function getFloatingPosition(event, width = 256, height = 160) {
+    const containerRect = containerRef.current?.getBoundingClientRect();
+    const targetRect = event.currentTarget.getBoundingClientRect();
+
+    if (!containerRect) {
+      return { x: 0, y: 0 };
+    }
+
+    let x = targetRect.right - containerRect.left + 8;
+    let y = targetRect.top - containerRect.top;
+
+    const maxX = containerRect.width - width - 8;
+    const maxY = containerRect.height - height - 8;
+
+    if (x > maxX) {
+      x = targetRect.left - containerRect.left - width - 8;
+    }
+
+    if (x < 8) {
+      x = 8;
+    }
+
+    if (y > maxY) {
+      y = Math.max(8, maxY);
+    }
+
+    return { x, y: Math.max(8, y) };
+  }
+
+  function closeActionMenu() {
+    setSelectedItem(null);
+    setMenuPosition(null);
+  }
+
+  function handleSelectItem(item, event) {
+    setSelectedItem(item);
+    setHoveredItem(null);
+    setTooltipPosition(null);
+    setMenuPosition(getFloatingPosition(event, 144, 96));
+  }
+
+  function handleHoverItem(item, event) {
+    if (selectedItem) return;
+    setHoveredItem(item);
+    setTooltipPosition(getFloatingPosition(event, 256, 180));
+  }
+
+  function handleLeaveItem() {
+    setHoveredItem(null);
+    setTooltipPosition(null);
+  }
+
+  function handleUseItem(item) {
+    const command = item.command || (item.id ? `use ${item.id}` : null);
+    if (!command) return;
+    onAction(command);
+    closeActionMenu();
+  }
 
   return (
-    <div className="space-y-4">
+    <div ref={containerRef} className="relative">
       <ItemGrid
         inventory={normalizedInventory}
         selectedItem={selectedItem}
-        setSelectedItem={setSelectedItem}
-        setHoveredItem={setHoveredItem}
+        onSelectItem={handleSelectItem}
+        onHoverItem={handleHoverItem}
+        onLeaveItem={handleLeaveItem}
       />
-      <ItemDetail selectedItem={displayedItem} loading={loading} onAction={onAction} />
+      <ItemTooltip item={hoveredItem} position={tooltipPosition} />
+      <ItemActionMenu
+        item={selectedItem}
+        position={menuPosition}
+        loading={loading}
+        onUse={handleUseItem}
+        onClose={closeActionMenu}
+      />
     </div>
   );
 }

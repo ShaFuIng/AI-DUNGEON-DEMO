@@ -12,23 +12,28 @@ export default function MissionLogOverlay({ logs = [] }) {
   );
 
   return (
-    <aside className="pointer-events-none absolute left-4 top-20 z-20 w-[min(18rem,calc(100%-2rem))] text-xs text-stone-200">
-      <div className="overflow-hidden rounded-lg border border-amber-100/15 bg-[#12100d]/85 px-3 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.38)] backdrop-blur-sm">
-        <p className="mb-1 font-mono text-[10px] uppercase tracking-wide text-amber-200/80">
+    <aside className="pointer-events-none absolute left-4 top-20 z-20 w-[min(15rem,calc(100%-2rem))] text-xs text-stone-200">
+      <div className="rounded-lg border border-amber-100/15 bg-[#12100d]/70 px-2.5 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.34)] backdrop-blur-sm">
+        <p className="mb-2 font-mono text-[10px] uppercase tracking-wide text-amber-200/80">
           Recent Log
         </p>
-        <div className="space-y-1">
+        <div className="space-y-2">
           {recentLogs.length ? (
             recentLogs.map((line, index) => (
-              <p key={`${line}-${index}`} className="truncate text-stone-200">
-                <span className="mr-2 font-mono text-amber-100/50">
+              <div
+                key={`${line}-${index}`}
+                className="rounded-md border border-white/10 bg-black/25 px-2 py-1.5 leading-5 text-stone-200"
+              >
+                <span className="mr-1.5 font-mono text-amber-100/60">
                   {index + 1}
                 </span>
-                {line}
-              </p>
+                <span className="break-words">{line}</span>
+              </div>
             ))
           ) : (
-            <p className="text-stone-400">尚無行動紀錄</p>
+            <div className="rounded-md border border-dashed border-white/10 bg-black/20 px-2 py-1.5 text-stone-400">
+              尚無行動紀錄
+            </div>
           )}
         </div>
       </div>

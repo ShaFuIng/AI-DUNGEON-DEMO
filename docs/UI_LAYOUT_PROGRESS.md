@@ -32,7 +32,7 @@
 - 原 `StoryLog` 與 `CommandBar` 已整合為 `StoryCommandPanel`。
 - 顯示 story / command / system 訊息。
 - 戰鬥中目前會禁用一般輸入，避免 `move` / `take` 等探索指令混入戰鬥流程；戰鬥操作改由 `BattleView` 按鈕送到後端。
-- Map 左上 Recent Log 已改為固定最近 5 筆列表，最新一筆在最上方，不再輪播、不顯示 indicator。
+- Map 左上 Recent Log 已改為較窄的固定最近 5 筆半透明 block 列表，最新一筆在最上方，不再輪播、不顯示 indicator。
 
 ### MapView
 
@@ -97,21 +97,28 @@
 
 ## 5. 背包與物品提示
 
-- `InventoryWindowContent` 已支援 hover / click 顯示道具 detail panel。
-- Detail panel 會顯示：
+- `InventoryWindowContent` 已改為 hover 顯示自訂 tooltip，不再把完整道具說明放在背包底部。
+- Tooltip 會顯示：
   - 道具名稱
   - 類型
   - 描述
   - 效果
   - 用途提示
+- 點擊道具格會在格子旁開啟小型 action menu，提供「使用」按鈕。
+- action menu 會在點其他地方、按 Escape、或使用道具後關閉。
 - 資料來源優先使用後端 `player.inventoryItems` 與 `itemDetails`。
 - 若 item 缺少 description，會顯示 fallback：「這個道具還沒有詳細說明。」
 - 空格子不顯示錯誤資訊。
+- `use item` 後端已支援 consumable 與 key 類道具的環境判斷；quest / equipment / material 會回傳提示。
+- 裝備系統尚未開放，equipment 目前只提供使用提示。
 
 ## 6. 生成資料規則
 
 - Content Designer Gemini prompt 已要求：
   - item 必須有 `id`、`name`、`type`、`description`、`usageHint`。
+  - item 可以有 `command`；沒有 command 時前端會自動送 `use <item.id>`。
+  - key item 必須有 `unlocks`，且 usageHint 要描述能在哪裡使用。
+  - consumable 必須有 `effect`。
   - equipment 使用 `type = "equipment"`，並包含 `slot` 與 `stats`。
   - monster 必須有 `hp`、`maxHp`、`attack`、`defense`、`expReward`、`drops`、`description`。
   - 重要門、寶箱、機關需要對應 key item 或 quest item。

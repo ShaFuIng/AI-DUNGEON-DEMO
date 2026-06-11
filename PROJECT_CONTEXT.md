@@ -25,10 +25,11 @@
 - 前端 `App.jsx` 依後端 `gameState.mode` 顯示 `BattleView`；戰鬥中顯示 BattleView，敗北的 `gameOver` 狀態也保留 BattleView 並停用按鈕，不再用本地 `battleMode` 作為主要真相來源。
 - 後端已補上基礎指令護欄，避免怪物未擊敗或戰鬥中混入 `move` / `take` 探索流程。
 - Battle Log 已改為固定高度可滾動，避免戰鬥訊息撐高 `BattleView`。
-- 背包視窗已支援 item tooltip / detail panel，資料來源優先使用後端 `player.inventoryItems` / `itemDetails`。
+- 背包視窗已改為 hover tooltip 顯示道具資訊，點擊道具會在格子旁開啟小型「使用」action menu；資料來源優先使用後端 `player.inventoryItems` / `itemDetails`。
+- `use item` 後端已支援 consumable 與 key 類道具的環境判斷；quest / equipment / material 會回傳合理提示，裝備系統仍是 TODO。
 - 後端已加入基礎 EXP / Level Up 系統；怪物可設定 `expReward` 與固定 `drops`。
 - Content Designer prompt / validator / schema 已更新，要求 item description、usageHint、equipment stats、monster drops、expReward。
-- Map 左上 Recent Log 已改為最近 5 筆固定列表，不再使用輪播。
+- Map 左上 Recent Log 已改為較窄的最近 5 筆半透明 block 列表，不再使用輪播。
 - 後續仍需讓戰鬥 log / 敘事事件更完整，並補上更正式的敵人 AI、狀態效果、技能冷卻與戰鬥動畫。
 
 ## 下一步

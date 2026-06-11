@@ -103,10 +103,11 @@ npm start
 - EncounterModal 確認後會送出 `battle start` 指令進入 battle mode；前端 `BattleView` 依後端 `gameState.mode` 顯示，敗北的 `gameOver` 狀態也會保留戰鬥畫面並停用按鈕。
 - 戰鬥機制仍屬基礎版：已有 attack、skill slash、skill fireball、skill guard、use small_potion、escape；escape 目前是 60% 成功率的簡化機率制。
 - Battle Log 已改為固定高度可滾動，不會隨訊息增加撐高 BattleView。
-- 背包視窗支援 item tooltip / detail panel，會顯示道具類型、描述、效果與用途提示。
+- 背包視窗支援 hover tooltip 顯示道具類型、描述、效果與用途提示；點擊道具會開啟小型「使用」action menu。
+- `use item` 後端已支援 consumable 與 key 類道具的環境判斷；quest / equipment / material 會回傳合理提示，裝備系統仍是 TODO。
 - 後端已加入基礎 EXP / Level Up 系統，怪物可設定 `expReward` 與固定 `drops`。
 - Content Designer prompt / validator / schema 已要求 item description、usageHint、equipment stats、monster drops、expReward。
-- Map 左上 Recent Log 已改為最近 5 筆列表，不再輪播。
+- Map 左上 Recent Log 已改為較窄的最近 5 筆半透明 block 列表，不再輪播。
 - 近期優先完善完整回合制、敵人 AI、狀態效果、技能冷卻、戰鬥動畫，以及 Floating Window 拖曳與可讀性細節；主版面不做大幅重排。
 
 ## .env.example 用途
