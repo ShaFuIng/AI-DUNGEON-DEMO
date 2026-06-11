@@ -71,11 +71,12 @@
 ## 近期新增：Adventure Setup 三步流程與 Boss Retreat 泛化
 - `AdventureSetup` 改為 Step 1 Adventure Inputs、Step 2 Character Preview、Step 3 Adventure Preview。
 - 新增 `POST /api/character/preview`，只生成角色預覽，不修改 runtime session。
-- 新增 `POST /api/adventure/preview`，只生成冒險預覽，不修改 runtime session。
-- `/api/adventure/generate` 保留為最後 finalize，會寫入目前 server runtime gameData。
+- 新增 `POST /api/adventure/preview`，生成冒險預覽並暫存同一份 runtime state/gameData，供 Step 3 開始冒險後的 command API 使用。
+- Step 3「開始冒險」直接使用 `/api/adventure/preview` 回傳的 state/gameData，不再呼叫 `/api/adventure/generate`。
 - `confirmedCharacter` 會被傳入 adventure generation，角色 attributes、skills、starter equipment 會套用到 runtime gameData。
 - 新增 `AI/prompts/buildCharacterPreviewPrompt.js` 與 `AI/characterPreviewGenerator.js`。
 - Boss retreat 不再硬綁 `boss_room` / `ruin_guardian` / `west`；改由 `room.kind === "boss"`、monster boss metadata 與 `previousRoomId` 決定。
+- `balanceRuntimeAdventure` 會修復 mirrored exits 與 unreachable rooms，讓 validator 的 exit mirror / reachability 檢查仍保留但更少被 LLM shape 卡住。
 
 ## 近期修正：門鎖與 Recent Log 動畫
 - `gameEngine` 已新增 `flags.unlockedDoors`，用來保存已解鎖的門。

@@ -142,7 +142,7 @@
 ## 近期新增：Adventure Setup 與動態技能
 - `App.jsx` 啟動時先顯示 `AdventureSetup`，玩家可選 Default Demo 或 Generated Adventure。
 - Default Demo 會呼叫 `/api/reset` 並使用預設 `data/gameData.js`。
-- Generated Adventure 會呼叫 `/api/adventure/generate`，成功後用 response 的 `state` / `gameData` 直接進入主遊戲畫面。
+- Generated Adventure 先呼叫 `/api/adventure/preview`，Step 3 開始冒險時直接使用 preview response 的 `state` / `gameData` 進入主遊戲畫面。
 - `BattleView` 的技能按鈕改由 `gameState.player.skills` 產生，不再硬編碼 `skill slash` / `skill fireball` / `skill guard`。
 - `SkillsWindowContent` 會顯示 runtime skill name、role、MP cost 與 description，並送出 `skill <skill.id>`。
 - Start Screen 的 API key 欄位只會存到瀏覽器 localStorage；後端只在該次生成 request 使用。
@@ -158,7 +158,8 @@
 - `AdventureSetup` 從單步生成改為三步：Adventure Inputs、Character Preview、Adventure Preview。
 - Character Preview 顯示角色摘要、背景、attributes、三個技能、appearance 與 imagePrompt。
 - Adventure Preview 顯示房間列表、kind、敵人、道具 / challenge、Boss、勝利條件與資源摘要。
-- Preview API 不會修改 server runtime session；只有按「開始冒險」才 finalize。
+- Adventure Preview 成功後 server 會持有同一份 runtime state/gameData；按「開始冒險」不再呼叫 `/api/adventure/generate`。
+- Balancer 會補 mirrored exits 並嘗試接回 unreachable rooms，避免 generated map 因單向出口或孤島房間卡在 validator。
 - Boss encounter 判斷已支援 generated adventure 的 `room.kind = "boss"`，撤退會依後端 previousRoomId 回到上一個房間。
 
 ## 8. 重要檔案

@@ -108,7 +108,9 @@ app.post("/api/adventure/preview", async (req, res) => {
       });
     const previewState = createInitialGameState(previewGameData);
     const publicPreviewState = getPublicGameState(previewState);
+    currentGameData = previewGameData;
     setRuntimeGameData(currentGameData);
+    gameState = previewState;
 
     res.json({
       state: publicPreviewState,

@@ -45,14 +45,14 @@ Vite proxy：`/api -> http://localhost:3000`
 2. Character Preview
 3. Adventure / Map Preview
 
-Preview APIs 不會修改目前 server runtime session：
+Preview flow：
 
 ```http
 POST /api/character/preview
 POST /api/adventure/preview
 ```
 
-最後按「開始冒險」才會呼叫：
+`/api/adventure/preview` 成功後會回傳並暫存同一份 runtime `state` / `gameData`。最後按「開始冒險」會直接使用 preview result 進入遊戲，不會再次呼叫 LLM，也不會再打：
 
 ```http
 POST /api/adventure/generate
@@ -78,7 +78,7 @@ raw Gemini JSON -> parse -> normalizeRuntimeGameData -> balanceRuntimeAdventure 
 
 因此即使 Gemini 把 `items` / `monsters` / `skills` 產成 array，也會先轉成 engine 需要的 object map；若仍無法修正，才會回傳 422 與 validation details。
 
-`balanceRuntimeAdventure` 會補強可玩性：room.kind、challenge、補血道具、裝備、Boss 房勝利物品，以及普通怪 / Boss 數值平衡。`use <equipment_id>` 已可裝備 weapon / armor / accessory，戰鬥會使用 effective attack / defense / maxHp / maxMp。
+`balanceRuntimeAdventure` 會補強可玩性：room.kind、challenge、補血道具、裝備、Boss 房勝利物品、普通怪 / Boss 數值平衡、mirrored exits，以及 unreachable room 修復。`use <equipment_id>` 已可裝備 weapon / armor / accessory，戰鬥會使用 effective attack / defense / maxHp / maxMp。
 
 Boss retreat 已改為 runtime 判斷，不再只綁定 `boss_room` / `ruin_guardian`；generated adventure 會使用 `room.kind = "boss"` 與 `previousRoomId` 退回上一個房間。
 

@@ -166,6 +166,8 @@ raw Gemini JSON
 - 至少補齊 1 個 puzzle/riddle/locked_door challenge。
 - Boss room 會持有 quest item，且 requiredBossDefeated 固定為 true。
 - 普通怪與 Boss 數值會依玩家 stats、skills、equipment 做 deterministic balance。
+- exits 會補上 mirror，例如 `east` 對 `west`、`north` 對 `south`。
+- unreachable rooms 會被接回 `initialRoomId` 可抵達的房間圖，再重新補 mirror。
 
 ## Equipment Runtime
 
@@ -227,8 +229,9 @@ Runtime 支援：
 2. Step 1：輸入 API key、模型、風格、房間數、難度、角色 prompt、冒險 prompt。
 3. Step 2：呼叫 `/api/character/preview`，顯示角色名稱、背景、attributes、skills、equipment、appearance、imagePrompt。
 4. Step 3：呼叫 `/api/adventure/preview`，顯示 room list、kind、monster、items、challenge、Boss、win condition、equipment、consumables。
-5. 按「開始冒險」才呼叫 `/api/adventure/generate` finalize runtime gameData。
-6. Demo 模式仍會呼叫 `/api/reset` 並指定 `mode: "default"`。
+5. `/api/adventure/preview` 成功後，server 會持有同一份 runtime `state` / `gameData`，以便後續 `/api/game/command` 使用。
+6. 按「開始冒險」會直接使用 Step 3 preview response 的 `state` / `gameData` 進入遊戲，不再重新呼叫 LLM 或 `/api/adventure/generate`。
+7. Demo 模式仍會呼叫 `/api/reset` 並指定 `mode: "default"`。
 
 ## Boss Retreat
 

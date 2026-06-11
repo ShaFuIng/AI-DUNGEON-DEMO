@@ -50,7 +50,13 @@ function StepIndicator({ step }) {
   );
 }
 
-export default function AdventureSetup({ loading, error, onStartDemo, onGenerate }) {
+export default function AdventureSetup({
+  loading,
+  error,
+  onStartDemo,
+  onGenerate,
+  onStartGeneratedAdventure,
+}) {
   const [step, setStep] = useState("input");
   const [apiKey, setApiKey] = useState("");
   const [model, setModel] = useState(MODELS[0].value);
@@ -138,9 +144,17 @@ export default function AdventureSetup({ loading, error, onStartDemo, onGenerate
   }
 
   function startGeneratedAdventure() {
-    onGenerate({
-      ...buildBasePayload(),
-      confirmedCharacter: characterPreview,
+    if (!adventurePreview?.state || !adventurePreview?.gameData) {
+      setPreviewError("尚未取得可開始的冒險資料，請先重新生成冒險預覽。");
+      return;
+    }
+
+    onStartGeneratedAdventure({
+      state: adventurePreview.state,
+      gameData: adventurePreview.gameData,
+      generationSummary: adventurePreview.generationSummary,
+      preview: adventurePreview.preview,
+      character: characterPreview,
     });
   }
 

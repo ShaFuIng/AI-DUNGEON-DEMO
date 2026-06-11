@@ -9,6 +9,9 @@ function balanceRuntimeAdventure(gameData, input = {}) {
   ensureWinConditionPlacement(balanced);
   balanceSkills(balanced);
   balanceMonsterStats(balanced, difficulty);
+  ensureMirroredExits(balanced);
+  ensureReachability(balanced);
+  ensureMirroredExits(balanced);
 
   return balanced;
 }
@@ -265,6 +268,117 @@ function getBestEquipmentBonus(gameData, stat) {
       .filter((item) => item.type === "equipment")
       .map((item) => Number(item.stats?.[stat]) || 0)
   );
+}
+
+const OPPOSITE_DIRECTIONS = {
+  north: "south",
+  south: "north",
+  east: "west",
+  west: "east",
+};
+
+function ensureMirroredExits(gameData) {
+  const rooms = gameData.rooms || {};
+
+  for (const room of Object.values(rooms)) {
+    room.exits = room.exits || {};
+
+    for (const [direction, targetRoomId] of Object.entries(room.exits)) {
+      const targetRoom = rooms[targetRoomId];
+      const oppositeDirection = OPPOSITE_DIRECTIONS[direction];
+
+      if (!targetRoom || !oppositeDirection) {
+        continue;
+      }
+
+      targetRoom.exits = targetRoom.exits || {};
+
+      if (!targetRoom.exits[oppositeDirection]) {
+        targetRoom.exits[oppositeDirection] = room.id;
+      } else if (targetRoom.exits[oppositeDirection] !== room.id) {
+        console.warn(
+          `Skipped conflicting mirrored exit: ${targetRoom.id}.${oppositeDirection} already points to ${targetRoom.exits[oppositeDirection]}, expected ${room.id}.`
+        );
+      }
+    }
+  }
+}
+
+function ensureReachability(gameData) {
+  const rooms = gameData.rooms || {};
+  const initialRoomId = gameData.initialRoomId || Object.keys(rooms)[0];
+
+  if (!initialRoomId || !rooms[initialRoomId]) {
+    return;
+  }
+
+  let reachable = getReachableRoomIds(rooms, initialRoomId);
+  let unreachable = Object.keys(rooms).filter((roomId) => !reachable.has(roomId));
+
+  while (unreachable.length > 0) {
+    const toRoom = rooms[unreachable[0]];
+    const connection = findReachableConnection(rooms, reachable, toRoom);
+
+    if (!toRoom || !connection) {
+      console.warn(`Unable to connect unreachable room: ${unreachable[0]}`);
+      break;
+    }
+
+    const { fromRoom, directionPair } = connection;
+    fromRoom.exits = fromRoom.exits || {};
+    toRoom.exits = toRoom.exits || {};
+    fromRoom.exits[directionPair.forward] = toRoom.id;
+    toRoom.exits[directionPair.backward] = fromRoom.id;
+
+    reachable = getReachableRoomIds(rooms, initialRoomId);
+    unreachable = Object.keys(rooms).filter((roomId) => !reachable.has(roomId));
+  }
+}
+
+function getReachableRoomIds(rooms, initialRoomId) {
+  const visited = new Set();
+  const queue = [initialRoomId];
+
+  while (queue.length > 0) {
+    const roomId = queue.shift();
+    if (visited.has(roomId) || !rooms[roomId]) continue;
+    visited.add(roomId);
+
+    for (const targetRoomId of Object.values(rooms[roomId].exits || {})) {
+      if (rooms[targetRoomId] && !visited.has(targetRoomId)) {
+        queue.push(targetRoomId);
+      }
+    }
+  }
+
+  return visited;
+}
+
+function findFreeDirectionPair(fromRoom, toRoom) {
+  const preferredPairs = [
+    ["east", "west"],
+    ["west", "east"],
+    ["north", "south"],
+    ["south", "north"],
+  ];
+
+  return preferredPairs
+    .map(([forward, backward]) => ({ forward, backward }))
+    .find(({ forward, backward }) => !fromRoom.exits?.[forward] && !toRoom.exits?.[backward]);
+}
+
+function findReachableConnection(rooms, reachable, toRoom) {
+  for (const roomId of reachable) {
+    const fromRoom = rooms[roomId];
+    if (!fromRoom) continue;
+
+    const directionPair = findFreeDirectionPair(fromRoom, toRoom);
+    if (directionPair) {
+      return { fromRoom, directionPair };
+    }
+  }
+
+  return null;
 }
 
 function clamp(value, min, max) {

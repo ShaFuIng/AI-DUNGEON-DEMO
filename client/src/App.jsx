@@ -349,6 +349,17 @@ export default function App() {
     }
   }
 
+  function handleStartGeneratedAdventure({ state, gameData, generationSummary }) {
+    setError("");
+    setGameState(state);
+    setGameData(gameData);
+    setSetupComplete(true);
+    setStoryLines([
+      createStoryLine("system", generationSummary || "冒險預覽已套用，新的冒險開始。"),
+      createStoryLine("story", state?.currentRoom?.description || "新的冒險開始了。"),
+    ]);
+  }
+
   function openEncounterForEnemy(enemy, state = gameState, { force = false } = {}) {
     if (!enemy) {
       return false;
@@ -642,6 +653,7 @@ export default function App() {
         error={error}
         onStartDemo={startDefaultDemo}
         onGenerate={generateAdventure}
+        onStartGeneratedAdventure={handleStartGeneratedAdventure}
       />
     );
   }
