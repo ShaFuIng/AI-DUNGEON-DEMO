@@ -131,4 +131,7 @@
 - `comfyClient` 會覆蓋 workflow node：`26:24` positive、`25:24` negative、`13` width/height、`3` seed、`9` filename prefix。
 - 生成流程會呼叫 ComfyUI `/prompt`、poll `/history/{promptId}`，再用 `/view` 取回圖片並保存到 `public/generated/comfy/`。
 - Adventure Setup Step 2 會顯示 ComfyUI 狀態、重新檢查按鈕、生成角色立繪按鈕與生成後圖片。
+- Vite dev server 已 proxy `/generated` 到 `http://localhost:3000`，讓 Step 2 與主畫面都能讀 `/generated/comfy/<filename>`。
+- App 端使用 generated character state，在開始冒險與每次 command response 後套用 metadata 到 `gameState.player`。
+- CharacterPanel 會優先顯示 `player.portraitUrl` 或 `player.portrait.imageUrl`，失敗時 fallback 到 AD placeholder。
 - ComfyUI 未啟動或產圖失敗不會影響文字 RPG 生成流程。

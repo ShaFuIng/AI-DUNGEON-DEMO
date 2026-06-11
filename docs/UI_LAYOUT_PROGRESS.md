@@ -226,4 +226,8 @@ schemas/generatedArea.schema.json
 - ComfyUI 已連線且角色預覽存在時，可按「生成角色立繪」。
 - 前端會把 `portraitPrompt.positive` / `portraitPrompt.negative` POST 到 `/api/image/character`，預設使用 `512x768`。
 - 成功後 Step 2 會顯示生成圖片，並把結果記錄在 `characterPreview.generatedPortrait`。
+- Vite dev server 已 proxy `/generated` 到後端，Step 2 可以讀取 `/generated/comfy/<filename>`。
+- 開始冒險後，App 會把 generated character metadata 套進 `gameState.player`，CharacterPanel 顯示 generated name/title/species/class 與 portrait。
+- `/api/game/command` 回傳新 state 後，前端會重新套用 metadata，讓 look / move 後角色立繪仍保留。
+- CharacterPanel 若沒有 portraitUrl 或圖片載入失敗，會 fallback 到原本 AD placeholder。
 - ComfyUI 未啟動或產圖失敗時不顯示全頁錯誤，不阻擋角色生成、冒險生成或開始冒險。

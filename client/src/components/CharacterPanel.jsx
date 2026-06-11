@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 function ResourceBar({ label, value = 0, max = 1, tone = "mp", slim = false }) {
   const percent = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
   const toneClass =
@@ -57,7 +59,11 @@ function StatCard({ label, value, muted = false }) {
 }
 
 function formatEffectiveStat(value, baseValue) {
-  if (!Number.isFinite(Number(value)) || !Number.isFinite(Number(baseValue)) || value === baseValue) {
+  if (
+    !Number.isFinite(Number(value)) ||
+    !Number.isFinite(Number(baseValue)) ||
+    value === baseValue
+  ) {
     return value ?? "-";
   }
 
@@ -70,16 +76,33 @@ export default function CharacterPanel({ player, flags, className = "" }) {
   const defense = player?.defense ?? 2;
   const exp = player?.exp ?? 0;
   const nextExp = player?.nextExp ?? 100;
+  const name = player?.name || "冒險者";
+  const title = player?.title || "冒險者";
+  const species = player?.species || player?.race || "未知種族";
+  const classLabel = player?.className || player?.role || "冒險者";
+  const portraitUrl = player?.portraitUrl || player?.portrait?.imageUrl || "";
+  const [portraitFailed, setPortraitFailed] = useState(false);
+  const showPortrait = Boolean(portraitUrl) && !portraitFailed;
+
+  useEffect(() => {
+    setPortraitFailed(false);
+  }, [portraitUrl]);
 
   return (
     <aside
       className={`flex h-full min-h-[760px] flex-col overflow-hidden rounded-lg border border-white/15 bg-[radial-gradient(circle_at_50%_0%,rgba(245,158,11,0.10),transparent_34%),radial-gradient(circle_at_100%_30%,rgba(20,184,166,0.08),transparent_36%),linear-gradient(160deg,rgba(27,30,36,0.96),rgba(14,16,20,0.98))] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.035),0_18px_45px_rgba(0,0,0,0.48)] backdrop-blur sm:p-5 ${className}`}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-baseline gap-3">
-          <h2 className="shrink-0 text-2xl font-semibold text-white">探索者</h2>
-          <p className="shrink-0 text-2xl font-semibold text-stone-300">人類</p>
-          <p className="shrink-0 text-2xl font-semibold text-stone-300">冒險者</p>
+        <div className="min-w-0">
+          <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
+            <h2 className="min-w-0 truncate text-2xl font-semibold text-white">
+              {name}
+            </h2>
+            <p className="text-lg font-semibold text-amber-100/80">{title}</p>
+          </div>
+          <p className="mt-1 text-sm font-semibold text-stone-300">
+            {species} / {classLabel}
+          </p>
         </div>
         <span className="shrink-0 rounded-full border border-amber-200/30 bg-amber-300/10 px-3 py-1 font-mono text-xs font-semibold text-amber-100">
           Lv. {level}
@@ -88,15 +111,26 @@ export default function CharacterPanel({ player, flags, className = "" }) {
 
       <div className="mt-4 flex min-h-0 flex-1 items-start justify-center">
         <div className="relative aspect-[3/5] max-h-[520px] w-full overflow-hidden rounded-xl border border-amber-200/25 bg-[radial-gradient(circle_at_50%_18%,rgba(245,158,11,0.28),transparent_34%),linear-gradient(160deg,rgba(245,158,11,0.14),rgba(20,184,166,0.18))] p-4">
-          <div className="absolute inset-x-10 bottom-0 h-56 rounded-t-full border border-white/10 bg-black/25" />
-          <div className="absolute inset-x-16 bottom-12 h-36 rounded-t-full bg-amber-100/10 blur-sm" />
+          {showPortrait ? (
+            <img
+              src={portraitUrl}
+              alt={`${name} portrait`}
+              className="absolute inset-0 h-full w-full object-cover"
+              onError={() => setPortraitFailed(true)}
+            />
+          ) : (
+            <>
+              <div className="absolute inset-x-10 bottom-0 h-56 rounded-t-full border border-white/10 bg-black/25" />
+              <div className="absolute inset-x-16 bottom-12 h-36 rounded-t-full bg-amber-100/10 blur-sm" />
 
-          <div className="relative z-10 flex h-full flex-col items-center justify-center text-center">
-            <span className="text-8xl font-black tracking-tight text-white/90">AD</span>
-            <span className="mt-4 font-mono text-[11px] uppercase tracking-[0.24em] text-amber-100/70">
-              Adventurer
-            </span>
-          </div>
+              <div className="relative z-10 flex h-full flex-col items-center justify-center text-center">
+                <span className="text-8xl font-black tracking-tight text-white/90">AD</span>
+                <span className="mt-4 font-mono text-[11px] uppercase tracking-[0.24em] text-amber-100/70">
+                  Adventurer
+                </span>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

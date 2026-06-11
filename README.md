@@ -27,7 +27,7 @@ npm run client:dev
 ```
 前端預設：`http://localhost:5173`
 
-Vite proxy：`/api -> http://localhost:3000`
+Vite proxy：`/api -> http://localhost:3000`，`/generated -> http://localhost:3000`
 
 如果看到 `http proxy error: /api/state ECONNREFUSED`，代表後端沒有啟動，或 Vite proxy target 的 port 與 `server.js` 實際 port 不一致。
 
@@ -222,6 +222,9 @@ COMFYUI_BASE_URL=http://127.0.0.1:8188
 - workflow 會覆蓋 node id：`26:24` positive、`25:24` negative、`13` width/height、`3` seed、`9` filename prefix
 - 後端會呼叫 ComfyUI `/prompt`，poll `/history/{promptId}`，再透過 `/view` 取回圖片並存到 `public/generated/comfy/`
 - 成功時 API 回傳 `imageUrl`，例如 `/generated/comfy/character_portrait_xxx.png`
+- Vite dev server 已 proxy `/generated -> http://localhost:3000`，所以 `http://localhost:5173/generated/comfy/<filename>` 可以讀到後端產出的圖片
+- Step 2 生成的角色 metadata 會在開始冒險時套到前端 `gameState.player`，CharacterPanel 會顯示 generated character 的 name/title/species/class 與 portrait
+- `/api/game/command` 回傳新 state 後，前端會重新套用 generated character metadata，避免 look / move 後立繪或名字消失
 - ComfyUI 未啟動時仍不會影響文字 RPG 生成流程、Default Demo Mode 或 Generated Adventure Mode
 
 ## Content Designer Agent 安全邊界

@@ -160,6 +160,40 @@ function blurActiveElement() {
   }
 }
 
+function applyCharacterMetadata(state, character) {
+  if (!state?.player || !character) {
+    return state;
+  }
+
+  return {
+    ...state,
+    player: {
+      ...state.player,
+      name: character.name || state.player.name || "冒險者",
+      title: character.title || state.player.title || "冒險者",
+      summary: character.summary || state.player.summary || "",
+      species:
+        character.species ||
+        character.race ||
+        state.player.species ||
+        state.player.race ||
+        "未知種族",
+      className:
+        character.className ||
+        character.role ||
+        state.player.className ||
+        state.player.role ||
+        "冒險者",
+      portraitUrl:
+        character.generatedPortrait?.imageUrl ||
+        state.player.portraitUrl ||
+        "",
+      portrait: character.generatedPortrait || state.player.portrait || null,
+      appearance: character.appearance || state.player.appearance || null,
+    },
+  };
+}
+
 function VictoryModal({ open, player, flags, onReset, onStay }) {
   if (!open) return null;
 
@@ -213,6 +247,7 @@ export default function App() {
   const [setupComplete, setSetupComplete] = useState(false);
   const [gameState, setGameState] = useState(null);
   const [gameData, setGameData] = useState(null);
+  const [generatedCharacter, setGeneratedCharacter] = useState(null);
   const [storyLines, setStoryLines] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -303,6 +338,7 @@ export default function App() {
         dataResponse.json(),
       ]);
 
+      setGeneratedCharacter(null);
       setGameState(state);
       setGameData(data);
       setSetupComplete(true);
@@ -335,12 +371,16 @@ export default function App() {
         throw new Error(data?.message || "generation_failed");
       }
 
-      setGameState(data.state);
+      const nextCharacter = payload?.confirmedCharacter || null;
+      const nextState = applyCharacterMetadata(data.state, nextCharacter);
+
+      setGeneratedCharacter(nextCharacter);
+      setGameState(nextState);
       setGameData(data.gameData);
       setSetupComplete(true);
       setStoryLines([
         createStoryLine("system", data.generationSummary || "新冒險已生成。"),
-        createStoryLine("story", data.state?.currentRoom?.description || "新的冒險開始了。"),
+        createStoryLine("story", nextState?.currentRoom?.description || "新的冒險開始了。"),
       ]);
     } catch (generateError) {
       setError("冒險生成失敗，請調整 prompt 或使用預設 Demo。");
@@ -349,14 +389,17 @@ export default function App() {
     }
   }
 
-  function handleStartGeneratedAdventure({ state, gameData, generationSummary }) {
+  function handleStartGeneratedAdventure({ state, gameData, generationSummary, character }) {
+    const nextState = applyCharacterMetadata(state, character);
+
     setError("");
-    setGameState(state);
+    setGeneratedCharacter(character || null);
+    setGameState(nextState);
     setGameData(gameData);
     setSetupComplete(true);
     setStoryLines([
       createStoryLine("system", generationSummary || "冒險預覽已套用，新的冒險開始。"),
-      createStoryLine("story", state?.currentRoom?.description || "新的冒險開始了。"),
+      createStoryLine("story", nextState?.currentRoom?.description || "新的冒險開始了。"),
     ]);
   }
 
@@ -433,7 +476,9 @@ export default function App() {
       const nextStoryText =
         data.narration || data.eventResult?.message || "指令已處理。";
 
-      setGameState(data.state);
+      const nextState = applyCharacterMetadata(data.state, generatedCharacter);
+
+      setGameState(nextState);
       setStoryLines((lines) => [
         ...lines,
         createStoryLine(
@@ -452,14 +497,14 @@ export default function App() {
         return;
       }
 
-      const encounteredEnemy = normalizeEnemy(data.state?.currentRoom?.monster);
+      const encounteredEnemy = normalizeEnemy(nextState?.currentRoom?.monster);
 
-      if (data.state?.mode === "battle") {
+      if (nextState?.mode === "battle") {
         setEncounterOpen(false);
         setPendingEncounterEnemy(null);
         setPendingEncounterType("normal");
         setDismissedBossEncounterId(null);
-        setLastEncounterMonsterId(data.state.activeMonsterId || encounteredEnemy?.id || null);
+        setLastEncounterMonsterId(nextState.activeMonsterId || encounteredEnemy?.id || null);
         return;
       }
 
@@ -474,11 +519,11 @@ export default function App() {
 
       if (
         encounteredEnemy &&
-        data.state?.mode === "explore" &&
+        nextState?.mode === "explore" &&
         !encounterOpen &&
         encounteredEnemy.id !== lastEncounterMonsterId
       ) {
-        const opened = openEncounterForEnemy(encounteredEnemy, data.state);
+        const opened = openEncounterForEnemy(encounteredEnemy, nextState);
         if (opened) {
           setLastEncounterMonsterId(encounteredEnemy.id);
         }
@@ -546,7 +591,7 @@ export default function App() {
       const retreatText =
         data.narration || data.eventResult?.message || "你暫時撤離了核心密室。";
 
-      setGameState(data.state);
+      setGameState(applyCharacterMetadata(data.state, generatedCharacter));
       setStoryLines((lines) => [
         ...lines,
         createStoryLine("story", retreatText),

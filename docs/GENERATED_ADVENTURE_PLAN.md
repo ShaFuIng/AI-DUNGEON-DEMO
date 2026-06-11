@@ -301,4 +301,8 @@ The runtime JSON parser is centralized in `AI/utils/parseGeneratedJson.js`; inva
 - workflow node 對應：`26:24` positive、`25:24` negative、`13` width/height、`3` seed、`9` filename prefix。
 - 後端會呼叫 ComfyUI `/prompt`、poll `/history/{promptId}` 最多 60 秒，然後從 SaveImage output 取得圖片。
 - 圖片會透過 ComfyUI `/view` 下載到 `public/generated/comfy/`，前端使用 `/generated/comfy/<filename>` 顯示。
+- Vite dev server proxy 新增 `/generated -> http://localhost:3000`，開發模式可直接載入後端產出的圖片。
+- Step 2 的 `characterPreview.generatedPortrait` 會在開始冒險時傳給 App。
+- App 會將 generated character metadata 合併到 `gameState.player`：`name`、`title`、`species`、`className`、`portraitUrl`、`portrait`、`appearance`。
+- 每次 `/api/game/command` 回傳新 state 後，App 會重新套用 generated character metadata，避免主畫面角色資訊被後端 public state 覆蓋。
 - ComfyUI 未啟動或產圖失敗不會影響角色預覽、冒險預覽、開始冒險或文字 RPG command flow。
