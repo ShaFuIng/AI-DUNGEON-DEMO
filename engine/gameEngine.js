@@ -322,6 +322,10 @@ function getPublicItemInfo(itemId) {
     unlocks: item.unlocks || [],
     slot: item.slot || null,
     stats: item.stats || null,
+    sourceType: item.sourceType || null,
+    rarity: item.rarity || null,
+    flavorText: item.flavorText || "",
+    imagePrompt: item.imagePrompt || "",
   };
 }
 
@@ -870,8 +874,12 @@ function getUsefulInventoryItemIds(gameState, room = getCurrentRoom(gameState)) 
       return true;
     }
 
+    if (findChallengeUseTarget(gameState, room, item)) {
+      return true;
+    }
+
     if (item.type === "key") {
-      return Boolean(findKeyUnlockTarget(gameState, room, item) || findChallengeUseTarget(gameState, room, item));
+      return Boolean(findKeyUnlockTarget(gameState, room, item));
     }
 
     if (item.type === "quest") {
@@ -993,7 +1001,7 @@ function handleMove(gameState, direction) {
   }
 
   const unresolvedChallenge = room.challenge && !isChallengeResolved(gameState, room) ? room.challenge : null;
-  if (unresolvedChallenge?.type === "locked_door") {
+  if (unresolvedChallenge && challengeBlocksExit(unresolvedChallenge)) {
     return createEventResult(
       "challenge_blocks_exit",
       `${unresolvedChallenge.description} ${unresolvedChallenge.solutionHint || "先解開這個挑戰再繼續前進。"}`
@@ -1381,6 +1389,14 @@ function handleUseChallengeItem(gameState, item) {
   const challengeTarget = findChallengeUseTarget(gameState, room, item);
 
   if (!challengeTarget) {
+    const unresolvedChallenge = room.challenge && !isChallengeResolved(gameState, room) ? room.challenge : null;
+    if (unresolvedChallenge?.requiredItemId && ["key", "material", "quest"].includes(item.type)) {
+      const requiredItem = gameData.items[unresolvedChallenge.requiredItemId];
+      return createEventResult(
+        "challenge_wrong_item",
+        `${item.name} 無法處理這個挑戰。你可能需要 ${requiredItem?.name || unresolvedChallenge.requiredItemId}。`
+      );
+    }
     return null;
   }
 
@@ -1397,12 +1413,41 @@ function handleUseChallengeItem(gameState, item) {
     }
   }
 
+  applyChallengeUnlocks(room, challengeTarget);
+
   addLog(gameState, `你解開了 ${room.name} 的挑戰`);
+  const rewardText = (challengeTarget.rewardItemIds || [])
+    .filter((rewardItemId) => gameData.items[rewardItemId])
+    .map((rewardItemId) => gameData.items[rewardItemId].name)
+    .join("、");
 
   return createEventResult(
     "challenge_resolved",
-    `你使用 ${item.name} 解開了眼前的挑戰。${challengeTarget.solutionHint || ""}`
+    `你使用 ${item.name} 解開了眼前的挑戰。${challengeTarget.solutionHint || ""}${rewardText ? ` 新的獎勵出現了：${rewardText}。` : ""}`
   );
+}
+
+function applyChallengeUnlocks(room, challenge) {
+  if (challenge.unlocksExit?.direction && challenge.unlocksExit?.roomId && gameData.rooms[challenge.unlocksExit.roomId]) {
+    room.exits = room.exits || {};
+    room.exits[challenge.unlocksExit.direction] = challenge.unlocksExit.roomId;
+  }
+
+  if (challenge.unlocksRoom && gameData.rooms[challenge.unlocksRoom]) {
+    const direction = findFreeExitDirection(room);
+    if (direction) {
+      room.exits = room.exits || {};
+      room.exits[direction] = challenge.unlocksRoom;
+    }
+  }
+}
+
+function findFreeExitDirection(room) {
+  return ["north", "east", "south", "west"].find((direction) => !room.exits?.[direction]);
+}
+
+function challengeBlocksExit(challenge) {
+  return ["locked_door", "mechanism", "trap", "sealed_chest"].includes(challenge.type);
 }
 
 function equipItem(gameState, itemId) {

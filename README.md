@@ -78,7 +78,9 @@ raw Gemini JSON -> parse -> normalizeRuntimeGameData -> balanceRuntimeAdventure 
 
 因此即使 Gemini 把 `items` / `monsters` / `skills` 產成 array，也會先轉成 engine 需要的 object map；若仍無法修正，才會回傳 422 與 validation details。
 
-`balanceRuntimeAdventure` 會補強可玩性：room.kind、challenge、補血道具、裝備、Boss 房勝利物品、普通怪 / Boss 數值平衡、mirrored exits，以及 unreachable room 修復。`use <equipment_id>` 已可裝備 weapon / armor / accessory，戰鬥會使用 effective attack / defense / maxHp / maxMp。
+JSON parse 現在統一走 `AI/utils/parseGeneratedJson.js`。它會先抽出 JSON object，直接 `JSON.parse`，若遇到 Gemini 常見的非法跳脫字元（例如 `\_`、`\(`、`\龍`）會只把非法反斜線補成合法字面反斜線後再 parse；仍失敗時，server 會回傳短版 details，terminal 會顯示階段、parse error 與錯誤位置附近 context，不會印 API key。
+
+`balanceRuntimeAdventure` 會補強可玩性：room.kind、item-based challenge、補血道具、Boss 前裝備、Boss 房勝利物品、普通怪 / Boss 數值平衡、mirrored exits，以及 unreachable room 修復。Runtime challenge 不再使用文字謎題；支援 `item_puzzle`、`locked_door`、`mechanism`、`trap`、`sealed_chest`，validator 會拒絕 `riddle` / `text_answer` / `answer_riddle` / `guess` 類型，並檢查 required item 是否存在且可在挑戰前取得。`use <equipment_id>` 已可裝備 weapon / armor / accessory，戰鬥會使用 effective attack / defense / maxHp / maxMp；`use <required_item_id>` 會解開目前房間的道具挑戰。
 
 Boss retreat 已改為 runtime 判斷，不再只綁定 `boss_room` / `ruin_guardian`；generated adventure 會使用 `room.kind = "boss"` 與 `previousRoomId` 退回上一個房間。
 
@@ -97,6 +99,13 @@ node AI/contentDesigner.js --provider raw-mock --write --validate
 node AI/contentDesigner.js --provider gemini --theme "冰封遺跡" --difficulty 5 --room-count 4
 node AI/contentDesigner.js --provider gemini --theme "冰封遺跡" --difficulty 5 --room-count 4 --write --validate
 ```
+
+## Generated JSON parse sample
+```bash
+npm run test:parse-json
+```
+
+這個 script 會讀取 `AI/samples/badEscapedJson.sample.txt`，確認 `parseGeneratedJson` 能修復非法 JSON escape。
 
 ## Patch suggestion 指令
 ```bash

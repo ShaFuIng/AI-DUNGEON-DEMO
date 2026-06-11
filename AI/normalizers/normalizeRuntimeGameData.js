@@ -1,4 +1,10 @@
 const DEFAULT_DIRECTIONS = ["north", "east", "south", "west"];
+const ROOM_KINDS = ["start", "combat", "puzzle", "treasure", "rest", "key", "boss", "lore"];
+const ITEM_TYPES = ["key", "consumable", "equipment", "quest", "material"];
+const CHALLENGE_TYPES = ["item_puzzle", "locked_door", "mechanism", "trap", "sealed_chest"];
+const FORBIDDEN_TEXT_CHALLENGE_TYPES = ["riddle", "answer_riddle", "text_answer", "guess", "answer", "solve", "say"];
+const SOURCE_TYPES = ["direct_pickup", "puzzle_reward", "monster_drop", "sealed_chest", "boss_reward"];
+const RARITIES = ["common", "uncommon", "rare"];
 
 function normalizeRuntimeGameData(rawGameData = {}) {
   const gameData = cloneObject(rawGameData);
@@ -10,7 +16,7 @@ function normalizeRuntimeGameData(rawGameData = {}) {
         ...room,
         id: toSnakeCaseId(room.id || roomId || room.name, `room_${index + 1}`),
         name: room.name || `房間 ${index + 1}`,
-        description: room.description || "這裡還沒有明確描述。",
+        description: room.description || "這裡還需要更多描述。",
         kind: normalizeRoomKind(room.kind, index),
         ascii: room.ascii || "",
         exits: normalizeExits(room.exits),
@@ -51,7 +57,11 @@ function normalizeItems(rawItems) {
         name: item.name || `道具 ${index + 1}`,
         description: item.description || item.usageHint || "這個道具還沒有詳細說明。",
         type,
-        usageHint: item.usageHint || item.description || "可在合適時機使用。",
+        usageHint: item.usageHint || item.description || `使用 use ${id}。`,
+        sourceType: normalizeSourceType(item.sourceType, type),
+        rarity: normalizeRarity(item.rarity, type),
+        flavorText: item.flavorText || item.description || "它看起來與這段冒險有關。",
+        imagePrompt: item.imagePrompt || `fantasy RPG ${item.name || id} item icon, clear readable design`,
       };
 
       if (type === "consumable") {
@@ -89,7 +99,7 @@ function normalizeMonsters(rawMonsters) {
           defense: nonNegativeNumber(monster.defense, index === entries.length - 1 ? 2 : 1),
           expReward: nonNegativeNumber(monster.expReward ?? monster.exp, 10 + index * 10),
           drops: Array.isArray(monster.drops) ? monster.drops : [],
-          description: monster.description || "一個阻擋去路的敵人。",
+          description: monster.description || "一名阻擋去路的敵人。",
         },
       ];
     })
@@ -104,10 +114,7 @@ function normalizeSkills(rawSkills) {
       const id = toSnakeCaseId(skill.id || key || skill.name, `skill_${index + 1}`);
       const mpCost = nonNegativeNumber(skill.mpCost ?? skill.cost, index === 0 ? 0 : index + 2);
       const role = normalizeSkillRole(skill.role, index);
-      const damage = nonNegativeNumber(
-        skill.damage,
-        role === "defense" || role === "utility" ? 0 : 8 + index * 4
-      );
+      const damage = nonNegativeNumber(skill.damage, role === "defense" || role === "utility" ? 0 : 8 + index * 4);
 
       return [
         id,
@@ -119,6 +126,7 @@ function normalizeSkills(rawSkills) {
           damage,
           role,
           description: skill.description || "這個技能還沒有詳細說明。",
+          flavorText: skill.flavorText || skill.description || "",
         },
       ];
     })
@@ -127,12 +135,8 @@ function normalizeSkills(rawSkills) {
 
 function normalizePlayer(rawPlayer = {}, skills = {}) {
   const skillIds = Object.keys(skills);
-  const requestedSkills = Array.isArray(rawPlayer.skills)
-    ? rawPlayer.skills
-    : Object.values(rawPlayer.skills || {});
-  const normalizedSkills = requestedSkills
-    .map((skill) => matchEntityId(skill, skills))
-    .filter(Boolean);
+  const requestedSkills = Array.isArray(rawPlayer.skills) ? rawPlayer.skills : Object.values(rawPlayer.skills || {});
+  const normalizedSkills = requestedSkills.map((skill) => matchEntityId(skill, skills)).filter(Boolean);
 
   return {
     ...rawPlayer,
@@ -153,9 +157,7 @@ function normalizeRoomReferences(gameData) {
 
   for (const room of Object.values(gameData.rooms)) {
     const rawItems = Array.isArray(room.items) ? room.items : Object.values(room.items || {});
-    room.items = rawItems
-      .map((item) => matchEntityId(item, gameData.items, itemIdMap))
-      .filter(Boolean);
+    room.items = rawItems.map((item) => matchEntityId(item, gameData.items, itemIdMap)).filter(Boolean);
 
     if (room.monster === null || room.monster === undefined || room.monster === "") {
       room.monster = null;
@@ -167,18 +169,24 @@ function normalizeRoomReferences(gameData) {
 
 function normalizeChallengeReferences(gameData) {
   const itemIdMap = buildNameMap(gameData.items);
+  const roomIdMap = buildNameMap(gameData.rooms);
 
   for (const room of Object.values(gameData.rooms || {})) {
     if (!room.challenge) continue;
 
-    room.challenge.requiredItemId = matchEntityId(
-      room.challenge.requiredItemId,
-      gameData.items,
-      itemIdMap
-    );
+    room.challenge.requiredItemId = matchEntityId(room.challenge.requiredItemId, gameData.items, itemIdMap);
     room.challenge.rewardItemIds = (room.challenge.rewardItemIds || [])
       .map((itemId) => matchEntityId(itemId, gameData.items, itemIdMap))
       .filter(Boolean);
+
+    if (room.challenge.unlocksExit) {
+      room.challenge.unlocksExit.roomId = matchEntityId(room.challenge.unlocksExit.roomId, gameData.rooms, roomIdMap);
+      if (!room.challenge.unlocksExit.roomId) room.challenge.unlocksExit = null;
+    }
+
+    if (room.challenge.unlocksRoom) {
+      room.challenge.unlocksRoom = matchEntityId(room.challenge.unlocksRoom, gameData.rooms, roomIdMap);
+    }
   }
 }
 
@@ -200,9 +208,7 @@ function normalizeWinCondition(gameData) {
   winCondition.returnRoomId =
     rooms[winCondition.returnRoomId] ? winCondition.returnRoomId : gameData.initialRoomId || Object.keys(rooms)[0];
 
-  const guardingRoom = Object.values(rooms).find((room) =>
-    (room.items || []).includes(winCondition.requiredItemId)
-  );
+  const guardingRoom = Object.values(rooms).find((room) => (room.items || []).includes(winCondition.requiredItemId));
   if (winCondition.requiredBossDefeated && guardingRoom && !guardingRoom.monster) {
     guardingRoom.monster = Object.keys(gameData.monsters || {}).at(-1) || null;
   }
@@ -228,10 +234,7 @@ function normalizeObject(value) {
 }
 
 function normalizeExits(exits) {
-  if (!exits || typeof exits !== "object" || Array.isArray(exits)) {
-    return {};
-  }
-
+  if (!exits || typeof exits !== "object" || Array.isArray(exits)) return {};
   return Object.fromEntries(
     Object.entries(exits)
       .filter(([direction]) => DEFAULT_DIRECTIONS.includes(direction))
@@ -269,10 +272,7 @@ function buildNameMap(map) {
 
 function matchEntityId(value, map, nameMap = buildNameMap(map)) {
   if (!value) return null;
-
-  if (typeof value === "object") {
-    return matchEntityId(value.id || value.name, map, nameMap);
-  }
+  if (typeof value === "object") return matchEntityId(value.id || value.name, map, nameMap);
 
   const rawId = String(value);
   const normalizedId = toSnakeCaseId(rawId, rawId);
@@ -286,46 +286,63 @@ function findItemByType(items, type) {
 function normalizeItemType(type) {
   const normalized = String(type || "material").toLowerCase();
   if (normalized === "quest_item") return "quest";
-  if (["key", "consumable", "equipment", "quest", "material"].includes(normalized)) {
-    return normalized;
-  }
-  return "material";
+  return ITEM_TYPES.includes(normalized) ? normalized : "material";
 }
 
 function normalizeRoomKind(kind, index) {
   const normalized = String(kind || "").toLowerCase();
-  const allowed = ["start", "combat", "puzzle", "treasure", "rest", "key", "boss", "lore"];
-
-  if (allowed.includes(normalized)) {
-    return normalized;
-  }
-
+  if (ROOM_KINDS.includes(normalized)) return normalized;
   return index === 0 ? "start" : "lore";
 }
 
 function normalizeChallengeShape(challenge) {
-  if (!challenge || typeof challenge !== "object" || Array.isArray(challenge)) {
-    return null;
-  }
-
-  const type = String(challenge.type || "puzzle").toLowerCase();
+  if (!challenge || typeof challenge !== "object" || Array.isArray(challenge)) return null;
 
   return {
-    type: ["puzzle", "locked_door", "trap", "riddle"].includes(type) ? type : "puzzle",
-    description: challenge.description || "這裡有一個尚未解開的機關。",
+    type: normalizeChallengeType(challenge.type),
+    description: challenge.description || "這裡有一道需要使用道具才能處理的障礙。",
     requiredItemId: challenge.requiredItemId || null,
-    solutionHint: challenge.solutionHint || "仔細觀察並嘗試使用合適的物品。",
+    solutionHint: challenge.solutionHint || "觀察周遭，找出能用在這裡的道具。",
     rewardItemIds: Array.isArray(challenge.rewardItemIds) ? challenge.rewardItemIds : [],
+    unlocksExit: normalizeUnlocksExit(challenge.unlocksExit),
+    unlocksRoom: challenge.unlocksRoom || null,
   };
+}
+
+function normalizeChallengeType(type) {
+  const normalized = String(type || "item_puzzle").toLowerCase();
+  if (normalized === "puzzle" || FORBIDDEN_TEXT_CHALLENGE_TYPES.includes(normalized)) {
+    return "item_puzzle";
+  }
+  return CHALLENGE_TYPES.includes(normalized) ? normalized : "item_puzzle";
+}
+
+function normalizeUnlocksExit(unlocksExit) {
+  if (!unlocksExit || typeof unlocksExit !== "object" || Array.isArray(unlocksExit)) return null;
+
+  const direction = String(unlocksExit.direction || "").toLowerCase();
+  const roomId = unlocksExit.roomId || unlocksExit.toRoomId || unlocksExit.targetRoomId;
+  if (!DEFAULT_DIRECTIONS.includes(direction) || !roomId) return null;
+  return { direction, roomId: String(roomId) };
+}
+
+function normalizeSourceType(sourceType, itemType = "material") {
+  const normalized = String(sourceType || "").toLowerCase();
+  if (SOURCE_TYPES.includes(normalized)) return normalized;
+  if (itemType === "quest") return "boss_reward";
+  return "direct_pickup";
+}
+
+function normalizeRarity(rarity, itemType = "material") {
+  const normalized = String(rarity || "").toLowerCase();
+  if (RARITIES.includes(normalized)) return normalized;
+  if (itemType === "quest" || itemType === "equipment") return "uncommon";
+  return "common";
 }
 
 function normalizeEquipmentSlot(slot, index) {
   const normalized = String(slot || "").toLowerCase();
-
-  if (["weapon", "armor", "accessory"].includes(normalized)) {
-    return normalized;
-  }
-
+  if (["weapon", "armor", "accessory"].includes(normalized)) return normalized;
   return index % 3 === 0 ? "weapon" : index % 3 === 1 ? "armor" : "accessory";
 }
 
@@ -338,10 +355,7 @@ function normalizeEquipmentStats(stats, slot) {
     if (value > 0) result[stat] = value;
   }
 
-  if (Object.keys(result).length > 0) {
-    return result;
-  }
-
+  if (Object.keys(result).length > 0) return result;
   if (slot === "weapon") return { attack: 2 };
   if (slot === "armor") return { defense: 1, maxHp: 4 };
   return { maxMp: 2 };
@@ -349,17 +363,13 @@ function normalizeEquipmentStats(stats, slot) {
 
 function normalizeSkillRole(role, index) {
   const normalized = String(role || "").toLowerCase();
-  if (["damage", "defense", "utility"].includes(normalized)) {
-    return normalized;
-  }
+  if (["damage", "defense", "utility"].includes(normalized)) return normalized;
   return index === 2 ? "defense" : "damage";
 }
 
 function normalizeHealingEffect(effect, item) {
   const hp = Number(effect?.hp ?? item.hp ?? item.heal ?? item.healing ?? item.effect_value);
-  return {
-    hp: Number.isFinite(hp) && hp > 0 ? hp : 10,
-  };
+  return { hp: Number.isFinite(hp) && hp > 0 ? hp : 10 };
 }
 
 function positiveNumber(value, fallback) {

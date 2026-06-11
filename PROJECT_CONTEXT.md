@@ -110,3 +110,14 @@
 - 房間道具拾取狀態已改由 `flags.collectedItems` 記錄，避免 consumable / key 使用後在原房間重生。
 - `status` / `help` / `/help` 會以系統資訊顯示，不再新增一般 `> command` 區塊。
 - 指令輸入列只會在送出指令後自動取回 focus；Floating Window 開關不會搶焦點，E / B / S 可連續按第二次關閉裝備、背包、技能視窗。
+# Runtime Generated JSON / Item Challenge Update
+- Gemini runtime JSON parsing is centralized in `AI/utils/parseGeneratedJson.js`.
+- The parser extracts plain JSON, fenced `json` blocks, or the first object found inside surrounding text.
+- If direct `JSON.parse` fails, invalid escape sequences are sanitized while legal JSON escapes stay intact.
+- Runtime adventure challenges are item-based only: `item_puzzle`, `locked_door`, `mechanism`, `trap`, `sealed_chest`.
+- Text-answer challenge types such as `riddle`, `answer_riddle`, `text_answer`, and `guess` are normalized away before validation and rejected if still present.
+- Balancer ensures each challenge `requiredItemId` exists and is obtainable before the challenge.
+- Validator reports missing required items, missing item sources, self-locked items, and missing challenge reward items.
+- Step 2 character preview now carries `starterEquipment`, trait objects, structured appearance, and portrait prompt text.
+- Step 3 adventure preview now includes required/reward item names and `itemChains`.
+- Starting Step 3 still uses the `/api/adventure/preview` state/gameData directly; it does not call `/api/adventure/generate`.

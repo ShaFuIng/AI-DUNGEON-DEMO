@@ -1,11 +1,21 @@
+const CHALLENGE_TYPES = ["item_puzzle", "locked_door", "mechanism", "trap", "sealed_chest"];
+const OPPOSITE_DIRECTIONS = {
+  north: "south",
+  south: "north",
+  east: "west",
+  west: "east",
+};
+
 function balanceRuntimeAdventure(gameData, input = {}) {
   const balanced = cloneObject(gameData);
   const difficulty = clamp(Number(input.difficulty) || 4, 1, 10);
 
   ensureRoomKinds(balanced);
+  ensureItemMetadata(balanced);
   ensureConsumables(balanced, difficulty);
   ensureEquipment(balanced, difficulty);
   ensureChallenge(balanced);
+  ensureChallengeItemsObtainable(balanced);
   ensureWinConditionPlacement(balanced);
   balanceSkills(balanced);
   balanceMonsterStats(balanced, difficulty);
@@ -30,16 +40,29 @@ function ensureRoomKinds(gameData) {
   });
 }
 
+function ensureItemMetadata(gameData) {
+  for (const item of Object.values(gameData.items || {})) {
+    item.sourceType = item.sourceType || defaultSourceType(item);
+    item.rarity = item.rarity || (item.type === "quest" || item.type === "equipment" ? "uncommon" : "common");
+    item.flavorText = item.flavorText || item.description || "這個物品與冒險的線索有所呼應。";
+    item.imagePrompt = item.imagePrompt || `fantasy RPG ${item.name || item.id} item icon, clear readable design`;
+  }
+}
+
 function ensureConsumables(gameData, difficulty) {
   const consumables = Object.values(gameData.items || {}).filter((item) => item.type === "consumable");
   if (consumables.length === 0) {
     gameData.items.healing_potion = {
       id: "healing_potion",
-      name: "療癒藥水",
-      description: "能在危急時恢復生命的小瓶藥水。",
+      name: "療傷藥水",
+      description: "一瓶溫熱的藥水，能在危急時恢復生命。",
       type: "consumable",
-      usageHint: "受傷時使用，可恢復 12 點 HP。",
+      usageHint: "use healing_potion 恢復 12 HP。",
       effect: { hp: 12 },
+      sourceType: "direct_pickup",
+      rarity: "common",
+      flavorText: "瓶身還殘留草藥的苦味。",
+      imagePrompt: "small red healing potion bottle, fantasy RPG item icon",
     };
     placeItemBeforeBoss(gameData, "healing_potion");
   }
@@ -47,11 +70,15 @@ function ensureConsumables(gameData, difficulty) {
   if (difficulty >= 4 && Object.values(gameData.items).filter((item) => item.type === "consumable").length < 2) {
     gameData.items.guardian_tonic = {
       id: "guardian_tonic",
-      name: "守護藥劑",
-      description: "能在 Boss 戰前提供額外喘息空間的補給。",
+      name: "守護者補劑",
+      description: "專為挑戰 Boss 前準備的補給。",
       type: "consumable",
-      usageHint: "HP 偏低時使用，可恢復 10 點 HP。",
+      usageHint: "use guardian_tonic 恢復 10 HP。",
       effect: { hp: 10 },
+      sourceType: "direct_pickup",
+      rarity: "common",
+      flavorText: "喝下去時像吞了一口暖光。",
+      imagePrompt: "amber fantasy tonic bottle, RPG item icon",
     };
     placeItemBeforeBoss(gameData, "guardian_tonic");
   }
@@ -59,37 +86,64 @@ function ensureConsumables(gameData, difficulty) {
 
 function ensureEquipment(gameData, difficulty) {
   const equipment = Object.values(gameData.items || {}).filter((item) => item.type === "equipment");
-  if (equipment.length > 0) return;
+  if (equipment.length > 0) {
+    equipment.forEach((item) => {
+      item.sourceType = item.sourceType || "direct_pickup";
+      item.rarity = item.rarity || "uncommon";
+    });
+    ensureEquipmentBeforeBoss(gameData);
+    return;
+  }
 
   const defensive = difficulty >= 5;
   const itemId = defensive ? "warded_armor" : "balanced_blade";
   gameData.items[itemId] = defensive
     ? {
         id: itemId,
-        name: "守紋護甲",
-        description: "刻著守護紋路的輕甲，能提高防禦與生命上限。",
+        name: "護符皮甲",
+        description: "鑲著簡易護符的皮甲，適合在 Boss 戰前穿上。",
         type: "equipment",
         slot: "armor",
         stats: { defense: 2, maxHp: 6 },
-        usageHint: "在 Boss 戰前裝備，能承受更多傷害。",
+        usageHint: "use warded_armor 裝備護甲。",
+        sourceType: "direct_pickup",
+        rarity: "uncommon",
+        flavorText: "縫線裡藏著微弱的守護咒。",
+        imagePrompt: "fantasy leather armor with small ward charms, RPG item icon",
       }
     : {
         id: itemId,
         name: "平衡短刃",
-        description: "重量適中的短刃，能提高穩定攻擊力。",
+        description: "重量剛好的短刃，能提高冒險者的輸出。",
         type: "equipment",
         slot: "weapon",
         stats: { attack: 2 },
-        usageHint: "裝備後可提高普通攻擊與技能傷害。",
+        usageHint: "use balanced_blade 裝備武器。",
+        sourceType: "direct_pickup",
+        rarity: "uncommon",
+        flavorText: "刀身沒有華麗裝飾，只有實用的鋒利。",
+        imagePrompt: "balanced fantasy short blade, RPG item icon",
       };
 
   placeItemBeforeBoss(gameData, itemId, ["treasure", "key", "rest"]);
 }
 
+function ensureEquipmentBeforeBoss(gameData) {
+  const bossRoom = findBossRoom(gameData);
+  const equipmentIds = Object.values(gameData.items || {}).filter((item) => item.type === "equipment").map((item) => item.id);
+  const placedBeforeBoss = Object.values(gameData.rooms || {}).some(
+    (room) => room.id !== bossRoom?.id && (room.items || []).some((itemId) => equipmentIds.includes(itemId))
+  );
+  if (!placedBeforeBoss && equipmentIds[0]) placeItemBeforeBoss(gameData, equipmentIds[0], ["treasure", "key", "rest", "start"]);
+}
+
 function ensureChallenge(gameData) {
   const rooms = Object.values(gameData.rooms || {});
   const hasChallenge = rooms.some((room) => room.challenge);
-  if (hasChallenge) return;
+  if (hasChallenge) {
+    for (const room of rooms) normalizeChallengeForItemPlay(gameData, room);
+    return;
+  }
 
   const targetRoom =
     rooms.find((room) => room.kind === "puzzle") ||
@@ -99,27 +153,112 @@ function ensureChallenge(gameData) {
 
   targetRoom.kind = "puzzle";
   targetRoom.challenge = {
-    type: "riddle",
-    description: "牆面上的符號需要一個能對應古老紋路的物品才能安定下來。",
+    type: "item_puzzle",
+    description: "牆面上有一處凹槽，形狀與某個古老信物相符。",
     requiredItemId: keyItemId,
-    solutionHint: `使用 ${gameData.items[keyItemId].name} 觀察符號的排列。`,
+    solutionHint: `使用 ${gameData.items[keyItemId].name} 可以啟動這裡的機關。`,
     rewardItemIds: [],
+    unlocksExit: null,
+    unlocksRoom: null,
   };
 
   placeItemBeforeRoom(gameData, keyItemId, targetRoom.id);
 }
 
+function normalizeChallengeForItemPlay(gameData, room) {
+  if (!room.challenge) return;
+  if (!CHALLENGE_TYPES.includes(room.challenge.type)) room.challenge.type = "item_puzzle";
+  if (!room.challenge.requiredItemId || !gameData.items?.[room.challenge.requiredItemId]) {
+    room.challenge.requiredItemId = ensureKeyItem(gameData);
+  }
+  room.challenge.rewardItemIds = Array.isArray(room.challenge.rewardItemIds) ? room.challenge.rewardItemIds : [];
+  room.challenge.solutionHint =
+    room.challenge.solutionHint || `使用 ${gameData.items[room.challenge.requiredItemId]?.name || room.challenge.requiredItemId} 處理這個障礙。`;
+}
+
+function ensureChallengeItemsObtainable(gameData) {
+  const rooms = Object.values(gameData.rooms || {});
+
+  for (const room of rooms) {
+    if (!room.challenge) continue;
+    normalizeChallengeForItemPlay(gameData, room);
+
+    const requiredItemId = room.challenge.requiredItemId;
+    const item = gameData.items?.[requiredItemId];
+    if (!item) continue;
+
+    const usefulSources = findItemSources(gameData, requiredItemId).filter((source) =>
+      isValidChallengeItemSource(gameData, source, room)
+    );
+
+    if (usefulSources.length === 0) {
+      item.sourceType = "direct_pickup";
+      placeItemBeforeRoom(gameData, requiredItemId, room.id);
+    }
+  }
+
+  for (const room of rooms) {
+    if (!room.challenge) continue;
+    for (const rewardItemId of room.challenge.rewardItemIds || []) {
+      if (gameData.items?.[rewardItemId]) {
+        gameData.items[rewardItemId].sourceType = room.challenge.type === "sealed_chest" ? "sealed_chest" : "puzzle_reward";
+      }
+    }
+  }
+}
+
+function findItemSources(gameData, itemId) {
+  const sources = [];
+
+  for (const room of Object.values(gameData.rooms || {})) {
+    if ((room.items || []).includes(itemId)) {
+      sources.push({ sourceType: "direct_pickup", roomId: room.id });
+    }
+    if (room.challenge?.rewardItemIds?.includes(itemId)) {
+      sources.push({ sourceType: "puzzle_reward", roomId: room.id, challengeId: `${room.id}:challenge` });
+    }
+  }
+
+  for (const room of Object.values(gameData.rooms || {})) {
+    const monster = gameData.monsters?.[room.monster];
+    if (monster?.drops?.includes(itemId)) {
+      sources.push({
+        sourceType: monster.isBoss || monster.role === "boss" || room.kind === "boss" ? "boss_reward" : "monster_drop",
+        roomId: room.id,
+        monsterId: monster.id,
+      });
+    }
+  }
+
+  return sources;
+}
+
+function isValidChallengeItemSource(gameData, source, challengeRoom) {
+  if (!source || source.roomId === challengeRoom.id) return false;
+  const sourceRoom = gameData.rooms?.[source.roomId];
+  if (!sourceRoom || sourceRoom.kind === "boss") return false;
+  if (source.challengeId === `${challengeRoom.id}:challenge`) return false;
+  return getRoomOrder(gameData, source.roomId) <= getRoomOrder(gameData, challengeRoom.id);
+}
+
 function ensureKeyItem(gameData) {
-  const keyItem = Object.values(gameData.items || {}).find((item) => item.type === "key");
-  if (keyItem) return keyItem.id;
+  const keyItem = Object.values(gameData.items || {}).find((item) => item.type === "key" || item.type === "material");
+  if (keyItem) {
+    keyItem.sourceType = keyItem.sourceType || "direct_pickup";
+    return keyItem.id;
+  }
 
   gameData.items.ancient_symbol = {
     id: "ancient_symbol",
-    name: "古代符記",
-    description: "一枚刻著古老符號的小石片，可與遺跡中的機關共鳴。",
+    name: "古老符記",
+    description: "一枚刻著淺淡紋路的符記，可以與遺跡中的機關呼應。",
     type: "key",
-    usageHint: "可用於解開符號、門鎖或謎題機關。",
+    usageHint: "use ancient_symbol 啟動相符的機關。",
     unlocks: [],
+    sourceType: "direct_pickup",
+    rarity: "common",
+    flavorText: "符記邊緣被磨得發亮，像是曾被反覆握緊。",
+    imagePrompt: "ancient stone symbol token, fantasy RPG item icon",
   };
 
   return "ancient_symbol";
@@ -138,10 +277,10 @@ function ensureWinConditionPlacement(gameData) {
   }
 
   bossRoom.kind = "boss";
+  bossRoom.items = bossRoom.items || [];
   if (!bossRoom.items.includes(requiredItemId)) bossRoom.items.push(requiredItemId);
-  if (!bossRoom.monster) {
-    bossRoom.monster = ensureBossMonster(gameData);
-  }
+  if (!bossRoom.monster) bossRoom.monster = ensureBossMonster(gameData);
+  if (gameData.items[requiredItemId]) gameData.items[requiredItemId].sourceType = "boss_reward";
   if (gameData.monsters[bossRoom.monster]) {
     gameData.monsters[bossRoom.monster].role = "boss";
     gameData.monsters[bossRoom.monster].isBoss = true;
@@ -196,6 +335,8 @@ function balanceMonsterStats(gameData, difficulty) {
       monster.attack = clamp(Math.round(playerMaxHp / (7 - Math.min(difficulty, 6) * 0.25)) - armorDefense, 4, Math.ceil(playerMaxHp / 5));
       monster.defense = Math.min(Number(monster.defense) || 2, 3);
       monster.expReward = Math.max(Number(monster.expReward) || 25, 25);
+      monster.role = "boss";
+      monster.isBoss = true;
     } else {
       monster.maxHp = clamp(Math.round(playerDpr * (2.5 + difficulty * 0.08)), playerDpr * 2, playerDpr * 4);
       monster.attack = clamp(Math.round(playerMaxHp / 8 + difficulty * 0.4), 3, Math.ceil(playerMaxHp / 5));
@@ -207,21 +348,33 @@ function balanceMonsterStats(gameData, difficulty) {
   }
 }
 
-function placeItemBeforeBoss(gameData, itemId, preferredKinds = ["rest", "treasure", "key", "lore"]) {
+function placeItemBeforeBoss(gameData, itemId, preferredKinds = ["rest", "treasure", "key", "lore", "start"]) {
   const bossRoom = findBossRoom(gameData);
   const rooms = Object.values(gameData.rooms || {});
   const room =
     rooms.find((candidate) => candidate.id !== bossRoom?.id && preferredKinds.includes(candidate.kind)) ||
     rooms.find((candidate) => candidate.id !== bossRoom?.id && candidate.id !== gameData.initialRoomId) ||
     rooms[0];
-  if (room && !room.items.includes(itemId)) room.items.push(itemId);
+  if (room) addRoomItem(room, itemId);
 }
 
 function placeItemBeforeRoom(gameData, itemId, targetRoomId) {
   const rooms = Object.values(gameData.rooms || {});
   const targetIndex = rooms.findIndex((room) => room.id === targetRoomId);
-  const room = rooms[Math.max(0, targetIndex - 1)] || rooms[0];
-  if (room && !room.items.includes(itemId)) room.items.push(itemId);
+  const candidates = rooms
+    .slice(0, Math.max(1, targetIndex))
+    .filter((room) => room.id !== targetRoomId && room.kind !== "boss");
+  const room = candidates.at(-1) || rooms.find((candidate) => candidate.id !== targetRoomId && candidate.kind !== "boss") || rooms[0];
+  if (room) addRoomItem(room, itemId);
+}
+
+function addRoomItem(room, itemId) {
+  room.items = room.items || [];
+  if (!room.items.includes(itemId)) room.items.push(itemId);
+}
+
+function getRoomOrder(gameData, roomId) {
+  return Object.keys(gameData.rooms || {}).indexOf(roomId);
 }
 
 function findBossRoom(gameData) {
@@ -250,7 +403,9 @@ function ensureBossMonster(gameData) {
     defense: 2,
     expReward: 25,
     drops: [],
-    description: "守護任務物品的最後敵人。",
+    description: "守在最深處的敵人，保護著完成任務所需的關鍵物品。",
+    role: "boss",
+    isBoss: true,
   };
   return "final_guardian";
 }
@@ -270,13 +425,6 @@ function getBestEquipmentBonus(gameData, stat) {
   );
 }
 
-const OPPOSITE_DIRECTIONS = {
-  north: "south",
-  south: "north",
-  east: "west",
-  west: "east",
-};
-
 function ensureMirroredExits(gameData) {
   const rooms = gameData.rooms || {};
 
@@ -286,13 +434,9 @@ function ensureMirroredExits(gameData) {
     for (const [direction, targetRoomId] of Object.entries(room.exits)) {
       const targetRoom = rooms[targetRoomId];
       const oppositeDirection = OPPOSITE_DIRECTIONS[direction];
-
-      if (!targetRoom || !oppositeDirection) {
-        continue;
-      }
+      if (!targetRoom || !oppositeDirection) continue;
 
       targetRoom.exits = targetRoom.exits || {};
-
       if (!targetRoom.exits[oppositeDirection]) {
         targetRoom.exits[oppositeDirection] = room.id;
       } else if (targetRoom.exits[oppositeDirection] !== room.id) {
@@ -307,10 +451,7 @@ function ensureMirroredExits(gameData) {
 function ensureReachability(gameData) {
   const rooms = gameData.rooms || {};
   const initialRoomId = gameData.initialRoomId || Object.keys(rooms)[0];
-
-  if (!initialRoomId || !rooms[initialRoomId]) {
-    return;
-  }
+  if (!initialRoomId || !rooms[initialRoomId]) return;
 
   let reachable = getReachableRoomIds(rooms, initialRoomId);
   let unreachable = Object.keys(rooms).filter((roomId) => !reachable.has(roomId));
@@ -318,7 +459,6 @@ function ensureReachability(gameData) {
   while (unreachable.length > 0) {
     const toRoom = rooms[unreachable[0]];
     const connection = findReachableConnection(rooms, reachable, toRoom);
-
     if (!toRoom || !connection) {
       console.warn(`Unable to connect unreachable room: ${unreachable[0]}`);
       break;
@@ -345,9 +485,7 @@ function getReachableRoomIds(rooms, initialRoomId) {
     visited.add(roomId);
 
     for (const targetRoomId of Object.values(rooms[roomId].exits || {})) {
-      if (rooms[targetRoomId] && !visited.has(targetRoomId)) {
-        queue.push(targetRoomId);
-      }
+      if (rooms[targetRoomId] && !visited.has(targetRoomId)) queue.push(targetRoomId);
     }
   }
 
@@ -371,14 +509,15 @@ function findReachableConnection(rooms, reachable, toRoom) {
   for (const roomId of reachable) {
     const fromRoom = rooms[roomId];
     if (!fromRoom) continue;
-
     const directionPair = findFreeDirectionPair(fromRoom, toRoom);
-    if (directionPair) {
-      return { fromRoom, directionPair };
-    }
+    if (directionPair) return { fromRoom, directionPair };
   }
-
   return null;
+}
+
+function defaultSourceType(item) {
+  if (item.type === "quest") return "boss_reward";
+  return "direct_pickup";
 }
 
 function clamp(value, min, max) {
@@ -391,4 +530,6 @@ function cloneObject(value) {
 
 module.exports = {
   balanceRuntimeAdventure,
+  findItemSources,
+  ensureChallengeItemsObtainable,
 };

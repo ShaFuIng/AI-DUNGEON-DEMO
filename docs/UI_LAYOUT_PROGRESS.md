@@ -210,3 +210,8 @@ schemas/generatedArea.schema.json
 - `status` / `help` / `/help` 以系統資訊呈現，不再顯示一般 `> command` 區塊。
 - 指令列送出後會自動 focus；E / B / S 可切換裝備、背包、技能視窗，Escape 優先關閉已開 Floating Window。
 - Recent Command Panel Refinement：後端 `help` / `/help` 只列目前狀態的重要操作指令；`status`、`help`、`/help`、`reset` 等 ESC 選單輔助指令不再出現在終端機 help 清單。`StoryCommandPanel` 補全候選由 `App.jsx` 依目前 `gameState` 產生，已拾取道具不再出現在 help / autocomplete 的 `take` 候選。指令列只會在送出指令後自動 focus，Floating Window 開關不會搶回輸入焦點，E / B / S 可連續按第二次關閉裝備、背包、技能視窗。
+## Adventure Setup Preview Refinement
+- Step 2 character preview now shows `title`, `personality`, starter equipment, structured appearance, and portrait prompt positive/negative text.
+- Step 3 adventure preview now shows richer room rows: monster, items, challenge type, required item, reward items, exits, and summary.
+- Step 3 sidebar includes player summary, content counts, and `itemChains` that connect required item source -> challenge room -> reward.
+- The start button still enters the adventure with the preview response `state` / `gameData`; it does not call `/api/adventure/generate`.

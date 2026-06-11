@@ -17,13 +17,16 @@ function normalizeCharacterPreview(rawCharacter = {}, input = {}) {
   const id = toSnakeCaseId(rawCharacter.id || rawCharacter.name || "adventurer", "adventurer");
   const attributes = rawCharacter.attributes || {};
   const skills = normalizeSkills(rawCharacter.skills);
-  const equipment = normalizeEquipment(rawCharacter.equipment);
+  const starterEquipment = normalizeEquipment(rawCharacter.starterEquipment || rawCharacter.equipment);
+  const portraitPrompt = normalizePortraitPrompt(rawCharacter.portraitPrompt, rawCharacter, input);
 
   return {
     id,
-    name: rawCharacter.name || "無名冒險者",
-    summary: rawCharacter.summary || "一位即將踏入未知地城的冒險者。",
-    background: rawCharacter.background || input.characterPrompt || "背景尚未揭露。",
+    name: rawCharacter.name || "未命名冒險者",
+    title: rawCharacter.title || "新手冒險者",
+    summary: rawCharacter.summary || "一位剛踏上旅途、仍在尋找自身命運的冒險者。",
+    background: rawCharacter.background || input.characterPrompt || "這名角色的過去仍籠罩在迷霧之中。",
+    personality: rawCharacter.personality || "謹慎、好奇，遇到危險時仍願意向前一步。",
     attributes: {
       maxHp: positiveNumber(attributes.maxHp ?? attributes.hp, 30),
       maxMp: positiveNumber(attributes.maxMp ?? attributes.mp, 12),
@@ -31,21 +34,45 @@ function normalizeCharacterPreview(rawCharacter = {}, input = {}) {
       defense: nonNegativeNumber(attributes.defense, 2),
     },
     skills,
-    equipment,
-    traits: Array.isArray(rawCharacter.traits) ? rawCharacter.traits.slice(0, 4) : [],
-    appearance: rawCharacter.appearance || "穿著實用旅行裝束，帶著準備探索的神情。",
-    imagePrompt:
-      rawCharacter.imagePrompt ||
-      `Traditional fantasy RPG character portrait, ${rawCharacter.name || "adventurer"}, ${input.genre || "dungeon adventure"}`,
+    starterEquipment,
+    equipment: starterEquipment,
+    traits: normalizeTraits(rawCharacter.traits),
+    appearance: normalizeAppearance(rawCharacter.appearance),
+    portraitPrompt,
+    imagePrompt: portraitPrompt.positive,
   };
 }
 
 function normalizeSkills(rawSkills) {
   const skills = Array.isArray(rawSkills) ? rawSkills : Object.values(rawSkills || {});
   const fallback = [
-    { id: "steady_strike", name: "穩定打擊", role: "damage", mpCost: 0, damage: 8, description: "不消耗 MP 的穩定攻擊。" },
-    { id: "signature_burst", name: "招牌爆發", role: "damage", mpCost: 4, damage: 14, description: "消耗 MP 造成強力傷害。" },
-    { id: "guard_focus", name: "守勢專注", role: "defense", mpCost: 2, damage: 0, description: "進入防禦狀態，降低下一次傷害。" },
+    {
+      id: "steady_strike",
+      name: "穩定一擊",
+      role: "damage",
+      mpCost: 0,
+      damage: 8,
+      description: "不消耗 MP 的可靠攻擊。",
+      flavorText: "每一次出手都像量過距離。",
+    },
+    {
+      id: "signature_burst",
+      name: "招牌爆發",
+      role: "damage",
+      mpCost: 4,
+      damage: 14,
+      description: "消耗 MP 對敵人造成較高傷害。",
+      flavorText: "把一路累積的意志凝成瞬間的鋒芒。",
+    },
+    {
+      id: "guard_focus",
+      name: "專注防禦",
+      role: "defense",
+      mpCost: 2,
+      damage: 0,
+      description: "進入防禦姿態，降低下一次受到的傷害。",
+      flavorText: "在呼吸之間找回重心。",
+    },
   ];
   const source = skills.length >= 3 ? skills : fallback;
 
@@ -56,6 +83,7 @@ function normalizeSkills(rawSkills) {
     mpCost: nonNegativeNumber(skill.mpCost ?? skill.cost, fallback[index].mpCost),
     damage: nonNegativeNumber(skill.damage, fallback[index].damage),
     description: skill.description || fallback[index].description,
+    flavorText: skill.flavorText || fallback[index].flavorText,
   }));
 }
 
@@ -66,24 +94,76 @@ function normalizeEquipment(rawEquipment) {
     : [
         {
           id: "starter_blade",
-          name: "旅人短刃",
+          name: "入門短刃",
           type: "equipment",
           slot: "weapon",
           stats: { attack: 1 },
-          description: "適合新手冒險者的短刃。",
-          usageHint: "冒險開始後可裝備。",
+          description: "一把保養得宜的短刃，足以支撐最初的探索。",
+          usageHint: "使用 use starter_blade 裝備。",
+          flavorText: "握柄上還留著前任持有者的刻痕。",
+          imagePrompt: "fantasy starter blade, worn leather grip, clean steel, game item icon",
         },
       ];
 
   return source.slice(0, 2).map((item, index) => ({
     id: toSnakeCaseId(item.id || item.name, `starter_equipment_${index + 1}`),
-    name: item.name || `初始裝備 ${index + 1}`,
+    name: item.name || `起始裝備 ${index + 1}`,
     type: "equipment",
     slot: ["weapon", "armor", "accessory"].includes(item.slot) ? item.slot : index === 0 ? "weapon" : "armor",
     stats: normalizeStats(item.stats, index),
-    description: item.description || "一件適合冒險初期使用的裝備。",
-    usageHint: item.usageHint || "冒險開始後可裝備。",
+    description: item.description || "一件能幫助角色撐過初期冒險的裝備。",
+    usageHint: item.usageHint || `使用 use ${toSnakeCaseId(item.id || item.name, `starter_equipment_${index + 1}`)} 裝備。`,
+    flavorText: item.flavorText || "這件裝備與角色的過去有一點微妙連結。",
+    imagePrompt: item.imagePrompt || `fantasy RPG ${item.name || "starter equipment"} item icon, clear readable design`,
   }));
+}
+
+function normalizeTraits(rawTraits) {
+  const traits = Array.isArray(rawTraits) ? rawTraits : Object.values(rawTraits || {});
+  const fallback = [
+    { id: "keeps_moving", name: "不輕言退", description: "面對未知時，會先觀察再前進。" },
+  ];
+  const source = traits.length ? traits : fallback;
+
+  return source.slice(0, 4).map((trait, index) => ({
+    id: toSnakeCaseId(trait.id || trait.name, `trait_${index + 1}`),
+    name: trait.name || fallback[0].name,
+    description: trait.description || trait.summary || fallback[0].description,
+  }));
+}
+
+function normalizeAppearance(rawAppearance) {
+  const appearance = rawAppearance && typeof rawAppearance === "object" && !Array.isArray(rawAppearance)
+    ? rawAppearance
+    : { signatureFeature: rawAppearance };
+
+  return {
+    genderPresentation: appearance.genderPresentation || "中性奇幻冒險者",
+    ageLook: appearance.ageLook || "青年",
+    bodyType: appearance.bodyType || "輕裝、行動敏捷",
+    hair: appearance.hair || "深色短髮",
+    eyes: appearance.eyes || "專注明亮的眼神",
+    outfit: appearance.outfit || "適合探索地下城的實用服裝",
+    signatureFeature: appearance.signatureFeature || "身上帶著與冒險主題相關的小飾物",
+    colorPalette: appearance.colorPalette || "深色皮革、暖金屬、低飽和布料",
+    mood: appearance.mood || "警覺但堅定",
+  };
+}
+
+function normalizePortraitPrompt(rawPrompt, rawCharacter, input) {
+  const prompt = rawPrompt && typeof rawPrompt === "object" && !Array.isArray(rawPrompt) ? rawPrompt : {};
+  const name = rawCharacter.name || "adventurer";
+  const positive =
+    prompt.positive ||
+    rawCharacter.imagePrompt ||
+    `Traditional fantasy RPG character portrait, ${name}, ${input.genre || "dungeon adventure"}, detailed outfit, expressive face`;
+
+  return {
+    positive,
+    negative: prompt.negative || "low quality, blurry, extra fingers, distorted face, unreadable text, watermark",
+    style: prompt.style || "fantasy RPG portrait, semi-realistic illustration",
+    aspectRatio: prompt.aspectRatio || "1:1",
+  };
 }
 
 function normalizeStats(stats, index) {

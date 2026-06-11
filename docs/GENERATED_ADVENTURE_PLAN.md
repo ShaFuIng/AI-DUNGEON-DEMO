@@ -163,7 +163,7 @@ raw Gemini JSON
 - 至少補齊 1 個 healing consumable。
 - 難度較高時補齊額外補給。
 - 至少補齊 1 個 equipment item，並放在 Boss 前可取得的位置。
-- 至少補齊 1 個 puzzle/riddle/locked_door challenge。
+- 至少補齊 1 個 item-based challenge，型別限 `item_puzzle` / `locked_door` / `mechanism` / `trap` / `sealed_chest`。
 - Boss room 會持有 quest item，且 requiredBossDefeated 固定為 true。
 - 普通怪與 Boss 數值會依玩家 stats、skills、equipment 做 deterministic balance。
 - exits 會補上 mirror，例如 `east` 對 `west`、`north` 對 `south`。
@@ -207,11 +207,13 @@ room 可包含：
 ```json
 {
   "challenge": {
-    "type": "puzzle",
+    "type": "item_puzzle",
     "description": "...",
     "requiredItemId": "ancient_symbol",
-    "solutionHint": "...",
-    "rewardItemIds": []
+    "solutionHint": "use ancient_symbol",
+    "rewardItemIds": [],
+    "unlocksExit": null,
+    "unlocksRoom": null
   }
 }
 ```
@@ -254,3 +256,31 @@ Boss 判斷不再只依賴 `boss_room` / `ruin_guardian`：
 
 - `AI/samples/runtimeAdventure.valid.json`
 - `AI/samples/runtimeAdventure.arrayInput.json`
+## Item-Based Challenge Update
+
+Runtime generated adventures now use item-based challenges only.
+
+Allowed challenge types:
+- `item_puzzle`
+- `locked_door`
+- `mechanism`
+- `trap`
+- `sealed_chest`
+
+Forbidden challenge types:
+- `riddle`
+- `answer_riddle`
+- `text_answer`
+- `guess`
+
+Every challenge must have `requiredItemId`, and that item must exist in `gameData.items`. The balancer tries to place missing required items before the challenge; the validator rejects outputs where the item has no source or is only available behind its own challenge.
+
+Runtime behavior:
+- `look` shows challenge description and `solutionHint`.
+- `help` suggests `use requiredItemId` when the player has the required item.
+- `use requiredItemId` resolves the challenge and records `gameState.flags.resolvedChallenges`.
+- Blocking challenge types prevent movement until resolved.
+
+`buildAdventurePreview(gameData)` returns `itemChains` so Step 3 can show how an item source leads to a challenge and optional reward.
+
+The runtime JSON parser is centralized in `AI/utils/parseGeneratedJson.js`; invalid Gemini escapes are sanitized only after the first `JSON.parse` fails.

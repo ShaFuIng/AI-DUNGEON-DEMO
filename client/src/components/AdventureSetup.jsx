@@ -5,7 +5,7 @@ const MODELS = [
   { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
 ];
 
-const GENRES = ["奇幻遺跡", "賽博龐克", "黑暗童話", "蒸氣龐克", "校園怪談", "太空歌劇"];
+const GENRES = ["奇幻地下城", "蒸氣龐克", "科幻遺跡", "東方玄幻", "暗黑童話", "校園異能"];
 const STEPS = [
   { id: "input", label: "冒險設定" },
   { id: "character", label: "角色預覽" },
@@ -50,11 +50,27 @@ function StepIndicator({ step }) {
   );
 }
 
+function AppearanceList({ appearance }) {
+  if (!appearance || typeof appearance !== "object") {
+    return <p className="mt-2 text-sm leading-6 text-teal-50/80">{appearance || "-"}</p>;
+  }
+
+  return (
+    <dl className="mt-2 space-y-2 text-xs leading-5 text-teal-50/80">
+      {Object.entries(appearance).map(([key, value]) => (
+        <div key={key}>
+          <dt className="font-mono uppercase text-teal-200/80">{key}</dt>
+          <dd>{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 export default function AdventureSetup({
   loading,
   error,
   onStartDemo,
-  onGenerate,
   onStartGeneratedAdventure,
 }) {
   const [step, setStep] = useState("input");
@@ -62,10 +78,10 @@ export default function AdventureSetup({
   const [model, setModel] = useState(MODELS[0].value);
   const [genre, setGenre] = useState(GENRES[0]);
   const [characterPrompt, setCharacterPrompt] = useState(
-    "一位背負龍印的年輕冒險者，擅長近戰，也能用記憶火花保護自己。"
+    "一位擅長觀察與使用道具的年輕冒險者，第一次進入古老遺跡。"
   );
   const [adventurePrompt, setAdventurePrompt] = useState(
-    "生成 5 個房間的短篇地下城：要有補血道具、關鍵任務物品、至少一個普通怪物、一個 Boss，以及能返回起點完成任務的勝利條件。"
+    "設計 5 個房間的短篇冒險，包含至少一個需要道具解開的機關、一件 Boss 前可取得的裝備，以及一名守護關鍵物品的 Boss。"
   );
   const [roomCount, setRoomCount] = useState(5);
   const [difficulty, setDifficulty] = useState(4);
@@ -112,8 +128,8 @@ export default function AdventureSetup({
       setCharacterPreview(data.character);
       setAdventurePreview(null);
       setStep("character");
-    } catch (previewFailed) {
-      setPreviewError("角色預覽生成失敗，請調整角色設定或稍後再試。");
+    } catch {
+      setPreviewError("角色預覽生成失敗，請調整角色描述或稍後再試。");
     } finally {
       setIsGeneratingCharacter(false);
     }
@@ -136,7 +152,7 @@ export default function AdventureSetup({
       if (!response.ok) throw new Error(data?.message || "adventure_preview_failed");
       setAdventurePreview(data);
       setStep("adventure");
-    } catch (previewFailed) {
+    } catch {
       setPreviewError("冒險預覽生成失敗，請調整冒險 Prompt 或稍後再試。");
     } finally {
       setIsGeneratingAdventure(false);
@@ -145,7 +161,7 @@ export default function AdventureSetup({
 
   function startGeneratedAdventure() {
     if (!adventurePreview?.state || !adventurePreview?.gameData) {
-      setPreviewError("尚未取得可開始的冒險資料，請先重新生成冒險預覽。");
+      setPreviewError("目前沒有可開始的冒險資料，請重新生成冒險預覽。");
       return;
     }
 
@@ -165,9 +181,7 @@ export default function AdventureSetup({
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-5 px-4 py-6 sm:px-6 lg:px-8">
         <header className="border-b border-white/10 pb-5">
           <p className="font-mono text-xs uppercase text-amber-300">Adventure Setup</p>
-          <h1 className="mt-2 text-3xl font-semibold text-white sm:text-4xl">
-            AI Dungeon Demo
-          </h1>
+          <h1 className="mt-2 text-3xl font-semibold text-white sm:text-4xl">AI Dungeon Demo</h1>
         </header>
 
         <StepIndicator step={step} />
@@ -190,11 +204,9 @@ export default function AdventureSetup({
                     value={apiKey}
                     onChange={handleApiKeyChange}
                     className="mt-2 h-11 w-full rounded-lg border border-white/10 bg-[#101216] px-3 text-sm text-white outline-none focus:border-amber-200/70"
-                    placeholder="貼上你的 Gemini API key"
+                    placeholder="貼上 Gemini API key"
                   />
-                  <span className="mt-1 block text-xs text-stone-500">
-                    只存在這台瀏覽器的 localStorage，不會寫入 repo。
-                  </span>
+                  <span className="mt-1 block text-xs text-stone-500">API key 只存在 localStorage 與單次 request body。</span>
                 </label>
 
                 <label>
@@ -204,7 +216,7 @@ export default function AdventureSetup({
                   </select>
                 </label>
                 <label>
-                  <span className="text-sm font-semibold text-stone-200">風格</span>
+                  <span className="text-sm font-semibold text-stone-200">類型</span>
                   <select value={genre} onChange={(event) => setGenre(event.target.value)} className="mt-2 h-11 w-full rounded-lg border border-white/10 bg-[#101216] px-3 text-sm text-white outline-none">
                     {GENRES.map((item) => <option key={item} value={item}>{item}</option>)}
                   </select>
@@ -218,7 +230,7 @@ export default function AdventureSetup({
                   <input type="number" min="1" max="10" value={difficulty} onChange={(event) => setDifficulty(event.target.value)} className="mt-2 h-11 w-full rounded-lg border border-white/10 bg-[#101216] px-3 text-sm text-white outline-none" />
                 </label>
                 <label className="sm:col-span-2">
-                  <span className="text-sm font-semibold text-stone-200">角色設定</span>
+                  <span className="text-sm font-semibold text-stone-200">角色描述</span>
                   <textarea value={characterPrompt} onChange={(event) => setCharacterPrompt(event.target.value)} rows={4} className="mt-2 w-full resize-y rounded-lg border border-white/10 bg-[#101216] px-3 py-3 text-sm leading-6 text-white outline-none" />
                 </label>
                 <label className="sm:col-span-2">
@@ -228,7 +240,7 @@ export default function AdventureSetup({
               </div>
               <div className="mt-5 flex flex-wrap gap-2">
                 <button type="button" disabled={isGeneratingCharacter || !apiKey.trim()} onClick={previewCharacter} className="rounded-lg border border-amber-200/40 bg-amber-300/15 px-4 py-2 text-sm font-semibold text-amber-50 transition hover:bg-amber-300/25 disabled:cursor-wait disabled:opacity-60">
-                  {isGeneratingCharacter ? "生成角色中" : "下一步：角色預覽"}
+                  {isGeneratingCharacter ? "生成角色中" : "生成角色預覽"}
                 </button>
                 <button type="button" disabled={loading || isGeneratingCharacter} onClick={onStartDemo} className="rounded-lg border border-white/10 bg-white/[0.05] px-4 py-2 text-sm font-semibold text-stone-200 transition hover:bg-white/[0.08] disabled:cursor-wait disabled:opacity-60">
                   使用預設 Demo
@@ -238,8 +250,8 @@ export default function AdventureSetup({
 
             <aside className="rounded-lg border border-teal-200/20 bg-teal-300/10 p-4 text-sm leading-7 text-teal-50/90">
               <p className="font-mono text-xs uppercase text-teal-200">Generated Adventure</p>
-              <p className="mt-3">先預覽角色，再預覽冒險地圖。只有最後開始冒險時才會切換 runtime gameData。</p>
-              <p className="mt-3">API key 只存於 localStorage 與單次 request body。</p>
+              <p className="mt-3">流程會先生成角色，再用確認後的角色生成可遊玩的短篇冒險。</p>
+              <p className="mt-3">冒險預覽成功後，開始冒險會直接使用同一份 preview state/gameData。</p>
             </aside>
           </section>
         ) : null}
@@ -247,11 +259,13 @@ export default function AdventureSetup({
         {step === "character" && characterPreview ? (
           <section className="rounded-lg border border-white/10 bg-black/20 p-5">
             <SectionTitle eyebrow="Step 2" title="角色預覽" />
-            <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+            <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
               <div>
-                <h3 className="text-2xl font-semibold text-white">{characterPreview.name}</h3>
+                <p className="text-sm font-semibold text-amber-200">{characterPreview.title}</p>
+                <h3 className="mt-1 text-2xl font-semibold text-white">{characterPreview.name}</h3>
                 <p className="mt-2 text-sm leading-7 text-stone-300">{characterPreview.summary}</p>
                 <p className="mt-3 text-sm leading-7 text-stone-400">{characterPreview.background}</p>
+                <p className="mt-3 text-sm leading-7 text-stone-300">{characterPreview.personality}</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <StatPill label="HP" value={characterPreview.attributes.maxHp} />
                   <StatPill label="MP" value={characterPreview.attributes.maxMp} />
@@ -262,22 +276,38 @@ export default function AdventureSetup({
                   {characterPreview.skills.map((skill) => (
                     <div key={skill.id} className="rounded-lg border border-amber-200/20 bg-amber-300/10 p-3">
                       <p className="font-semibold text-white">{skill.name}</p>
-                      <p className="mt-1 font-mono text-xs text-amber-100/70">{skill.role} · {skill.mpCost} MP · DMG {skill.damage}</p>
-                      <p className="mt-2 line-clamp-3 text-xs leading-5 text-stone-400">{skill.description}</p>
+                      <p className="mt-1 font-mono text-xs text-amber-100/70">{skill.role} / {skill.mpCost} MP / DMG {skill.damage}</p>
+                      <p className="mt-2 text-xs leading-5 text-stone-400">{skill.description}</p>
+                      <p className="mt-2 text-xs leading-5 text-amber-100/70">{skill.flavorText}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  {(characterPreview.starterEquipment || characterPreview.equipment || []).map((item) => (
+                    <div key={item.id} className="rounded-lg border border-white/10 bg-white/[0.04] p-3">
+                      <p className="font-semibold text-white">{item.name}</p>
+                      <p className="mt-1 font-mono text-xs text-stone-400">{item.slot}</p>
+                      <p className="mt-2 text-xs leading-5 text-stone-300">{item.description}</p>
+                      <p className="mt-2 text-xs leading-5 text-stone-500">{item.flavorText}</p>
                     </div>
                   ))}
                 </div>
               </div>
-              <aside className="rounded-lg border border-teal-200/20 bg-teal-300/10 p-4">
-                <p className="font-semibold text-teal-50">Appearance</p>
-                <p className="mt-2 text-sm leading-6 text-teal-50/80">{characterPreview.appearance}</p>
-                <p className="mt-4 font-semibold text-teal-50">Image Prompt</p>
-                <p className="mt-2 text-xs leading-5 text-teal-50/70">{characterPreview.imagePrompt}</p>
+              <aside className="space-y-3">
+                <div className="rounded-lg border border-teal-200/20 bg-teal-300/10 p-4">
+                  <p className="font-semibold text-teal-50">Appearance</p>
+                  <AppearanceList appearance={characterPreview.appearance} />
+                </div>
+                <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+                  <p className="font-semibold text-white">Portrait Prompt</p>
+                  <p className="mt-2 text-xs leading-5 text-stone-300">{characterPreview.portraitPrompt?.positive || characterPreview.imagePrompt}</p>
+                  <p className="mt-3 font-mono text-xs text-red-200/80">{characterPreview.portraitPrompt?.negative}</p>
+                </div>
               </aside>
             </div>
             <div className="mt-5 flex flex-wrap gap-2">
               <button type="button" onClick={previewAdventure} disabled={isGeneratingAdventure} className="rounded-lg border border-amber-200/40 bg-amber-300/15 px-4 py-2 text-sm font-semibold text-amber-50 disabled:cursor-wait disabled:opacity-60">
-                {isGeneratingAdventure ? "生成冒險中" : "確認角色，預覽冒險"}
+                {isGeneratingAdventure ? "生成冒險中" : "確認角色，生成冒險"}
               </button>
               <button type="button" onClick={previewCharacter} disabled={isGeneratingCharacter} className="rounded-lg border border-white/10 bg-white/[0.05] px-4 py-2 text-sm font-semibold text-stone-200 disabled:cursor-wait disabled:opacity-60">
                 重新生成角色
@@ -292,32 +322,48 @@ export default function AdventureSetup({
         {step === "adventure" && adventurePreview?.preview ? (
           <section className="rounded-lg border border-white/10 bg-black/20 p-5">
             <SectionTitle eyebrow="Step 3" title="冒險預覽" />
-            <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
               <div className="overflow-hidden rounded-lg border border-white/10">
-                <div className="grid grid-cols-[1.1fr_0.8fr_0.8fr_0.8fr] border-b border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-stone-400">
-                  <span>房間</span><span>類型</span><span>敵人</span><span>內容</span>
+                <div className="grid grid-cols-[1.05fr_0.7fr_0.9fr_0.9fr_0.9fr] border-b border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-stone-400">
+                  <span>房間</span><span>類型</span><span>敵人/物品</span><span>需求</span><span>獎勵/出口</span>
                 </div>
                 {adventurePreview.preview.rooms.map((room) => (
-                  <div key={room.id} className="grid grid-cols-[1.1fr_0.8fr_0.8fr_0.8fr] gap-2 border-b border-white/5 px-3 py-2 text-sm text-stone-200 last:border-b-0">
-                    <span className="truncate font-semibold text-white">{room.name}</span>
+                  <div key={room.id} className="grid grid-cols-[1.05fr_0.7fr_0.9fr_0.9fr_0.9fr] gap-2 border-b border-white/5 px-3 py-3 text-sm text-stone-200 last:border-b-0">
+                    <span>
+                      <span className="block font-semibold text-white">{room.name}</span>
+                      <span className="mt-1 line-clamp-2 block text-xs text-stone-500">{room.summary}</span>
+                    </span>
                     <span className="font-mono text-xs text-amber-100/80">{room.kind}</span>
-                    <span className="truncate text-stone-400">{room.monsterName || "-"}</span>
-                    <span className="truncate text-stone-400">{room.challengeType || room.itemNames.join("、") || "-"}</span>
+                    <span className="text-xs text-stone-400">{room.monsterName || room.itemNames.join("、") || "-"}</span>
+                    <span className="text-xs text-stone-400">{room.requiredItemName || room.challengeType || "-"}</span>
+                    <span className="text-xs text-stone-400">{room.rewardItemNames?.join("、") || room.exits?.join(" / ") || "-"}</span>
                   </div>
                 ))}
               </div>
               <aside className="space-y-3 text-sm leading-6">
                 <div className="rounded-lg border border-red-200/20 bg-red-400/10 p-3">
                   <p className="font-semibold text-red-50">Boss</p>
-                  <p className="mt-1 text-red-50/80">{adventurePreview.preview.boss?.name || "未指定"}</p>
+                  <p className="mt-1 text-red-50/80">{adventurePreview.preview.boss?.name || "未標示"}</p>
                 </div>
                 <div className="rounded-lg border border-amber-200/20 bg-amber-300/10 p-3">
-                  <p className="font-semibold text-amber-50">任務物品</p>
-                  <p className="mt-1 text-amber-50/80">{adventurePreview.preview.winCondition?.requiredItemId}</p>
+                  <p className="font-semibold text-amber-50">玩家摘要</p>
+                  <p className="mt-1 text-amber-50/80">
+                    HP {adventurePreview.preview.playerSummary?.hp} / MP {adventurePreview.preview.playerSummary?.mp} / ATK {adventurePreview.preview.playerSummary?.attack}
+                  </p>
                 </div>
                 <div className="rounded-lg border border-teal-200/20 bg-teal-300/10 p-3">
-                  <p className="font-semibold text-teal-50">資源</p>
-                  <p className="mt-1 text-teal-50/80">裝備 {adventurePreview.preview.equipment.length} · 補給 {adventurePreview.preview.consumables.length} · 挑戰 {adventurePreview.preview.challenges.length}</p>
+                  <p className="font-semibold text-teal-50">內容統計</p>
+                  <p className="mt-1 text-teal-50/80">裝備 {adventurePreview.preview.equipment.length} / 消耗品 {adventurePreview.preview.consumables.length} / 挑戰 {adventurePreview.preview.challenges.length}</p>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-white/[0.04] p-3">
+                  <p className="font-semibold text-white">Item Chains</p>
+                  <div className="mt-2 space-y-2">
+                    {(adventurePreview.preview.itemChains || []).map((chain) => (
+                      <p key={`${chain.challengeRoomId}-${chain.requiredItemId}`} className="text-xs leading-5 text-stone-300">
+                        {`${chain.source} -> ${chain.challengeRoomName} 使用 ${chain.requiredItemName}${chain.rewardItemNames?.length ? ` -> ${chain.rewardItemNames.join("、")}` : ""}`}
+                      </p>
+                    ))}
+                  </div>
                 </div>
               </aside>
             </div>

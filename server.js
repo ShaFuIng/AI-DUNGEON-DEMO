@@ -122,8 +122,8 @@ app.post("/api/adventure/preview", async (req, res) => {
     console.error("Adventure preview generation failed:", error.message);
     setRuntimeGameData(currentGameData);
     res.status(422).json({
-      error: "adventure_preview_failed",
-      message: "冒險預覽生成失敗，請調整 prompt 或稍後再試。",
+      error: "generation_failed",
+      message: "冒險預覽生成失敗，請調整冒險 Prompt 或稍後再試。",
       details: getPublicErrorDetails(error),
     });
   }

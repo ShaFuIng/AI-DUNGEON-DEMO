@@ -1,6 +1,6 @@
 ```json
 {
   "id": "bad_escape_sample",
-  "description": "牆上刻著 \_ 古老符號，旁邊有 \(龍\) 的紋路。"
+  "description": "牆上刻著 \_ 古老符號，旁邊還有 \(龍) 的痕跡。"
 }
 ```
