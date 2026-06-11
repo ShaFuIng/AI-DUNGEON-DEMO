@@ -37,27 +37,6 @@ function ResourceBar({ label, value = 0, max = 1, tone = "mp", slim = false }) {
   );
 }
 
-function StatCard({ label, value, muted = false }) {
-  return (
-    <div
-      className={`rounded-lg border border-white/10 bg-black/20 p-3 text-center ${
-        muted ? "opacity-55" : ""
-      }`}
-    >
-      <p className="font-mono text-[11px] uppercase tracking-wide text-stone-500">
-        {label}
-      </p>
-      <p
-        className={`mt-2 text-xl font-semibold ${
-          muted ? "text-stone-500" : "text-white"
-        }`}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
-
 function formatEffectiveStat(value, baseValue) {
   if (
     !Number.isFinite(Number(value)) ||
@@ -71,16 +50,42 @@ function formatEffectiveStat(value, baseValue) {
   return `${value} (+${bonus})`;
 }
 
-export default function CharacterPanel({ player, flags, className = "" }) {
+function StatUpgradeCard({ label, value, stat, canUpgrade, loading, onAllocateStat }) {
+  return (
+    <div className="rounded-lg border border-white/10 bg-black/20 p-3 text-center">
+      <p className="font-mono text-[11px] uppercase tracking-wide text-stone-500">
+        {label}
+      </p>
+      <p className="mt-2 text-xl font-semibold text-white">
+        {value}
+      </p>
+      {stat ? (
+        <button
+          type="button"
+          disabled={!canUpgrade || loading}
+          onClick={() => onAllocateStat?.(stat)}
+          className="mt-2 h-7 w-7 rounded border border-amber-200/30 bg-amber-300/10 text-sm font-bold text-amber-50 transition hover:bg-amber-300/20 disabled:cursor-not-allowed disabled:opacity-35"
+          aria-label={`Increase ${label}`}
+        >
+          +
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+export default function CharacterPanel({ player, flags, loading = false, onAllocateStat, className = "" }) {
   const level = player?.level ?? 1;
   const defense = player?.defense ?? 2;
   const exp = player?.exp ?? 0;
   const nextExp = player?.nextExp ?? 100;
-  const name = player?.name || "冒險者";
-  const title = player?.title || "冒險者";
-  const species = player?.species || player?.race || "未知種族";
-  const classLabel = player?.className || player?.role || "冒險者";
+  const name = player?.name || "Adventurer";
+  const title = player?.title || "Dungeon Delver";
+  const species = player?.species || player?.race || "Unknown";
+  const classLabel = player?.className || player?.role || "Hero";
   const portraitUrl = player?.portraitUrl || player?.portrait?.imageUrl || "";
+  const statPoints = Number(player?.statPoints) || 0;
+  const canUpgrade = statPoints > 0;
   const [portraitFailed, setPortraitFailed] = useState(false);
   const showPortrait = Boolean(portraitUrl) && !portraitFailed;
 
@@ -151,17 +156,44 @@ export default function CharacterPanel({ player, flags, className = "" }) {
       </div>
 
       <div className="mt-5 grid grid-cols-4 gap-3">
-        <StatCard
+        <StatUpgradeCard
           label="ATK"
+          stat="attack"
           value={formatEffectiveStat(player?.attack, player?.baseAttack)}
+          canUpgrade={canUpgrade}
+          loading={loading}
+          onAllocateStat={onAllocateStat}
         />
-        <StatCard
+        <StatUpgradeCard
           label="DEF"
+          stat="defense"
           value={formatEffectiveStat(defense, player?.baseDefense)}
+          canUpgrade={canUpgrade}
+          loading={loading}
+          onAllocateStat={onAllocateStat}
         />
-        <StatCard label="SPD" value="--" muted />
-        <StatCard label="LCK" value="--" muted />
       </div>
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <StatUpgradeCard
+          label="HP"
+          stat="maxHp"
+          value={player?.maxHp ?? 0}
+          canUpgrade={canUpgrade}
+          loading={loading}
+          onAllocateStat={onAllocateStat}
+        />
+        <StatUpgradeCard
+          label="MP"
+          stat="maxMp"
+          value={player?.maxMp ?? 0}
+          canUpgrade={canUpgrade}
+          loading={loading}
+          onAllocateStat={onAllocateStat}
+        />
+      </div>
+      <p className="mt-3 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-stone-300">
+        可分配屬性點：{statPoints}
+      </p>
 
       <div className="mt-5 flex flex-wrap gap-2">
         {flags?.gameWon ? (

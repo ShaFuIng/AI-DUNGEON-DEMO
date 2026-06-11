@@ -627,6 +627,41 @@ export default function App() {
     sendCommand(command);
   }
 
+  async function handleAllocateStat(stat) {
+    if (loading) return;
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/player/allocate-stat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stat }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data?.ok) {
+        throw new Error(data?.message || "allocate_stat_failed");
+      }
+
+      const nextState = applyCharacterMetadata(data.state, generatedCharacter);
+      setGameState(nextState);
+      setStoryLines((lines) => [
+        ...lines,
+        createStoryLine("system", data.message || "屬性點已分配。"),
+      ]);
+    } catch (allocateError) {
+      setError("屬性點分配失敗，請稍後再試。");
+      setStoryLines((lines) => [
+        ...lines,
+        createStoryLine("system", "屬性點分配失敗，請稍後再試。"),
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
     if (setupComplete && !gameState) {
       loadGameState();
@@ -779,6 +814,8 @@ export default function App() {
               <CharacterPanel
                 player={gameState?.player}
                 flags={gameState?.flags}
+                loading={loading}
+                onAllocateStat={handleAllocateStat}
                 className="w-full"
               />
               <CharacterSideTabs

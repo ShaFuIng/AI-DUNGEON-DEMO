@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatSkillNumbers, getSkillRoleLabel } from "../../utils/formatSkillNumbers.js";
 
 const SKILL_TREE = [
   { title: "Slash Mastery", branch: "近戰強化", status: "Locked" },
@@ -79,7 +80,7 @@ function normalizeSkills(skills) {
     label: skill.name || skill.id,
     command: `skill ${skill.id}`,
     icon: getSkillIcon(skill.role),
-    type: `${skill.role || "damage"} · ${skill.mpCost ?? 0} MP`,
+    type: `${getSkillRoleLabel(skill)} / ${formatSkillNumbers(skill)}`,
     description: skill.description || "這個技能還沒有詳細說明。",
   }));
 

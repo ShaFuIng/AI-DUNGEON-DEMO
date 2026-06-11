@@ -66,9 +66,9 @@ function validateRuntimeGameData(gameData) {
   if (roomIds.length > 0 && emptyRoomCount / roomIds.length > 0.2) {
     errors.push(`too many empty rooms: ${emptyRoomCount}/${roomIds.length}`);
   }
-  if (!hasSkillRole(skills, "damage")) errors.push("at least one damage skill is required.");
-  if (!Object.values(skills).some((skill) => ["defense", "utility"].includes(skill.role))) {
-    errors.push("at least one defense or utility skill is required.");
+  if (!hasDamageSkill(skills)) errors.push("at least one damage skill is required.");
+  if (!Object.values(skills).some((skill) => ["defense", "utility", "heal"].includes(skill.role))) {
+    errors.push("at least one defense, utility, or heal skill is required.");
   }
 
   validateBossBalance(gameData, rooms, monsters, errors);
@@ -125,6 +125,22 @@ function validateRoom(gameData, roomId, room, errors) {
   }
   for (const rewardItemId of room.challenge.rewardItemIds || []) {
     if (!items[rewardItemId]) errors.push(`room ${roomId} challenge references missing reward item ${rewardItemId}.`);
+  }
+  for (const direction of room.challenge.blockedExits || []) {
+    if (!DIRECTIONS.includes(direction)) {
+      errors.push(`room ${roomId} challenge has invalid blockedExits direction ${direction}.`);
+    }
+    if (!room.exits?.[direction]) {
+      errors.push(`room ${roomId} challenge blocks missing exit direction ${direction}.`);
+    }
+  }
+  for (const direction of room.challenge.unlocksExits || []) {
+    if (!DIRECTIONS.includes(direction)) {
+      errors.push(`room ${roomId} challenge has invalid unlocksExits direction ${direction}.`);
+    }
+    if (!room.exits?.[direction] && room.challenge.unlocksExit?.direction !== direction) {
+      errors.push(`room ${roomId} challenge unlocks missing exit direction ${direction}.`);
+    }
   }
   if (room.challenge.unlocksExit) {
     const { direction, roomId: targetRoomId } = room.challenge.unlocksExit;
@@ -186,8 +202,13 @@ function validateSkills(skills, errors) {
         errors.push(`skill ${skillId} is missing ${field}.`);
       }
     }
-    if (!["damage", "defense", "utility"].includes(skill.role)) {
+    if (!["basic", "signature", "damage", "defense", "heal", "utility"].includes(skill.role)) {
       errors.push(`skill ${skillId} is missing valid role.`);
+    }
+    for (const numericField of ["hitCount", "heal", "shield", "defenseBonus", "duration"]) {
+      if (skill[numericField] !== undefined && !Number.isFinite(Number(skill[numericField]))) {
+        errors.push(`skill ${skillId} has invalid numeric field ${numericField}.`);
+      }
     }
   }
 }
@@ -289,6 +310,10 @@ function hasGameplayFunction(room) {
 
 function hasSkillRole(skills, role) {
   return Object.values(skills || {}).some((skill) => skill.role === role);
+}
+
+function hasDamageSkill(skills) {
+  return Object.values(skills || {}).some((skill) => Number(skill.damage) > 0);
 }
 
 function validateBossBalance(gameData, rooms, monsters, errors) {

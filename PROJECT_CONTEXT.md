@@ -135,3 +135,16 @@
 - App 端使用 generated character state，在開始冒險與每次 command response 後套用 metadata 到 `gameState.player`。
 - CharacterPanel 會優先顯示 `player.portraitUrl` 或 `player.portrait.imageUrl`，失敗時 fallback 到 AD placeholder。
 - ComfyUI 未啟動或產圖失敗不會影響文字 RPG 生成流程。
+
+## Runtime Character / Challenge / Stat Updates
+
+- Adventure Setup saves generated character cards in browser `localStorage` under `aiDungeonCharacterCards`.
+- Saved character cards preserve generated portrait metadata by URL/filename only; no base64 image data is written to localStorage.
+- Loading or deleting character cards is local UI state only and does not alter Default Demo Mode.
+- Runtime challenges now support directional gates with `blockedExits` and `unlocksExits`.
+- An unresolved challenge blocks only its listed directions; other exits in the same room remain usable.
+- `look`, `help`, and available command details describe blocked directions and the expected `use <requiredItemId>` action.
+- Skill prompts, normalizers, balancer, validator, BattleView, SkillsWindowContent, and Step 2 preview now surface numeric skill details such as MP, DMG, hits, HEAL, DEF, SHIELD, and turns.
+- Level up grants 2 unspent `statPoints`; stats are no longer raised automatically.
+- `POST /api/player/allocate-stat` allocates one point to `maxHp`, `maxMp`, `attack`, or `defense` and returns the updated public state.
+- CharacterPanel shows unspent stat points and HP / MP / ATK / DEF allocation buttons.

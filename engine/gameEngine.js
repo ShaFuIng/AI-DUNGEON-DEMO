@@ -65,6 +65,7 @@ function createInitialGameState(nextGameData = gameData) {
       level: playerData.level ?? 1,
       exp: 0,
       nextExp: getExpToNextLevel(1),
+      statPoints: playerData.statPoints ?? playerData.unspentStatPoints ?? 0,
       inventory: [],
       equipment: {
         weapon: null,
@@ -188,6 +189,8 @@ function getPublicGameState(gameState) {
       level: gameState.player.level,
       exp: gameState.player.exp,
       nextExp: getExpToNextLevel(gameState.player.level),
+      statPoints: gameState.player.statPoints ?? 0,
+      unspentStatPoints: gameState.player.statPoints ?? 0,
       inventory: gameState.player.inventory.map((itemId) => {
         return gameData.items[itemId].name;
       }),
@@ -301,6 +304,8 @@ function getPublicChallengeInfo(gameState, room) {
 
   return {
     ...room.challenge,
+    blockedExits: getChallengeBlockedDirections(room.challenge),
+    unlocksExits: getChallengeUnlockDirections(room.challenge),
     resolved: isChallengeResolved(gameState, room),
   };
 }
@@ -341,7 +346,14 @@ function getPublicSkillInfo(skillId) {
     name: skill.name,
     mpCost: skill.mpCost ?? 0,
     damage: skill.damage ?? 0,
+    scaling: skill.scaling || "attack",
+    hitCount: skill.hitCount ?? 1,
+    heal: skill.heal ?? 0,
+    shield: skill.shield ?? 0,
+    defenseBonus: skill.defenseBonus ?? 0,
+    duration: skill.duration ?? 0,
     role: skill.role || inferSkillRole(skill),
+    flavorText: skill.flavorText || "",
     description: skill.description || "這個技能還沒有詳細說明。",
   };
 }
@@ -722,34 +734,15 @@ function awardExperience(gameState, monsterData) {
     const requiredExp = getExpToNextLevel(gameState.player.level);
     gameState.player.exp -= requiredExp;
 
-    const before = {
-      level: gameState.player.level,
-      maxHp: gameState.player.maxHp,
-      maxMp: gameState.player.maxMp,
-      attack: gameState.player.attack,
-      defense: gameState.player.defense,
-    };
-
     gameState.player.level += 1;
-    gameState.player.maxHp += 6;
-    gameState.player.maxMp += 3;
-    gameState.player.attack += 2;
-    gameState.player.defense += 1;
+    gameState.player.statPoints = (gameState.player.statPoints || 0) + 2;
     gameState.player.nextExp = getExpToNextLevel(gameState.player.level);
-
-    // MVP rule: level up fully restores HP/MP so the player can continue exploring.
-    const effectiveStats = getEffectivePlayerStats(gameState);
-    gameState.player.hp = effectiveStats.maxHp;
-    gameState.player.mp = effectiveStats.maxMp;
 
     messages.push(
       [
         `你升到了 Lv. ${gameState.player.level}！`,
-        `HP 上限 ${before.maxHp}→${gameState.player.maxHp}`,
-        `MP 上限 ${before.maxMp}→${gameState.player.maxMp}`,
-        `攻擊 ${before.attack}→${gameState.player.attack}`,
-        `防禦 ${before.defense}→${gameState.player.defense}`,
-        "HP / MP 已回滿。",
+        "獲得 2 點屬性點。",
+        "可在角色面板分配到 HP / MP / ATK / DEF。",
       ].join("，")
     );
     addLog(gameState, `你升到了 Lv. ${gameState.player.level}`);
@@ -758,6 +751,57 @@ function awardExperience(gameState, monsterData) {
   gameState.player.nextExp = getExpToNextLevel(gameState.player.level);
 
   return messages;
+}
+
+function allocatePlayerStat(gameState, stat) {
+  const statPoints = Number(gameState.player.statPoints) || 0;
+
+  if (!["maxHp", "maxMp", "attack", "defense"].includes(stat)) {
+    return {
+      ok: false,
+      message: "無效的能力值。",
+    };
+  }
+
+  if (statPoints <= 0) {
+    return {
+      ok: false,
+      message: "目前沒有可分配的屬性點。",
+    };
+  }
+
+  const increments = {
+    maxHp: 5,
+    maxMp: 2,
+    attack: 1,
+    defense: 1,
+  };
+  const labels = {
+    maxHp: "HP",
+    maxMp: "MP",
+    attack: "ATK",
+    defense: "DEF",
+  };
+  const increment = increments[stat];
+
+  gameState.player[stat] += increment;
+  gameState.player.statPoints = statPoints - 1;
+
+  if (stat === "maxHp") {
+    gameState.player.hp += increment;
+  }
+  if (stat === "maxMp") {
+    gameState.player.mp += increment;
+  }
+
+  clampPlayerResourcesToEffectiveMax(gameState);
+  const message = `${labels[stat]} +${increment}，剩餘屬性點 ${gameState.player.statPoints}。`;
+  addLog(gameState, message);
+
+  return {
+    ok: true,
+    message,
+  };
 }
 
 function applyMonsterDrops(gameState, monsterData) {
@@ -826,9 +870,13 @@ function buildAvailableCommandDetails(gameState) {
 
   for (const [direction, roomId] of Object.entries(room.exits || {})) {
     const targetRoom = gameData.rooms[roomId];
+    const unresolvedChallenge = room.challenge && !isChallengeResolved(gameState, room) ? room.challenge : null;
+    const isBlocked = unresolvedChallenge && challengeBlocksDirection(unresolvedChallenge, direction);
     commands.push({
       command: `move ${direction}`,
-      description: `移動到${targetRoom?.name || roomId}`,
+      description: isBlocked
+        ? `被挑戰阻擋：${targetRoom?.name || roomId}`
+        : `移動到${targetRoom?.name || roomId}`,
     });
   }
 
@@ -904,8 +952,9 @@ function handleLook(gameState) {
     ? `你看到怪物：${monsterInfo.name}（HP ${monsterInfo.hp}/${monsterInfo.maxHp}）`
     : "這裡沒有怪物。";
   const challenge = room.challenge && !isChallengeResolved(gameState, room) ? room.challenge : null;
+  const blockedDirections = getChallengeBlockedDirections(challenge);
   const challengeText = challenge
-    ? `你注意到挑戰：${challenge.description}${challenge.solutionHint ? ` 提示：${challenge.solutionHint}` : ""}`
+    ? `你注意到挑戰：${challenge.description}${blockedDirections.length ? ` 阻擋方向：${blockedDirections.join("、")}。` : ""}${challenge.solutionHint ? ` 提示：${challenge.solutionHint}` : ""}`
     : "這裡沒有尚未解開的挑戰。";
 
   const actionHints = [];
@@ -1001,7 +1050,7 @@ function handleMove(gameState, direction) {
   }
 
   const unresolvedChallenge = room.challenge && !isChallengeResolved(gameState, room) ? room.challenge : null;
-  if (unresolvedChallenge && challengeBlocksExit(unresolvedChallenge)) {
+  if (unresolvedChallenge && challengeBlocksDirection(unresolvedChallenge, direction)) {
     return createEventResult(
       "challenge_blocks_exit",
       `${unresolvedChallenge.description} ${unresolvedChallenge.solutionHint || "先解開這個挑戰再繼續前進。"}`
@@ -1446,8 +1495,44 @@ function findFreeExitDirection(room) {
   return ["north", "east", "south", "west"].find((direction) => !room.exits?.[direction]);
 }
 
-function challengeBlocksExit(challenge) {
-  return ["locked_door", "mechanism", "trap", "sealed_chest"].includes(challenge.type);
+function getChallengeBlockedDirections(challenge) {
+  if (!challenge) {
+    return [];
+  }
+
+  if (Array.isArray(challenge.blockedExits)) {
+    return challenge.blockedExits.filter(Boolean);
+  }
+
+  if (challenge.blocksExit) {
+    return [challenge.blocksExit].filter(Boolean);
+  }
+
+  if (challenge.unlocksExit?.direction) {
+    return [challenge.unlocksExit.direction];
+  }
+
+  return [];
+}
+
+function getChallengeUnlockDirections(challenge) {
+  if (!challenge) {
+    return [];
+  }
+
+  if (Array.isArray(challenge.unlocksExits)) {
+    return challenge.unlocksExits.filter(Boolean);
+  }
+
+  if (challenge.unlocksExit?.direction) {
+    return [challenge.unlocksExit.direction];
+  }
+
+  return [];
+}
+
+function challengeBlocksDirection(challenge, direction) {
+  return getChallengeBlockedDirections(challenge).includes(direction);
 }
 
 function equipItem(gameState, itemId) {
@@ -1687,4 +1772,5 @@ module.exports = {
   createInitialGameState,
   getPublicGameState,
   handleCommand,
+  allocatePlayerStat,
 };

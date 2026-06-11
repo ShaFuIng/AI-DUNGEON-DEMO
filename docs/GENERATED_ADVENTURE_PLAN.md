@@ -306,3 +306,16 @@ The runtime JSON parser is centralized in `AI/utils/parseGeneratedJson.js`; inva
 - App 會將 generated character metadata 合併到 `gameState.player`：`name`、`title`、`species`、`className`、`portraitUrl`、`portrait`、`appearance`。
 - 每次 `/api/game/command` 回傳新 state 後，App 會重新套用 generated character metadata，避免主畫面角色資訊被後端 public state 覆蓋。
 - ComfyUI 未啟動或產圖失敗不會影響角色預覽、冒險預覽、開始冒險或文字 RPG command flow。
+
+## Current Runtime Updates
+
+- Character previews are saved as local character cards in browser `localStorage` key `aiDungeonCharacterCards`.
+- Saved cards include generated portrait metadata (`imageUrl`, filename, prompt metadata) but never store base64 image payloads.
+- Bad or unexpected localStorage data is ignored safely and does not block character or adventure generation.
+- Runtime challenges support `blockedExits` and `unlocksExits`; unresolved challenges only block listed directions.
+- `look`, `help`, and command details should describe which exits are blocked and when `use <requiredItemId>` can resolve the challenge.
+- Skill generation now asks for numeric fields: MP cost, damage, scaling, hit count, heal, shield, defense bonus, duration, and flavor text.
+- Normalizers, balancer, validator, Step 2 preview, BattleView, and SkillsWindowContent display or preserve those numeric skill fields.
+- Level up grants `statPoints +2` and no longer auto-raises stats.
+- Stat allocation uses `POST /api/player/allocate-stat` with `{ "stat": "maxHp" | "maxMp" | "attack" | "defense" }`.
+- Next image phase can build on the existing ComfyUI status and character portrait plumbing.

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { formatSkillNumbers } from "../utils/formatSkillNumbers.js";
 
 function StatBar({ label, value, max, tone = "amber" }) {
   const safeMax = Math.max(Number(max) || 1, 1);
@@ -114,7 +115,7 @@ export default function BattleView({
     label: skill.name || skill.id,
     command: `skill ${skill.id}`,
     disabled: !activeEnemy || playerMp < (skill.mpCost ?? 0),
-    detail: `${skill.mpCost ?? 0} MP`,
+    detail: formatSkillNumbers(skill),
   }));
   const actions = [
     { id: "attack", label: "Attack", command: "attack", disabled: !activeEnemy },

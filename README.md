@@ -227,6 +227,17 @@ COMFYUI_BASE_URL=http://127.0.0.1:8188
 - `/api/game/command` 回傳新 state 後，前端會重新套用 generated character metadata，避免 look / move 後立繪或名字消失
 - ComfyUI 未啟動時仍不會影響文字 RPG 生成流程、Default Demo Mode 或 Generated Adventure Mode
 
+## Recent Runtime Updates
+
+- Adventure Setup 會把 Step 2 角色卡儲存在 browser `localStorage`，key 是 `aiDungeonCharacterCards`。
+- 角色卡包含 `generatedPortrait.imageUrl` / filename 等輕量 metadata，不儲存 base64 圖片資料；localStorage 讀取失敗時會安全 fallback 成空清單。
+- Runtime challenge 支援 `blockedExits` / `unlocksExits`，未解謎時只會阻擋指定方向，不再鎖住整個房間。
+- `look` / `help` 會顯示 challenge 提示與可用的 `use <requiredItemId>` 行為。
+- 技能 schema / prompt / validator / UI 已補上 MP、damage、hit count、heal、shield、defense bonus、duration 等數值欄位。
+- Level up 現在給 `statPoints +2`，不再自動增加 HP / MP / ATK / DEF。
+- 新增 `POST /api/player/allocate-stat`，body 使用 `{ "stat": "maxHp" | "maxMp" | "attack" | "defense" }`；成功後回傳最新 public state。
+- CharacterPanel 會顯示可分配屬性點，並提供 HP / MP / ATK / DEF 的 `+` 按鈕。
+
 ## Content Designer Agent 安全邊界
 - Development-time only。
 - 不直接修改 `gameEngine.js`。

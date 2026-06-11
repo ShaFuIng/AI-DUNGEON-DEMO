@@ -172,6 +172,23 @@ function normalizeChallengeForItemPlay(gameData, room) {
     room.challenge.requiredItemId = ensureKeyItem(gameData);
   }
   room.challenge.rewardItemIds = Array.isArray(room.challenge.rewardItemIds) ? room.challenge.rewardItemIds : [];
+  room.challenge.blockedExits = normalizeDirectionList(room.challenge.blockedExits || room.challenge.blocksExit);
+  room.challenge.unlocksExits = normalizeDirectionList(room.challenge.unlocksExits);
+  if (room.challenge.unlocksExit?.direction && !room.challenge.unlocksExits.includes(room.challenge.unlocksExit.direction)) {
+    room.challenge.unlocksExits.push(room.challenge.unlocksExit.direction);
+  }
+  if (room.challenge.blockedExits.length === 0 && room.challenge.unlocksExit?.direction) {
+    room.challenge.blockedExits.push(room.challenge.unlocksExit.direction);
+  }
+  if (room.challenge.blockedExits.length === 0) {
+    const forwardDirection = chooseForwardExitDirection(gameData, room);
+    if (forwardDirection) {
+      room.challenge.blockedExits.push(forwardDirection);
+      if (!room.challenge.unlocksExits.includes(forwardDirection)) {
+        room.challenge.unlocksExits.push(forwardDirection);
+      }
+    }
+  }
   room.challenge.solutionHint =
     room.challenge.solutionHint || `使用 ${gameData.items[room.challenge.requiredItemId]?.name || room.challenge.requiredItemId} 處理這個障礙。`;
 }
@@ -296,18 +313,30 @@ function balanceSkills(gameData) {
   const selected = skills.slice(0, 3);
 
   selected.forEach((skill, index) => {
+    skill.hitCount = Math.max(1, Number(skill.hitCount) || 1);
+    skill.heal = Number(skill.heal) || 0;
+    skill.shield = Number(skill.shield) || 0;
+    skill.defenseBonus = Number(skill.defenseBonus) || 0;
+    skill.duration = Number(skill.duration) || 0;
+    skill.scaling = skill.scaling || "attack";
+    skill.flavorText = skill.flavorText || skill.description || "";
+
     if (index === 0) {
-      skill.role = "damage";
+      skill.role = skill.role === "basic" ? "basic" : "damage";
       skill.mpCost = Math.min(Number(skill.mpCost) || 0, 1);
       skill.damage = clamp(Number(skill.damage) || playerAttack + 2, playerAttack + 1, playerAttack + 3);
     } else if (index === 1) {
-      skill.role = "damage";
+      skill.role = skill.role === "signature" ? "signature" : "damage";
       skill.mpCost = clamp(Number(skill.mpCost) || 4, 3, 5);
       skill.damage = clamp(Number(skill.damage) || Math.round(playerAttack * 1.8), playerAttack + 4, playerAttack * 2 + 4);
     } else {
-      skill.role = ["defense", "utility"].includes(skill.role) ? skill.role : "defense";
+      skill.role = ["defense", "utility", "heal"].includes(skill.role) ? skill.role : "defense";
       skill.mpCost = clamp(Number(skill.mpCost) || 3, 2, 4);
       skill.damage = Number(skill.damage) > 0 && skill.role === "utility" ? Number(skill.damage) : 0;
+      if (skill.role === "defense" && skill.defenseBonus <= 0 && skill.shield <= 0) {
+        skill.defenseBonus = 2;
+        skill.duration = Math.max(skill.duration, 2);
+      }
     }
   });
 
@@ -518,6 +547,18 @@ function findReachableConnection(rooms, reachable, toRoom) {
 function defaultSourceType(item) {
   if (item.type === "quest") return "boss_reward";
   return "direct_pickup";
+}
+
+function normalizeDirectionList(value) {
+  const values = Array.isArray(value) ? value : value ? [value] : [];
+  return [...new Set(values.filter((direction) => OPPOSITE_DIRECTIONS[direction]))];
+}
+
+function chooseForwardExitDirection(gameData, room) {
+  const currentOrder = getRoomOrder(gameData, room.id);
+  const forwardEntry = Object.entries(room.exits || {}).find(([, targetRoomId]) => getRoomOrder(gameData, targetRoomId) > currentOrder);
+
+  return forwardEntry?.[0] || null;
 }
 
 function clamp(value, min, max) {

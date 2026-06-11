@@ -8,6 +8,7 @@ const {
   createInitialGameState,
   getPublicGameState,
   handleCommand,
+  allocatePlayerStat,
   getRuntimeGameData,
   setRuntimeGameData,
 } = require("./engine/gameEngine");
@@ -99,6 +100,17 @@ app.get("/api/game-data", (req, res) => {
 // 取得目前遊戲公開狀態
 app.get("/api/state", (req, res) => {
   res.json(getPublicGameState(gameState));
+});
+
+app.post("/api/player/allocate-stat", (req, res) => {
+  const stat = req.body?.stat;
+  const result = allocatePlayerStat(gameState, stat);
+
+  res.status(result.ok ? 200 : 400).json({
+    ok: result.ok,
+    message: result.message,
+    state: getPublicGameState(gameState),
+  });
 });
 
 app.post("/api/character/preview", async (req, res) => {

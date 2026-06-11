@@ -231,3 +231,13 @@ schemas/generatedArea.schema.json
 - `/api/game/command` 回傳新 state 後，前端會重新套用 metadata，讓 look / move 後角色立繪仍保留。
 - CharacterPanel 若沒有 portraitUrl 或圖片載入失敗，會 fallback 到原本 AD placeholder。
 - ComfyUI 未啟動或產圖失敗時不顯示全頁錯誤，不阻擋角色生成、冒險生成或開始冒險。
+
+## Current UI Updates
+
+- Adventure Setup Step 1 now includes a saved character card list backed by browser `localStorage` key `aiDungeonCharacterCards`.
+- Saved cards can be loaded or deleted; generated portrait cards show their stored image URL, while cards without portraits use the AD fallback.
+- Adventure Setup Step 2 shows skill numeric summaries through `formatSkillNumbers`, including MP, damage, hits, healing, shield, defense bonus, and duration.
+- Adventure Setup Step 2 keeps the ComfyUI status panel near Portrait Prompt and still shows the connected / disconnected states without blocking text adventure flow.
+- CharacterPanel uses generated character metadata and portrait URLs when present, with the AD fallback if image loading fails.
+- CharacterPanel now displays unspent stat points and HP / MP / ATK / DEF `+` controls that call `POST /api/player/allocate-stat`.
+- BattleView and SkillsWindowContent now reuse the same skill number formatter so battle buttons and skill windows show consistent numeric data.
